@@ -1,73 +1,111 @@
-# Welcome to your Lovable project
+# Hardware Hub Simple - PAHALA.COM
 
-## Project info
+A modern, responsive e-commerce web application for an online hardware store built with React and TypeScript.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Overview
 
-## How can I edit this code?
+Hardware Hub Simple (PAHALA.COM) is a full-featured e-commerce platform designed for hardware stores. The application provides a seamless shopping experience for customers and comprehensive management tools for administrators.
 
-There are several ways of editing your application.
+## Features
 
-**Use Lovable**
+### Customer Features
+- **Product Browsing**: Browse products across multiple categories (Tools, Electrical, Plumbing, Paint, Building, Garden)
+- **Product Search**: Search and filter products by category and keywords
+- **Product Details**: View detailed product information including descriptions, prices, and stock availability
+- **Shopping Cart**: Add products to cart with quantity management
+- **Checkout**: Complete orders with customer information and delivery details
+- **Order Tracking**: View order history and track order status
+- **WhatsApp Integration**: Quick contact support via WhatsApp button
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+### Admin Features
+- **Admin Dashboard**: Overview of sales, orders, and inventory
+- **Product Management**: Add, edit, and manage product listings
+- **Order Management**: View and manage customer orders
+- **Inventory Tracking**: Monitor stock levels across all products
 
-Changes made via Lovable will be committed automatically to this repo.
+## Technology Stack
 
-**Use your preferred IDE**
+- **Frontend Framework**: React 18.3
+- **Language**: TypeScript
+- **Build Tool**: Vite
+- **Routing**: React Router DOM
+- **UI Components**: shadcn-ui with Radix UI primitives
+- **Styling**: Tailwind CSS
+- **Icons**: Bootstrap Icons & Lucide React
+- **Form Management**: React Hook Form with Zod validation
+- **State Management**: React Context API
+- **Testing**: Vitest with Testing Library
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## Prerequisites
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- Node.js (v16 or higher)
+- npm or yarn package manager
 
-Follow these steps:
+## Installation
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+1. Clone the repository:
+```bash
+git clone https://github.com/hudihi/hardware-hub-simple.git
+cd hardware-hub-simple
+```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+2. Install dependencies:
+```bash
+npm install
+```
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+3. Start the development server:
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The application will be available at `http://localhost:5173`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Available Scripts
 
-**Use GitHub Codespaces**
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run build:dev` - Build for development environment
+- `npm run preview` - Preview production build locally
+- `npm run lint` - Run ESLint for code quality
+- `npm test` - Run tests
+- `npm run test:watch` - Run tests in watch mode
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Project Structure
 
-## What technologies are used for this project?
+```
+src/
+├── components/       # Reusable UI components
+├── context/         # React Context providers (Cart, Auth, Orders)
+├── data/            # Static data and product catalog
+├── hooks/           # Custom React hooks
+├── pages/           # Page components and routes
+│   ├── admin/      # Admin panel pages
+│   └── ...         # Customer-facing pages
+├── types/           # TypeScript type definitions
+├── utils/           # Utility functions
+└── lib/            # Third-party library configurations
+```
 
-This project is built with:
+## Deployment
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+To build the application for production:
 
-## How can I deploy this project?
+```bash
+npm run build
+```
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+The build output will be in the `dist/` directory, ready to be deployed to any static hosting service such as:
+- Vercel
+- Netlify
+- GitHub Pages
+- AWS S3
+- Any other static hosting provider
 
-## Can I connect a custom domain to my Lovable project?
+## Contributing
 
-Yes, you can!
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## License
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+This project is private and proprietary.
