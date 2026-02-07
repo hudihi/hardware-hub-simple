@@ -1,8 +1,8 @@
-// Format price in Indonesian Rupiah
+// Format price in Tanzanian Shillings
 export const formatPrice = (price: number): string => {
-  return new Intl.NumberFormat('id-ID', {
+  return new Intl.NumberFormat('sw-TZ', {
     style: 'currency',
-    currency: 'IDR',
+    currency: 'TZS',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(price);
