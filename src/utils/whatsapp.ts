@@ -10,53 +10,53 @@ export const generateWhatsAppLink = (message: string): string => {
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMessage}`;
 };
 
-// Generate product share message
+// Generate product share message (Swahili)
 export const generateProductShareMessage = (
   productName: string,
   productPrice: number,
   productUrl: string
 ): string => {
-  return `Check out this product from PAHALA.COM!\n\n*${productName}*\nPrice: ${formatPrice(productPrice)}\n\n${productUrl}`;
+  return `Angalia bidhaa hii kutoka PAHALA.COM!\n\n*${productName}*\nBei: ${formatPrice(productPrice)}\n\n${productUrl}`;
 };
 
-// Generate order summary message for WhatsApp
+// Generate order summary message for WhatsApp (Swahili)
 export const generateOrderMessage = (order: Order): string => {
-  let message = `🛒 *Order Summary - PAHALA.COM*\n`;
-  message += `Order ID: ${order.id}\n\n`;
-  message += `📦 *Items:*\n`;
+  let message = `🛒 *Muhtasari wa Agizo - PAHALA.COM*\n`;
+  message += `Nambari ya Agizo: ${order.id}\n\n`;
+  message += `📦 *Bidhaa:*\n`;
 
   order.items.forEach((item, index) => {
     message += `${index + 1}. ${item.product.name}\n`;
     message += `   ${item.quantity} x ${formatPrice(item.product.price)} = ${formatPrice(item.product.price * item.quantity)}\n`;
   });
 
-  message += `\n💰 *Total: ${formatPrice(order.total)}*\n`;
-  message += `💳 Payment: Pay on Delivery\n\n`;
-  message += `📍 *Delivery Address:*\n`;
+  message += `\n💰 *Jumla: ${formatPrice(order.total)}*\n`;
+  message += `💳 Malipo: Lipa Unapopokea\n\n`;
+  message += `📍 *Anwani ya Uwasilishaji:*\n`;
   message += `${order.customer.name}\n`;
   message += `${order.customer.address.street}\n`;
   message += `${order.customer.address.city}, ${order.customer.address.province} ${order.customer.address.postalCode}\n`;
   message += `📞 ${order.customer.phone}\n`;
 
   if (order.notes) {
-    message += `\n📝 *Notes:* ${order.notes}\n`;
+    message += `\n📝 *Maelezo:* ${order.notes}\n`;
   }
 
   return message;
 };
 
-// Generate cart share message
+// Generate cart share message (Swahili)
 export const generateCartMessage = (items: CartItem[], total: number): string => {
-  let message = `🛒 *My Cart - PAHALA.COM*\n\n`;
-  message += `📦 *Items:*\n`;
+  let message = `🛒 *Kikapu Changu - PAHALA.COM*\n\n`;
+  message += `📦 *Bidhaa:*\n`;
 
   items.forEach((item, index) => {
     message += `${index + 1}. ${item.product.name} (${item.quantity} ${item.product.unit})\n`;
     message += `   ${formatPrice(item.product.price * item.quantity)}\n`;
   });
 
-  message += `\n💰 *Total: ${formatPrice(total)}*\n`;
-  message += `\nI would like to place this order.`;
+  message += `\n💰 *Jumla: ${formatPrice(total)}*\n`;
+  message += `\nNingependa kuagiza bidhaa hizi.`;
 
   return message;
 };

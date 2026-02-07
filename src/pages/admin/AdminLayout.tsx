@@ -6,9 +6,9 @@ const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
 
   const menuItems = [
-    { path: '/admin', label: 'Dashboard', icon: 'bi-speedometer2' },
-    { path: '/admin/products', label: 'Products', icon: 'bi-box-seam' },
-    { path: '/admin/orders', label: 'Orders', icon: 'bi-receipt' },
+    { path: '/admin', label: 'Dashibodi', icon: 'bi-speedometer2' },
+    { path: '/admin/products', label: 'Bidhaa', icon: 'bi-box-seam' },
+    { path: '/admin/orders', label: 'Maagizo', icon: 'bi-receipt' },
   ];
 
   return (
@@ -18,7 +18,7 @@ const AdminLayout: React.FC = () => {
         <div className="text-white mb-4">
           <h5 className="fw-bold mb-0">
             <i className="bi bi-shop me-2"></i>
-            PAHALA Admin
+            PAHALA Msimamizi
           </h5>
         </div>
 
@@ -44,14 +44,14 @@ const AdminLayout: React.FC = () => {
           onClick={() => navigate('/')}
         >
           <i className="bi bi-arrow-left me-2"></i>
-          Back to Store
+          Rudi Dukani
         </button>
       </div>
 
       {/* Mobile Header */}
       <div className="d-md-none position-fixed top-0 start-0 end-0 bg-white shadow-sm z-3">
         <div className="container py-2 d-flex justify-content-between align-items-center">
-          <h6 className="mb-0 fw-bold text-brown">PAHALA Admin</h6>
+          <h6 className="mb-0 fw-bold text-brown">PAHALA Msimamizi</h6>
           <div className="d-flex gap-2">
             {menuItems.map((item) => (
               <Link

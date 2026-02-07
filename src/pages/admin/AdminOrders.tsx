@@ -26,7 +26,7 @@ const AdminOrders: React.FC = () => {
 
   return (
     <div>
-      <h4 className="fw-bold mb-4">Orders</h4>
+      <h4 className="fw-bold mb-4">Maagizo</h4>
 
       {/* Filter */}
       <div className="card-pahala card mb-4">
@@ -38,7 +38,7 @@ const AdminOrders: React.FC = () => {
               }`}
               onClick={() => setSelectedStatus('')}
             >
-              All ({orders.length})
+              Yote ({orders.length})
             </button>
             {statusOptions.map((status) => {
               const count = orders.filter((o) => o.status === status).length;
@@ -65,20 +65,20 @@ const AdminOrders: React.FC = () => {
         <div className="card-body p-0">
           {filteredOrders.length === 0 ? (
             <div className="text-center py-4 text-muted">
-              No orders found
+              Hakuna maagizo yaliyopatikana
             </div>
           ) : (
             <div className="table-responsive">
               <table className="table table-hover mb-0">
                 <thead className="table-light">
                   <tr>
-                    <th>Order ID</th>
-                    <th>Customer</th>
-                    <th>Items</th>
-                    <th>Total</th>
-                    <th>Date</th>
-                    <th>Status</th>
-                    <th>Actions</th>
+                    <th>Nambari ya Agizo</th>
+                    <th>Mteja</th>
+                    <th>Bidhaa</th>
+                    <th>Jumla</th>
+                    <th>Tarehe</th>
+                    <th>Hali</th>
+                    <th>Vitendo</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -89,7 +89,7 @@ const AdminOrders: React.FC = () => {
                         <div>{order.customer.name}</div>
                         <small className="text-muted">{order.customer.phone}</small>
                       </td>
-                      <td>{order.items.length} items</td>
+                      <td>{order.items.length} bidhaa</td>
                       <td className="text-brown fw-semibold">
                         {formatPrice(order.total)}
                       </td>
@@ -127,7 +127,7 @@ const AdminOrders: React.FC = () => {
       </div>
 
       <div className="mt-3 text-muted small">
-        Showing {filteredOrders.length} of {orders.length} orders
+        Inaonyesha {filteredOrders.length} kati ya {orders.length} maagizo
       </div>
     </div>
   );

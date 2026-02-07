@@ -20,15 +20,15 @@ const HomePage: React.FC = () => {
       {/* Hero Section */}
       <div className="hero-section mb-4">
         <div className="container">
-          <h1 className="h4 fw-bold mb-2">Welcome to PAHALA.COM</h1>
-          <p className="mb-3 opacity-75">Your trusted hardware store</p>
+          <h1 className="h4 fw-bold mb-2">Karibu PAHALA.COM</h1>
+          <p className="mb-3 opacity-75">Duka lako la vifaa vya ujenzi la kuaminika</p>
           
           <div className="d-flex gap-2">
             <div className="flex-grow-1">
               <SearchBar
                 value={searchQuery}
                 onChange={setSearchQuery}
-                placeholder="Search for products..."
+                placeholder="Tafuta bidhaa..."
               />
             </div>
             <button
@@ -45,9 +45,9 @@ const HomePage: React.FC = () => {
         {/* Categories */}
         <div className="mb-4">
           <div className="d-flex justify-content-between align-items-center mb-3">
-            <h2 className="section-header mb-0">Categories</h2>
+            <h2 className="section-header mb-0">Makundi</h2>
             <Link to="/products" className="text-brown text-decoration-none small">
-              View All <i className="bi bi-chevron-right"></i>
+              Ona Zote <i className="bi bi-chevron-right"></i>
             </Link>
           </div>
           
@@ -63,9 +63,9 @@ const HomePage: React.FC = () => {
         {/* Featured Products */}
         <div className="mb-4">
           <div className="d-flex justify-content-between align-items-center mb-3">
-            <h2 className="section-header mb-0">Featured Products</h2>
+            <h2 className="section-header mb-0">Bidhaa Maarufu</h2>
             <Link to="/products" className="text-brown text-decoration-none small">
-              View All <i className="bi bi-chevron-right"></i>
+              Ona Zote <i className="bi bi-chevron-right"></i>
             </Link>
           </div>
           
@@ -82,9 +82,9 @@ const HomePage: React.FC = () => {
         <div className="card-pahala card mb-4">
           <div className="card-body text-center py-4">
             <i className="bi bi-headset fs-1 text-brown mb-2 d-block"></i>
-            <h5 className="fw-bold mb-2">Need Help?</h5>
+            <h5 className="fw-bold mb-2">Unahitaji Msaada?</h5>
             <p className="text-muted mb-3 small">
-              Our marketing team is ready to assist you
+              Timu yetu ya masoko iko tayari kukusaidia
             </p>
             <div className="d-flex gap-2 justify-content-center flex-wrap">
               <a
@@ -101,7 +101,7 @@ const HomePage: React.FC = () => {
                 className="btn btn-outline-primary btn-lg-mobile"
               >
                 <i className="bi bi-telephone me-2"></i>
-                Call Us
+                Piga Simu
               </a>
             </div>
           </div>

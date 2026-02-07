@@ -44,7 +44,7 @@ const ProductsPage: React.FC = () => {
           <SearchBar
             value={searchQuery}
             onChange={setSearchQuery}
-            placeholder="Search products..."
+            placeholder="Tafuta bidhaa..."
           />
         </div>
 
@@ -57,7 +57,7 @@ const ProductsPage: React.FC = () => {
               } btn-sm rounded-pill`}
               onClick={() => handleCategoryChange('')}
             >
-              All
+              Zote
             </button>
             {categories.map((category) => (
               <button
@@ -78,7 +78,7 @@ const ProductsPage: React.FC = () => {
 
         {/* Results Count */}
         <p className="text-muted small mb-3">
-          {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''} found
+          Bidhaa {filteredProducts.length} zimepatikana
         </p>
 
         {/* Products Grid */}
@@ -93,8 +93,8 @@ const ProductsPage: React.FC = () => {
         ) : (
           <div className="text-center py-5">
             <i className="bi bi-search fs-1 text-muted mb-3 d-block"></i>
-            <h5>No products found</h5>
-            <p className="text-muted">Try adjusting your search or filter</p>
+            <h5>Hakuna bidhaa zilizopatikana</h5>
+            <p className="text-muted">Jaribu kubadilisha utafutaji au kichujio</p>
           </div>
         )}
       </div>

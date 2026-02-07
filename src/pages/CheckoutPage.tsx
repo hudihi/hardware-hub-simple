@@ -59,7 +59,7 @@ const CheckoutPage: React.FC = () => {
         });
 
         if (!success) {
-          setError('Email already registered. Please login or use a different email.');
+          setError('Barua pepe imeshasajiliwa. Tafadhali ingia au tumia barua pepe nyingine.');
           setLoading(false);
           return;
         }
@@ -90,11 +90,11 @@ const CheckoutPage: React.FC = () => {
       navigate(`/orders/${order.id}`, { state: { newOrder: true } });
 
       // Optionally share via WhatsApp
-      if (window.confirm('Would you like to share your order via WhatsApp?')) {
+      if (window.confirm('Je, ungependa kushiriki agizo lako kupitia WhatsApp?')) {
         shareOrder(order);
       }
     } catch (err) {
-      setError('Something went wrong. Please try again.');
+      setError('Kuna tatizo limetokea. Tafadhali jaribu tena.');
     } finally {
       setLoading(false);
     }
@@ -108,10 +108,10 @@ const CheckoutPage: React.FC = () => {
           onClick={() => navigate('/cart')}
         >
           <i className="bi bi-arrow-left me-1"></i>
-          Back to Cart
+          Rudi kwenye Kikapu
         </button>
 
-        <h1 className="section-header">Checkout</h1>
+        <h1 className="section-header">Malipo</h1>
 
         {error && (
           <div className="alert alert-danger" role="alert">
@@ -125,11 +125,11 @@ const CheckoutPage: React.FC = () => {
             <div className="card-body">
               <h6 className="fw-bold mb-3">
                 <i className="bi bi-person me-2"></i>
-                Contact Information
+                Taarifa za Mawasiliano
               </h6>
 
               <div className="mb-3">
-                <label className="form-label">Full Name *</label>
+                <label className="form-label">Jina Kamili *</label>
                 <input
                   type="text"
                   className="form-control"
@@ -137,12 +137,12 @@ const CheckoutPage: React.FC = () => {
                   value={formData.name}
                   onChange={handleChange}
                   required
-                  placeholder="Enter your full name"
+                  placeholder="Ingiza jina lako kamili"
                 />
               </div>
 
               <div className="mb-3">
-                <label className="form-label">Email *</label>
+                <label className="form-label">Barua Pepe *</label>
                 <input
                   type="email"
                   className="form-control"
@@ -150,13 +150,13 @@ const CheckoutPage: React.FC = () => {
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  placeholder="your@email.com"
+                  placeholder="barua@mfano.com"
                   disabled={isAuthenticated}
                 />
               </div>
 
               <div className="mb-3">
-                <label className="form-label">Phone Number *</label>
+                <label className="form-label">Nambari ya Simu *</label>
                 <input
                   type="tel"
                   className="form-control"
@@ -164,13 +164,13 @@ const CheckoutPage: React.FC = () => {
                   value={formData.phone}
                   onChange={handleChange}
                   required
-                  placeholder="08xx xxxx xxxx"
+                  placeholder="07xx xxx xxx"
                 />
               </div>
 
               {!isAuthenticated && (
                 <div className="mb-0">
-                  <label className="form-label">Password *</label>
+                  <label className="form-label">Nenosiri *</label>
                   <input
                     type="password"
                     className="form-control"
@@ -179,10 +179,10 @@ const CheckoutPage: React.FC = () => {
                     onChange={handleChange}
                     required
                     minLength={6}
-                    placeholder="Create a password (min. 6 characters)"
+                    placeholder="Tengeneza nenosiri (angalau herufi 6)"
                   />
                   <small className="text-muted">
-                    Create an account to track your orders
+                    Tengeneza akaunti ili kufuatilia maagizo yako
                   </small>
                 </div>
               )}
@@ -194,11 +194,11 @@ const CheckoutPage: React.FC = () => {
             <div className="card-body">
               <h6 className="fw-bold mb-3">
                 <i className="bi bi-geo-alt me-2"></i>
-                Delivery Address
+                Anwani ya Uwasilishaji
               </h6>
 
               <div className="mb-3">
-                <label className="form-label">Street Address *</label>
+                <label className="form-label">Anwani ya Mtaa *</label>
                 <input
                   type="text"
                   className="form-control"
@@ -206,13 +206,13 @@ const CheckoutPage: React.FC = () => {
                   value={formData.street}
                   onChange={handleChange}
                   required
-                  placeholder="Street, house number, building"
+                  placeholder="Mtaa, nambari ya nyumba, jengo"
                 />
               </div>
 
               <div className="row g-3">
                 <div className="col-6">
-                  <label className="form-label">City *</label>
+                  <label className="form-label">Mji *</label>
                   <input
                     type="text"
                     className="form-control"
@@ -220,11 +220,11 @@ const CheckoutPage: React.FC = () => {
                     value={formData.city}
                     onChange={handleChange}
                     required
-                    placeholder="City"
+                    placeholder="Mji"
                   />
                 </div>
                 <div className="col-6">
-                  <label className="form-label">Province *</label>
+                  <label className="form-label">Mkoa *</label>
                   <input
                     type="text"
                     className="form-control"
@@ -232,13 +232,13 @@ const CheckoutPage: React.FC = () => {
                     value={formData.province}
                     onChange={handleChange}
                     required
-                    placeholder="Province"
+                    placeholder="Mkoa"
                   />
                 </div>
               </div>
 
               <div className="mt-3">
-                <label className="form-label">Postal Code *</label>
+                <label className="form-label">Nambari ya Posta *</label>
                 <input
                   type="text"
                   className="form-control"
@@ -246,7 +246,7 @@ const CheckoutPage: React.FC = () => {
                   value={formData.postalCode}
                   onChange={handleChange}
                   required
-                  placeholder="Postal code"
+                  placeholder="Nambari ya posta"
                 />
               </div>
             </div>
@@ -257,7 +257,7 @@ const CheckoutPage: React.FC = () => {
             <div className="card-body">
               <h6 className="fw-bold mb-3">
                 <i className="bi bi-sticky me-2"></i>
-                Order Notes (Optional)
+                Maelezo ya Agizo (Si Lazima)
               </h6>
               <textarea
                 className="form-control"
@@ -265,7 +265,7 @@ const CheckoutPage: React.FC = () => {
                 value={formData.notes}
                 onChange={handleChange}
                 rows={3}
-                placeholder="Any special instructions for your order..."
+                placeholder="Maelekezo maalum kwa agizo lako..."
               />
             </div>
           </div>
@@ -275,13 +275,13 @@ const CheckoutPage: React.FC = () => {
             <div className="card-body">
               <h6 className="fw-bold mb-3">
                 <i className="bi bi-credit-card me-2"></i>
-                Payment Method
+                Njia ya Malipo
               </h6>
               <div className="d-flex align-items-center gap-3 p-3 bg-cream rounded">
                 <i className="bi bi-cash-coin fs-4 text-brown"></i>
                 <div>
-                  <div className="fw-semibold">Pay on Delivery</div>
-                  <small className="text-muted">Pay when you receive your order</small>
+                  <div className="fw-semibold">Lipa Unapopokea</div>
+                  <small className="text-muted">Lipa unapopokea agizo lako</small>
                 </div>
                 <i className="bi bi-check-circle-fill text-success ms-auto"></i>
               </div>
@@ -293,7 +293,7 @@ const CheckoutPage: React.FC = () => {
             <div className="card-body">
               <h6 className="fw-bold mb-3">
                 <i className="bi bi-receipt me-2"></i>
-                Order Summary
+                Muhtasari wa Agizo
               </h6>
 
               {items.map((item) => (
@@ -308,7 +308,7 @@ const CheckoutPage: React.FC = () => {
               <hr />
 
               <div className="d-flex justify-content-between">
-                <span className="fw-bold">Total</span>
+                <span className="fw-bold">Jumla</span>
                 <span className="fw-bold text-brown fs-5">{formatPrice(total)}</span>
               </div>
             </div>
@@ -323,12 +323,12 @@ const CheckoutPage: React.FC = () => {
             {loading ? (
               <>
                 <span className="spinner-border spinner-border-sm me-2"></span>
-                Processing...
+                Inashughulika...
               </>
             ) : (
               <>
                 <i className="bi bi-check-circle me-2"></i>
-                Place Order
+                Weka Agizo
               </>
             )}
           </button>
