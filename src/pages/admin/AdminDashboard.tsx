@@ -12,25 +12,25 @@ const AdminDashboard: React.FC = () => {
 
   const stats = [
     {
-      label: 'Total Products',
+      label: 'Jumla ya Bidhaa',
       value: products.length,
       icon: 'bi-box-seam',
       color: 'primary',
     },
     {
-      label: 'Total Orders',
+      label: 'Jumla ya Maagizo',
       value: orders.length,
       icon: 'bi-receipt',
       color: 'success',
     },
     {
-      label: 'Pending Orders',
+      label: 'Maagizo Yanasubiri',
       value: pendingOrders,
       icon: 'bi-clock',
       color: 'warning',
     },
     {
-      label: 'Total Revenue',
+      label: 'Jumla ya Mapato',
       value: formatPrice(totalRevenue),
       icon: 'bi-currency-dollar',
       color: 'info',
@@ -41,7 +41,7 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <div>
-      <h4 className="fw-bold mb-4">Dashboard</h4>
+      <h4 className="fw-bold mb-4">Dashibodi</h4>
 
       {/* Stats Grid */}
       <div className="row g-3 mb-4">
@@ -69,23 +69,23 @@ const AdminDashboard: React.FC = () => {
       {/* Recent Orders */}
       <div className="card-pahala card">
         <div className="card-header bg-white">
-          <h6 className="mb-0 fw-bold">Recent Orders</h6>
+          <h6 className="mb-0 fw-bold">Maagizo ya Hivi Karibuni</h6>
         </div>
         <div className="card-body p-0">
           {recentOrders.length === 0 ? (
             <div className="text-center py-4 text-muted">
-              No orders yet
+              Hakuna maagizo bado
             </div>
           ) : (
             <div className="table-responsive">
               <table className="table table-hover mb-0">
                 <thead className="table-light">
                   <tr>
-                    <th>Order ID</th>
-                    <th>Customer</th>
-                    <th>Items</th>
-                    <th>Total</th>
-                    <th>Status</th>
+                    <th>Nambari ya Agizo</th>
+                    <th>Mteja</th>
+                    <th>Bidhaa</th>
+                    <th>Jumla</th>
+                    <th>Hali</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -93,7 +93,7 @@ const AdminDashboard: React.FC = () => {
                     <tr key={order.id}>
                       <td className="fw-semibold">{order.id}</td>
                       <td>{order.customer.name}</td>
-                      <td>{order.items.length} items</td>
+                      <td>{order.items.length} bidhaa</td>
                       <td className="text-brown fw-semibold">
                         {formatPrice(order.total)}
                       </td>
@@ -107,7 +107,9 @@ const AdminDashboard: React.FC = () => {
                               : 'bg-info'
                           }`}
                         >
-                          {order.status}
+                          {order.status === 'pending' ? 'Inasubiri' : 
+                           order.status === 'completed' ? 'Imekamilika' : 
+                           order.status}
                         </span>
                       </td>
                     </tr>

@@ -23,13 +23,13 @@ const Navbar: React.FC = () => {
 
           <div className="d-flex align-items-center gap-3">
             <Link to="/" className="nav-link">
-              <i className="bi bi-house me-1"></i> Home
+              <i className="bi bi-house me-1"></i> Nyumbani
             </Link>
             <Link to="/products" className="nav-link">
-              <i className="bi bi-grid me-1"></i> Products
+              <i className="bi bi-grid me-1"></i> Bidhaa
             </Link>
             <Link to="/orders" className="nav-link">
-              <i className="bi bi-box me-1"></i> Orders
+              <i className="bi bi-box me-1"></i> Maagizo
             </Link>
             <Link to="/cart" className="nav-link position-relative">
               <i className="bi bi-cart3 fs-5"></i>
@@ -62,28 +62,28 @@ const Navbar: React.FC = () => {
               className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}
             >
               <i className="bi bi-house"></i>
-              <span>Home</span>
+              <span>Nyumbani</span>
             </Link>
             <Link
               to="/products"
               className={`nav-link ${location.pathname.startsWith('/products') ? 'active' : ''}`}
             >
               <i className="bi bi-grid"></i>
-              <span>Products</span>
+              <span>Bidhaa</span>
             </Link>
             <Link
               to="/cart"
               className={`nav-link ${location.pathname === '/cart' ? 'active' : ''}`}
             >
               <i className="bi bi-cart3"></i>
-              <span>Cart</span>
+              <span>Kikapu</span>
             </Link>
             <Link
               to="/orders"
               className={`nav-link ${location.pathname === '/orders' ? 'active' : ''}`}
             >
               <i className="bi bi-box"></i>
-              <span>Orders</span>
+              <span>Maagizo</span>
             </Link>
           </div>
         </div>

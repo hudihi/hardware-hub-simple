@@ -17,10 +17,10 @@ const AdminProducts: React.FC = () => {
   return (
     <div>
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h4 className="fw-bold mb-0">Products</h4>
+        <h4 className="fw-bold mb-0">Bidhaa</h4>
         <button className="btn btn-primary btn-sm">
           <i className="bi bi-plus me-1"></i>
-          Add Product
+          Ongeza Bidhaa
         </button>
       </div>
 
@@ -32,7 +32,7 @@ const AdminProducts: React.FC = () => {
               <input
                 type="text"
                 className="form-control"
-                placeholder="Search products..."
+                placeholder="Tafuta bidhaa..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -43,7 +43,7 @@ const AdminProducts: React.FC = () => {
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
               >
-                <option value="">All Categories</option>
+                <option value="">Makundi Yote</option>
                 {categories.map((cat) => (
                   <option key={cat.id} value={cat.id}>
                     {cat.name}
@@ -62,11 +62,11 @@ const AdminProducts: React.FC = () => {
             <table className="table table-hover mb-0">
               <thead className="table-light">
                 <tr>
-                  <th>Product</th>
-                  <th>Category</th>
-                  <th>Price</th>
-                  <th>Stock</th>
-                  <th>Actions</th>
+                  <th>Bidhaa</th>
+                  <th>Kundi</th>
+                  <th>Bei</th>
+                  <th>Stoku</th>
+                  <th>Vitendo</th>
                 </tr>
               </thead>
               <tbody>
@@ -127,7 +127,7 @@ const AdminProducts: React.FC = () => {
       </div>
 
       <div className="mt-3 text-muted small">
-        Showing {filteredProducts.length} of {products.length} products
+        Inaonyesha {filteredProducts.length} kati ya {products.length} bidhaa
       </div>
     </div>
   );

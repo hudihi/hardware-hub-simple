@@ -18,9 +18,9 @@ const OrderDetailPage: React.FC = () => {
       <div className="page-container">
         <div className="container py-5 text-center">
           <i className="bi bi-box fs-1 text-muted mb-3 d-block"></i>
-          <h5>Order not found</h5>
+          <h5>Agizo halijapatikana</h5>
           <button className="btn btn-primary mt-3" onClick={() => navigate('/orders')}>
-            View All Orders
+            Ona Maagizo Yote
           </button>
         </div>
       </div>
@@ -39,7 +39,7 @@ const OrderDetailPage: React.FC = () => {
           onClick={() => navigate('/orders')}
         >
           <i className="bi bi-arrow-left me-1"></i>
-          Back to Orders
+          Rudi kwa Maagizo
         </button>
 
         {/* Success Message for New Orders */}
@@ -47,8 +47,8 @@ const OrderDetailPage: React.FC = () => {
           <div className="alert alert-success d-flex align-items-center mb-4" role="alert">
             <i className="bi bi-check-circle-fill me-2 fs-4"></i>
             <div>
-              <strong>Order placed successfully!</strong>
-              <p className="mb-0 small">We'll process your order soon. Thank you!</p>
+              <strong>Agizo limewekwa kwa mafanikio!</strong>
+              <p className="mb-0 small">Tutashughulikia agizo lako hivi karibuni. Asante!</p>
             </div>
           </div>
         )}
@@ -71,7 +71,7 @@ const OrderDetailPage: React.FC = () => {
               className="btn btn-whatsapp btn-lg-mobile w-100"
             >
               <i className="bi bi-whatsapp me-2"></i>
-              Share Order via WhatsApp
+              Shiriki Agizo kupitia WhatsApp
             </button>
           </div>
         </div>
@@ -81,7 +81,7 @@ const OrderDetailPage: React.FC = () => {
           <div className="card-body">
             <h6 className="fw-bold mb-3">
               <i className="bi bi-box me-2"></i>
-              Order Items
+              Bidhaa za Agizo
             </h6>
 
             {order.items.map((item, index) => (
@@ -108,7 +108,7 @@ const OrderDetailPage: React.FC = () => {
             ))}
 
             <div className="d-flex justify-content-between pt-2">
-              <span className="fw-bold">Total</span>
+              <span className="fw-bold">Jumla</span>
               <span className="fw-bold text-brown fs-5">{formatPrice(order.total)}</span>
             </div>
           </div>
@@ -119,7 +119,7 @@ const OrderDetailPage: React.FC = () => {
           <div className="card-body">
             <h6 className="fw-bold mb-3">
               <i className="bi bi-geo-alt me-2"></i>
-              Delivery Address
+              Anwani ya Uwasilishaji
             </h6>
             <p className="mb-1 fw-semibold">{order.customer.name}</p>
             <p className="mb-1 text-muted small">{order.customer.address.street}</p>
@@ -139,11 +139,11 @@ const OrderDetailPage: React.FC = () => {
           <div className="card-body">
             <h6 className="fw-bold mb-3">
               <i className="bi bi-credit-card me-2"></i>
-              Payment Method
+              Njia ya Malipo
             </h6>
             <div className="d-flex align-items-center gap-2">
               <i className="bi bi-cash-coin text-brown"></i>
-              <span>Pay on Delivery</span>
+              <span>Lipa Unapopokea</span>
             </div>
           </div>
         </div>
@@ -154,7 +154,7 @@ const OrderDetailPage: React.FC = () => {
             <div className="card-body">
               <h6 className="fw-bold mb-3">
                 <i className="bi bi-sticky me-2"></i>
-                Order Notes
+                Maelezo ya Agizo
               </h6>
               <p className="mb-0 text-muted">{order.notes}</p>
             </div>
@@ -165,7 +165,7 @@ const OrderDetailPage: React.FC = () => {
         <div className="card-pahala card">
           <div className="card-body text-center">
             <p className="mb-3 text-muted small">
-              Questions about your order?
+              Una maswali kuhusu agizo lako?
             </p>
             <div className="d-flex gap-2 justify-content-center flex-wrap">
               <a
@@ -182,7 +182,7 @@ const OrderDetailPage: React.FC = () => {
                 className="btn btn-outline-primary btn-sm"
               >
                 <i className="bi bi-telephone me-1"></i>
-                Call Us
+                Piga Simu
               </a>
             </div>
           </div>

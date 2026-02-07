@@ -18,15 +18,15 @@ const OrdersPage: React.FC = () => {
   return (
     <div className="page-container">
       <div className="container py-3">
-        <h1 className="section-header">My Orders</h1>
+        <h1 className="section-header">Maagizo Yangu</h1>
 
         {userOrders.length === 0 ? (
           <EmptyState
             icon="bi-box"
-            title="No orders yet"
-            description="Start shopping to see your orders here"
+            title="Hakuna maagizo bado"
+            description="Anza kununua ili kuona maagizo yako hapa"
             action={{
-              label: 'Browse Products',
+              label: 'Tazama Bidhaa',
               onClick: () => navigate('/products'),
             }}
           />
@@ -42,7 +42,7 @@ const OrdersPage: React.FC = () => {
         <div className="card-pahala card mt-4">
           <div className="card-body text-center">
             <p className="mb-3 text-muted small">
-              Need help with your order?
+              Unahitaji msaada na agizo lako?
             </p>
             <div className="d-flex gap-2 justify-content-center flex-wrap">
               <a
@@ -59,7 +59,7 @@ const OrdersPage: React.FC = () => {
                 className="btn btn-outline-primary btn-sm"
               >
                 <i className="bi bi-telephone me-1"></i>
-                Call Us
+                Piga Simu
               </a>
             </div>
           </div>

@@ -10,7 +10,7 @@ export const formatPrice = (price: number): string => {
 
 // Format date
 export const formatDate = (dateString: string): string => {
-  return new Intl.DateTimeFormat('id-ID', {
+  return new Intl.DateTimeFormat('sw-TZ', {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
@@ -19,15 +19,15 @@ export const formatDate = (dateString: string): string => {
   }).format(new Date(dateString));
 };
 
-// Get status display text
+// Get status display text (Swahili)
 export const getStatusText = (status: string): string => {
   const statusMap: Record<string, string> = {
-    pending: 'Pending',
-    confirmed: 'Confirmed',
-    processing: 'Processing',
-    ready: 'Ready for Pickup',
-    completed: 'Completed',
-    cancelled: 'Cancelled',
+    pending: 'Inasubiri',
+    confirmed: 'Imethibitishwa',
+    processing: 'Inashughulikiwa',
+    ready: 'Tayari Kuchukuliwa',
+    completed: 'Imekamilika',
+    cancelled: 'Imeghairiwa',
   };
   return statusMap[status] || status;
 };

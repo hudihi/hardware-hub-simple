@@ -14,13 +14,13 @@ const CartPage: React.FC = () => {
     return (
       <div className="page-container">
         <div className="container py-3">
-          <h1 className="section-header">Shopping Cart</h1>
+          <h1 className="section-header">Kikapu cha Ununuzi</h1>
           <EmptyState
             icon="bi-cart"
-            title="Your cart is empty"
-            description="Add some products to get started"
+            title="Kikapu chako kipo tupu"
+            description="Ongeza bidhaa ili kuanza"
             action={{
-              label: 'Browse Products',
+              label: 'Tazama Bidhaa',
               onClick: () => navigate('/products'),
             }}
           />
@@ -38,12 +38,12 @@ const CartPage: React.FC = () => {
     <div className="page-container">
       <div className="container py-3">
         <div className="d-flex justify-content-between align-items-center mb-3">
-          <h1 className="section-header mb-0">Shopping Cart</h1>
+          <h1 className="section-header mb-0">Kikapu cha Ununuzi</h1>
           <button
             className="btn btn-link text-danger p-0 small"
             onClick={clearCart}
           >
-            Clear All
+            Futa Zote
           </button>
         </div>
 
@@ -58,16 +58,16 @@ const CartPage: React.FC = () => {
         <div className="card-pahala card">
           <div className="card-body">
             <div className="d-flex justify-content-between mb-2">
-              <span className="text-muted">Subtotal</span>
+              <span className="text-muted">Jumla Ndogo</span>
               <span>{formatPrice(total)}</span>
             </div>
             <div className="d-flex justify-content-between mb-3">
-              <span className="text-muted">Delivery</span>
-              <span className="text-success">Pay on Delivery</span>
+              <span className="text-muted">Usafirishaji</span>
+              <span className="text-success">Lipa Unapopokea</span>
             </div>
             <hr />
             <div className="d-flex justify-content-between mb-4">
-              <span className="fw-bold">Total</span>
+              <span className="fw-bold">Jumla</span>
               <span className="fs-5 fw-bold text-brown">{formatPrice(total)}</span>
             </div>
 
@@ -77,14 +77,14 @@ const CartPage: React.FC = () => {
                 onClick={() => navigate('/checkout')}
               >
                 <i className="bi bi-lock me-2"></i>
-                Proceed to Checkout
+                Endelea Kulipa
               </button>
               <button
                 className="btn btn-whatsapp btn-lg-mobile"
                 onClick={handleWhatsAppShare}
               >
                 <i className="bi bi-whatsapp me-2"></i>
-                Share via WhatsApp
+                Shiriki kupitia WhatsApp
               </button>
             </div>
           </div>
