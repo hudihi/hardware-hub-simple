@@ -5,12 +5,14 @@ import { useAuth } from '../context/AuthContext';
 import { useOrders } from '../context/OrderContext';
 import { formatPrice } from '../utils/format';
 import { shareOrder } from '../utils/whatsapp';
+import { useLanguage } from '../context/LanguageContext';
 
 const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
   const { items, total, clearCart } = useCart();
   const { user, register, isAuthenticated } = useAuth();
   const { createOrder } = useOrders();
+  const { t } = useLanguage();
 
   const [formData, setFormData] = useState({
     name: user?.name || '',
@@ -43,7 +45,6 @@ const CheckoutPage: React.FC = () => {
     setError('');
 
     try {
-      // If not authenticated, register the user
       if (!isAuthenticated) {
         const success = await register({
           name: formData.name,
@@ -59,13 +60,12 @@ const CheckoutPage: React.FC = () => {
         });
 
         if (!success) {
-          setError('Barua pepe imeshasajiliwa. Tafadhali ingia au tumia barua pepe nyingine.');
+          setError(t('checkout_email_taken'));
           setLoading(false);
           return;
         }
       }
 
-      // Create order
       const order = createOrder(
         items,
         {
@@ -83,18 +83,14 @@ const CheckoutPage: React.FC = () => {
         formData.notes
       );
 
-      // Clear cart
       clearCart();
-
-      // Navigate to success page with order details
       navigate(`/orders/${order.id}`, { state: { newOrder: true } });
 
-      // Optionally share via WhatsApp
-      if (window.confirm('Je, ungependa kushiriki agizo lako kupitia WhatsApp?')) {
+      if (window.confirm(t('checkout_wa_confirm'))) {
         shareOrder(order);
       }
     } catch (err) {
-      setError('Kuna tatizo limetokea. Tafadhali jaribu tena.');
+      setError(t('checkout_error'));
     } finally {
       setLoading(false);
     }
@@ -108,10 +104,10 @@ const CheckoutPage: React.FC = () => {
           onClick={() => navigate('/cart')}
         >
           <i className="bi bi-arrow-left me-1"></i>
-          Rudi kwenye Kikapu
+          {t('checkout_back_cart')}
         </button>
 
-        <h1 className="section-header">Malipo</h1>
+        <h1 className="section-header">{t('checkout_title')}</h1>
 
         {error && (
           <div className="alert alert-danger" role="alert">
@@ -125,65 +121,29 @@ const CheckoutPage: React.FC = () => {
             <div className="card-body">
               <h6 className="fw-bold mb-3">
                 <i className="bi bi-person me-2"></i>
-                Taarifa za Mawasiliano
+                {t('checkout_contact')}
               </h6>
 
               <div className="mb-3">
-                <label className="form-label">Jina Kamili *</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  placeholder="Ingiza jina lako kamili"
-                />
+                <label className="form-label">{t('checkout_name')} *</label>
+                <input type="text" className="form-control" name="name" value={formData.name} onChange={handleChange} required placeholder={t('checkout_name_ph')} />
               </div>
 
               <div className="mb-3">
-                <label className="form-label">Barua Pepe *</label>
-                <input
-                  type="email"
-                  className="form-control"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  placeholder="barua@mfano.com"
-                  disabled={isAuthenticated}
-                />
+                <label className="form-label">{t('checkout_email')} *</label>
+                <input type="email" className="form-control" name="email" value={formData.email} onChange={handleChange} required placeholder={t('checkout_email_ph')} disabled={isAuthenticated} />
               </div>
 
               <div className="mb-3">
-                <label className="form-label">Nambari ya Simu *</label>
-                <input
-                  type="tel"
-                  className="form-control"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  required
-                  placeholder="07xx xxx xxx"
-                />
+                <label className="form-label">{t('checkout_phone')} *</label>
+                <input type="tel" className="form-control" name="phone" value={formData.phone} onChange={handleChange} required placeholder={t('checkout_phone_ph')} />
               </div>
 
               {!isAuthenticated && (
                 <div className="mb-0">
-                  <label className="form-label">Nenosiri *</label>
-                  <input
-                    type="password"
-                    className="form-control"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    required
-                    minLength={6}
-                    placeholder="Tengeneza nenosiri (angalau herufi 6)"
-                  />
-                  <small className="text-muted">
-                    Tengeneza akaunti ili kufuatilia maagizo yako
-                  </small>
+                  <label className="form-label">{t('checkout_password')} *</label>
+                  <input type="password" className="form-control" name="password" value={formData.password} onChange={handleChange} required minLength={6} placeholder={t('checkout_password_ph')} />
+                  <small className="text-muted">{t('checkout_password_hint')}</small>
                 </div>
               )}
             </div>
@@ -194,60 +154,28 @@ const CheckoutPage: React.FC = () => {
             <div className="card-body">
               <h6 className="fw-bold mb-3">
                 <i className="bi bi-geo-alt me-2"></i>
-                Anwani ya Uwasilishaji
+                {t('checkout_address')}
               </h6>
 
               <div className="mb-3">
-                <label className="form-label">Anwani ya Mtaa *</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  name="street"
-                  value={formData.street}
-                  onChange={handleChange}
-                  required
-                  placeholder="Mtaa, nambari ya nyumba, jengo"
-                />
+                <label className="form-label">{t('checkout_street')} *</label>
+                <input type="text" className="form-control" name="street" value={formData.street} onChange={handleChange} required placeholder={t('checkout_street_ph')} />
               </div>
 
               <div className="row g-3">
                 <div className="col-6">
-                  <label className="form-label">Mji *</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="city"
-                    value={formData.city}
-                    onChange={handleChange}
-                    required
-                    placeholder="Mji"
-                  />
+                  <label className="form-label">{t('checkout_city')} *</label>
+                  <input type="text" className="form-control" name="city" value={formData.city} onChange={handleChange} required placeholder={t('checkout_city')} />
                 </div>
                 <div className="col-6">
-                  <label className="form-label">Mkoa *</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="province"
-                    value={formData.province}
-                    onChange={handleChange}
-                    required
-                    placeholder="Mkoa"
-                  />
+                  <label className="form-label">{t('checkout_province')} *</label>
+                  <input type="text" className="form-control" name="province" value={formData.province} onChange={handleChange} required placeholder={t('checkout_province')} />
                 </div>
               </div>
 
               <div className="mt-3">
-                <label className="form-label">Nambari ya Posta *</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  name="postalCode"
-                  value={formData.postalCode}
-                  onChange={handleChange}
-                  required
-                  placeholder="Nambari ya posta"
-                />
+                <label className="form-label">{t('checkout_postal')} *</label>
+                <input type="text" className="form-control" name="postalCode" value={formData.postalCode} onChange={handleChange} required placeholder={t('checkout_postal')} />
               </div>
             </div>
           </div>
@@ -257,16 +185,9 @@ const CheckoutPage: React.FC = () => {
             <div className="card-body">
               <h6 className="fw-bold mb-3">
                 <i className="bi bi-sticky me-2"></i>
-                Maelezo ya Agizo (Si Lazima)
+                {t('checkout_notes_title')}
               </h6>
-              <textarea
-                className="form-control"
-                name="notes"
-                value={formData.notes}
-                onChange={handleChange}
-                rows={3}
-                placeholder="Maelekezo maalum kwa agizo lako..."
-              />
+              <textarea className="form-control" name="notes" value={formData.notes} onChange={handleChange} rows={3} placeholder={t('checkout_notes_ph')} />
             </div>
           </div>
 
@@ -275,13 +196,13 @@ const CheckoutPage: React.FC = () => {
             <div className="card-body">
               <h6 className="fw-bold mb-3">
                 <i className="bi bi-credit-card me-2"></i>
-                Njia ya Malipo
+                {t('checkout_payment')}
               </h6>
               <div className="d-flex align-items-center gap-3 p-3 bg-cream rounded">
                 <i className="bi bi-cash-coin fs-4 text-brown"></i>
                 <div>
-                  <div className="fw-semibold">Lipa Unapopokea</div>
-                  <small className="text-muted">Lipa unapopokea agizo lako</small>
+                  <div className="fw-semibold">{t('checkout_cod_title')}</div>
+                  <small className="text-muted">{t('checkout_cod_desc')}</small>
                 </div>
                 <i className="bi bi-check-circle-fill text-success ms-auto"></i>
               </div>
@@ -293,14 +214,12 @@ const CheckoutPage: React.FC = () => {
             <div className="card-body">
               <h6 className="fw-bold mb-3">
                 <i className="bi bi-receipt me-2"></i>
-                Muhtasari wa Agizo
+                {t('checkout_summary')}
               </h6>
 
               {items.map((item) => (
                 <div key={item.product.id} className="d-flex justify-content-between mb-2 small">
-                  <span>
-                    {item.quantity}x {item.product.name}
-                  </span>
+                  <span>{item.quantity}x {item.product.name}</span>
                   <span>{formatPrice(item.product.price * item.quantity)}</span>
                 </div>
               ))}
@@ -308,27 +227,22 @@ const CheckoutPage: React.FC = () => {
               <hr />
 
               <div className="d-flex justify-content-between">
-                <span className="fw-bold">Jumla</span>
+                <span className="fw-bold">{t('cart_total')}</span>
                 <span className="fw-bold text-brown fs-5">{formatPrice(total)}</span>
               </div>
             </div>
           </div>
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            className="btn btn-primary btn-lg-mobile w-100"
-            disabled={loading}
-          >
+          <button type="submit" className="btn btn-primary btn-lg-mobile w-100" disabled={loading}>
             {loading ? (
               <>
                 <span className="spinner-border spinner-border-sm me-2"></span>
-                Inashughulika...
+                {t('checkout_loading')}
               </>
             ) : (
               <>
                 <i className="bi bi-check-circle me-2"></i>
-                Weka Agizo
+                {t('checkout_submit')}
               </>
             )}
           </button>

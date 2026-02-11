@@ -1,10 +1,12 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const Navbar: React.FC = () => {
   const { itemCount } = useCart();
   const location = useLocation();
+  const { language, toggleLanguage, t } = useLanguage();
 
   // Don't show navbar on admin pages
   if (location.pathname.startsWith('/admin')) {
@@ -23,18 +25,26 @@ const Navbar: React.FC = () => {
 
           <div className="d-flex align-items-center gap-3">
             <Link to="/" className="nav-link">
-              <i className="bi bi-house me-1"></i> Nyumbani
+              <i className="bi bi-house me-1"></i> {t('nav_home')}
             </Link>
             <Link to="/products" className="nav-link">
-              <i className="bi bi-grid me-1"></i> Bidhaa
+              <i className="bi bi-grid me-1"></i> {t('nav_products')}
             </Link>
             <Link to="/orders" className="nav-link">
-              <i className="bi bi-box me-1"></i> Maagizo
+              <i className="bi bi-box me-1"></i> {t('nav_orders')}
             </Link>
             <Link to="/cart" className="nav-link position-relative">
               <i className="bi bi-cart3 fs-5"></i>
               {itemCount > 0 && <span className="cart-badge">{itemCount}</span>}
             </Link>
+            <button
+              className="btn btn-sm btn-outline-light rounded-pill px-3"
+              onClick={toggleLanguage}
+              title={language === 'sw' ? 'Switch to English' : 'Badilisha kwa Kiswahili'}
+            >
+              <i className="bi bi-translate me-1"></i>
+              {t('lang_toggle')}
+            </button>
           </div>
         </div>
       </nav>
@@ -46,10 +56,19 @@ const Navbar: React.FC = () => {
             <i className="bi bi-shop me-2"></i>
             PAHALA.COM
           </Link>
-          <Link to="/cart" className="text-white position-relative">
-            <i className="bi bi-cart3 fs-4"></i>
-            {itemCount > 0 && <span className="cart-badge">{itemCount}</span>}
-          </Link>
+          <div className="d-flex align-items-center gap-2">
+            <button
+              className="btn btn-sm btn-outline-light rounded-pill px-2 py-1"
+              onClick={toggleLanguage}
+              style={{ fontSize: '0.75rem' }}
+            >
+              {t('lang_toggle')}
+            </button>
+            <Link to="/cart" className="text-white position-relative">
+              <i className="bi bi-cart3 fs-4"></i>
+              {itemCount > 0 && <span className="cart-badge">{itemCount}</span>}
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -62,28 +81,28 @@ const Navbar: React.FC = () => {
               className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}
             >
               <i className="bi bi-house"></i>
-              <span>Nyumbani</span>
+              <span>{t('nav_home')}</span>
             </Link>
             <Link
               to="/products"
               className={`nav-link ${location.pathname.startsWith('/products') ? 'active' : ''}`}
             >
               <i className="bi bi-grid"></i>
-              <span>Bidhaa</span>
+              <span>{t('nav_products')}</span>
             </Link>
             <Link
               to="/cart"
               className={`nav-link ${location.pathname === '/cart' ? 'active' : ''}`}
             >
               <i className="bi bi-cart3"></i>
-              <span>Kikapu</span>
+              <span>{t('nav_cart')}</span>
             </Link>
             <Link
               to="/orders"
               className={`nav-link ${location.pathname === '/orders' ? 'active' : ''}`}
             >
               <i className="bi bi-box"></i>
-              <span>Maagizo</span>
+              <span>{t('nav_orders')}</span>
             </Link>
           </div>
         </div>

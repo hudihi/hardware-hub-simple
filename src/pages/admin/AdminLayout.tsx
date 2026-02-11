@@ -1,24 +1,25 @@
 import React from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
+import { useLanguage } from '../../context/LanguageContext';
 
 const AdminLayout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const menuItems = [
-    { path: '/admin', label: 'Dashibodi', icon: 'bi-speedometer2' },
-    { path: '/admin/products', label: 'Bidhaa', icon: 'bi-box-seam' },
-    { path: '/admin/orders', label: 'Maagizo', icon: 'bi-receipt' },
+    { path: '/admin', label: t('admin_dashboard'), icon: 'bi-speedometer2' },
+    { path: '/admin/products', label: t('admin_products'), icon: 'bi-box-seam' },
+    { path: '/admin/orders', label: t('admin_orders'), icon: 'bi-receipt' },
   ];
 
   return (
     <div className="d-flex min-vh-100">
-      {/* Sidebar - Desktop */}
       <div className="admin-sidebar d-none d-md-block p-3" style={{ width: '240px' }}>
         <div className="text-white mb-4">
           <h5 className="fw-bold mb-0">
             <i className="bi bi-shop me-2"></i>
-            PAHALA Msimamizi
+            {t('admin_title')}
           </h5>
         </div>
 
@@ -44,14 +45,13 @@ const AdminLayout: React.FC = () => {
           onClick={() => navigate('/')}
         >
           <i className="bi bi-arrow-left me-2"></i>
-          Rudi Dukani
+          {t('admin_back')}
         </button>
       </div>
 
-      {/* Mobile Header */}
       <div className="d-md-none position-fixed top-0 start-0 end-0 bg-white shadow-sm z-3">
         <div className="container py-2 d-flex justify-content-between align-items-center">
-          <h6 className="mb-0 fw-bold text-brown">PAHALA Msimamizi</h6>
+          <h6 className="mb-0 fw-bold text-brown">{t('admin_title')}</h6>
           <div className="d-flex gap-2">
             {menuItems.map((item) => (
               <Link
@@ -70,7 +70,6 @@ const AdminLayout: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="flex-grow-1 bg-light">
         <div className="p-3 pt-5 pt-md-3">
           <Outlet />

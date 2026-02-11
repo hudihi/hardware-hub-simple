@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
 import { OrderProvider } from './context/OrderContext';
+import { LanguageProvider } from './context/LanguageContext';
 import Navbar from './components/Navbar';
 import WhatsAppButton from './components/WhatsAppButton';
 import HomePage from './pages/HomePage';
@@ -19,6 +20,7 @@ import AdminOrders from './pages/admin/AdminOrders';
 
 const App: React.FC = () => {
   return (
+    <LanguageProvider>
     <AuthProvider>
       <CartProvider>
         <OrderProvider>
@@ -46,6 +48,7 @@ const App: React.FC = () => {
         </OrderProvider>
       </CartProvider>
     </AuthProvider>
+    </LanguageProvider>
   );
 };
 

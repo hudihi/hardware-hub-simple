@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Product } from '../types';
 import { formatPrice } from '../utils/format';
 import { useCart } from '../context/CartContext';
+import { useLanguage } from '../context/LanguageContext';
 
 interface ProductCardProps {
   product: Product;
@@ -10,6 +11,7 @@ interface ProductCardProps {
 
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const { addItem } = useCart();
+  const { t } = useLanguage();
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -22,7 +24,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     e.stopPropagation();
     
     const productUrl = `${window.location.origin}/products/${product.id}`;
-    const message = `Angalia ${product.name} katika PAHALA.COM!\n\nBei: ${formatPrice(product.price)}/${product.unit}\n\n${productUrl}`;
+    const message = `${product.name} - PAHALA.COM\n\n${formatPrice(product.price)}/${product.unit}\n\n${productUrl}`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
@@ -51,12 +53,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               className="btn btn-primary btn-sm flex-grow-1"
             >
               <i className="bi bi-cart-plus me-1"></i>
-              Ongeza
+              {t('products_add')}
             </button>
             <button
               onClick={handleShare}
               className="btn btn-outline-secondary btn-sm"
-              title="Shiriki"
+              title={t('products_share')}
             >
               <i className="bi bi-share"></i>
             </button>

@@ -2,12 +2,14 @@ import React, { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import SearchBar from '../components/SearchBar';
-import { products, categories, searchProducts, getProductsByCategory } from '../data/products';
+import { products, categories, getProductsByCategory } from '../data/products';
+import { useLanguage } from '../context/LanguageContext';
 
 const ProductsPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '');
+  const { t } = useLanguage();
 
   const filteredProducts = useMemo(() => {
     let result = products;
@@ -44,7 +46,7 @@ const ProductsPage: React.FC = () => {
           <SearchBar
             value={searchQuery}
             onChange={setSearchQuery}
-            placeholder="Tafuta bidhaa..."
+            placeholder={t('home_search_placeholder')}
           />
         </div>
 
@@ -57,7 +59,7 @@ const ProductsPage: React.FC = () => {
               } btn-sm rounded-pill`}
               onClick={() => handleCategoryChange('')}
             >
-              Zote
+              {t('products_all')}
             </button>
             {categories.map((category) => (
               <button
@@ -78,7 +80,7 @@ const ProductsPage: React.FC = () => {
 
         {/* Results Count */}
         <p className="text-muted small mb-3">
-          Bidhaa {filteredProducts.length} zimepatikana
+          {t('nav_products')} {filteredProducts.length} {t('products_found')}
         </p>
 
         {/* Products Grid */}
@@ -93,8 +95,8 @@ const ProductsPage: React.FC = () => {
         ) : (
           <div className="text-center py-5">
             <i className="bi bi-search fs-1 text-muted mb-3 d-block"></i>
-            <h5>Hakuna bidhaa zilizopatikana</h5>
-            <p className="text-muted">Jaribu kubadilisha utafutaji au kichujio</p>
+            <h5>{t('products_none')}</h5>
+            <p className="text-muted">{t('products_try_different')}</p>
           </div>
         )}
       </div>
