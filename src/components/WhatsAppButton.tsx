@@ -1,6 +1,9 @@
 import React from 'react';
+import { useLanguage } from '../context/LanguageContext';
 
 const WhatsAppButton: React.FC = () => {
+  const { t } = useLanguage();
+
   const handleClick = () => {
     const message = 'Hello! I have a question about PAHALA.COM hardware store.';
     const whatsappUrl = `https://wa.me/6281234567890?text=${encodeURIComponent(message)}`;
@@ -22,7 +25,7 @@ const WhatsAppButton: React.FC = () => {
       }}
     >
       <i className="bi bi-whatsapp fs-5"></i>
-      <span className="d-none d-md-inline">Chat with us</span>
+      <span className="d-none d-md-inline">{t('wa_chat')}</span>
     </button>
   );
 };

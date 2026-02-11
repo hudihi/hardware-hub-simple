@@ -4,10 +4,12 @@ import CategoryCard from '../components/CategoryCard';
 import ProductCard from '../components/ProductCard';
 import SearchBar from '../components/SearchBar';
 import { categories, products } from '../data/products';
+import { useLanguage } from '../context/LanguageContext';
 
 const HomePage: React.FC = () => {
   const [searchQuery, setSearchQuery] = React.useState('');
   const featuredProducts = products.slice(0, 6);
+  const { t } = useLanguage();
 
   const handleSearch = () => {
     if (searchQuery.trim()) {
@@ -20,15 +22,15 @@ const HomePage: React.FC = () => {
       {/* Hero Section */}
       <div className="hero-section mb-4">
         <div className="container">
-          <h1 className="h4 fw-bold mb-2">Karibu PAHALA.COM</h1>
-          <p className="mb-3 opacity-75">Duka lako la vifaa vya ujenzi la kuaminika</p>
+          <h1 className="h4 fw-bold mb-2">{t('home_welcome')}</h1>
+          <p className="mb-3 opacity-75">{t('home_subtitle')}</p>
           
           <div className="d-flex gap-2">
             <div className="flex-grow-1">
               <SearchBar
                 value={searchQuery}
                 onChange={setSearchQuery}
-                placeholder="Tafuta bidhaa..."
+                placeholder={t('home_search_placeholder')}
               />
             </div>
             <button
@@ -45,9 +47,9 @@ const HomePage: React.FC = () => {
         {/* Categories */}
         <div className="mb-4">
           <div className="d-flex justify-content-between align-items-center mb-3">
-            <h2 className="section-header mb-0">Makundi</h2>
+            <h2 className="section-header mb-0">{t('home_categories')}</h2>
             <Link to="/products" className="text-brown text-decoration-none small">
-              Ona Zote <i className="bi bi-chevron-right"></i>
+              {t('home_view_all')} <i className="bi bi-chevron-right"></i>
             </Link>
           </div>
           
@@ -63,9 +65,9 @@ const HomePage: React.FC = () => {
         {/* Featured Products */}
         <div className="mb-4">
           <div className="d-flex justify-content-between align-items-center mb-3">
-            <h2 className="section-header mb-0">Bidhaa Maarufu</h2>
+            <h2 className="section-header mb-0">{t('home_featured')}</h2>
             <Link to="/products" className="text-brown text-decoration-none small">
-              Ona Zote <i className="bi bi-chevron-right"></i>
+              {t('home_view_all')} <i className="bi bi-chevron-right"></i>
             </Link>
           </div>
           
@@ -82,9 +84,9 @@ const HomePage: React.FC = () => {
         <div className="card-pahala card mb-4">
           <div className="card-body text-center py-4">
             <i className="bi bi-headset fs-1 text-brown mb-2 d-block"></i>
-            <h5 className="fw-bold mb-2">Unahitaji Msaada?</h5>
+            <h5 className="fw-bold mb-2">{t('home_need_help')}</h5>
             <p className="text-muted mb-3 small">
-              Timu yetu ya masoko iko tayari kukusaidia
+              {t('home_help_text')}
             </p>
             <div className="d-flex gap-2 justify-content-center flex-wrap">
               <a
@@ -101,7 +103,7 @@ const HomePage: React.FC = () => {
                 className="btn btn-outline-primary btn-lg-mobile"
               >
                 <i className="bi bi-telephone me-2"></i>
-                Piga Simu
+                {t('home_call')}
               </a>
             </div>
           </div>
