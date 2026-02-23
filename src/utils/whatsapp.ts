@@ -1,5 +1,6 @@
 import { CartItem, Order } from '../types';
 import { formatPrice } from './format';
+import { Language } from '../i18n/translations';
 
 // WhatsApp number for the store (replace with actual number)
 const WHATSAPP_NUMBER = '6281234567890';
@@ -10,53 +11,97 @@ export const generateWhatsAppLink = (message: string): string => {
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMessage}`;
 };
 
-// Generate product share message (Swahili)
+// Generate product share message
 export const generateProductShareMessage = (
   productName: string,
   productPrice: number,
-  productUrl: string
+  productUrl: string,
+  language: Language = 'en'
 ): string => {
-  return `Angalia bidhaa hii kutoka PAHALA.COM!\n\n*${productName}*\nBei: ${formatPrice(productPrice)}\n\n${productUrl}`;
+  const labels = {
+    en: { check: 'Check out this product from PAHALA.COM!', price: 'Price' },
+    sw: { check: 'Angalia bidhaa hii kutoka PAHALA.COM!', price: 'Bei' },
+  };
+  const l = labels[language];
+  return `${l.check}\n\n*${productName}*\n${l.price}: ${formatPrice(productPrice)}\n\n${productUrl}`;
 };
 
-// Generate order summary message for WhatsApp (Swahili)
-export const generateOrderMessage = (order: Order): string => {
-  let message = `🛒 *Muhtasari wa Agizo - PAHALA.COM*\n`;
-  message += `Nambari ya Agizo: ${order.id}\n\n`;
-  message += `📦 *Bidhaa:*\n`;
+// Generate order summary message for WhatsApp
+export const generateOrderMessage = (order: Order, language: Language = 'en'): string => {
+  const labels = {
+    en: {
+      header: '🛒 *ORDER SUMMARY - PAHALA.COM*',
+      orderNum: 'Order Number',
+      items: '📦 *Items:*',
+      total: '💰 *Total',
+      payment: '💳 Payment: Pay on Delivery',
+      address: '📍 *Delivery Address:*',
+      notes: '📝 *Notes:*',
+    },
+    sw: {
+      header: '🛒 *MUHTASARI WA AGIZO - PAHALA.COM*',
+      orderNum: 'Nambari ya Agizo',
+      items: '📦 *Bidhaa:*',
+      total: '💰 *Jumla',
+      payment: '💳 Malipo: Lipa Unapopokea',
+      address: '📍 *Anwani ya Uwasilishaji:*',
+      notes: '📝 *Maelezo:*',
+    },
+  };
+  const l = labels[language];
+
+  let message = `${l.header}\n`;
+  message += `${l.orderNum}: ${order.id}\n\n`;
+  message += `${l.items}\n`;
 
   order.items.forEach((item, index) => {
     message += `${index + 1}. ${item.product.name}\n`;
     message += `   ${item.quantity} x ${formatPrice(item.product.price)} = ${formatPrice(item.product.price * item.quantity)}\n`;
   });
 
-  message += `\n💰 *Jumla: ${formatPrice(order.total)}*\n`;
-  message += `💳 Malipo: Lipa Unapopokea\n\n`;
-  message += `📍 *Anwani ya Uwasilishaji:*\n`;
+  message += `\n${l.total}: ${formatPrice(order.total)}*\n`;
+  message += `${l.payment}\n\n`;
+  message += `${l.address}\n`;
   message += `${order.customer.name}\n`;
   message += `${order.customer.address.street}\n`;
   message += `${order.customer.address.city}, ${order.customer.address.province} ${order.customer.address.postalCode}\n`;
   message += `📞 ${order.customer.phone}\n`;
 
   if (order.notes) {
-    message += `\n📝 *Maelezo:* ${order.notes}\n`;
+    message += `\n${l.notes} ${order.notes}\n`;
   }
 
   return message;
 };
 
-// Generate cart share message (Swahili)
-export const generateCartMessage = (items: CartItem[], total: number): string => {
-  let message = `🛒 *Kikapu Changu - PAHALA.COM*\n\n`;
-  message += `📦 *Bidhaa:*\n`;
+// Generate cart share message
+export const generateCartMessage = (items: CartItem[], total: number, language: Language = 'en'): string => {
+  const labels = {
+    en: {
+      header: '🛒 *My Cart - PAHALA.COM*',
+      items: '📦 *Items:*',
+      total: '💰 *Total',
+      cta: 'I would like to order these items.',
+    },
+    sw: {
+      header: '🛒 *Kikapu Changu - PAHALA.COM*',
+      items: '📦 *Bidhaa:*',
+      total: '💰 *Jumla',
+      cta: 'Ningependa kuagiza bidhaa hizi.',
+    },
+  };
+  const l = labels[language];
+
+  let message = `${l.header}\n\n`;
+  message += `${l.items}\n`;
 
   items.forEach((item, index) => {
     message += `${index + 1}. ${item.product.name} (${item.quantity} ${item.product.unit})\n`;
     message += `   ${formatPrice(item.product.price * item.quantity)}\n`;
   });
 
-  message += `\n💰 *Jumla: ${formatPrice(total)}*\n`;
-  message += `\nNingependa kuagiza bidhaa hizi.`;
+  message += `\n${l.total}: ${formatPrice(total)}*\n`;
+  message += `\n${l.cta}`;
 
   return message;
 };
@@ -71,14 +116,15 @@ export const openWhatsApp = (message: string): void => {
 export const shareProduct = (
   productName: string,
   productPrice: number,
-  productUrl: string
+  productUrl: string,
+  language: Language = 'en'
 ): void => {
-  const message = generateProductShareMessage(productName, productPrice, productUrl);
+  const message = generateProductShareMessage(productName, productPrice, productUrl, language);
   openWhatsApp(message);
 };
 
 // Share order via WhatsApp
-export const shareOrder = (order: Order): void => {
-  const message = generateOrderMessage(order);
+export const shareOrder = (order: Order, language: Language = 'en'): void => {
+  const message = generateOrderMessage(order, language);
   openWhatsApp(message);
 };

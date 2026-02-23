@@ -1,26 +1,30 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { Language, translations, TranslationKey } from '../i18n/translations';
 
 interface LanguageContextType {
   language: Language;
   toggleLanguage: () => void;
+  setLanguage: (lang: Language) => void;
   t: (key: TranslationKey) => string;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [language, setLanguage] = useState<Language>(
-    () => (localStorage.getItem('pahala-lang') as Language) || 'sw'
-  );
+  const [language, setLanguageState] = useState<Language>(() => {
+    const stored = localStorage.getItem('pahala-lang') as Language;
+    return stored === 'sw' || stored === 'en' ? stored : 'en';
+  });
+
+  const setLanguage = useCallback((lang: Language) => {
+    setLanguageState(lang);
+    localStorage.setItem('pahala-lang', lang);
+    document.documentElement.lang = lang;
+  }, []);
 
   const toggleLanguage = useCallback(() => {
-    setLanguage((prev) => {
-      const next = prev === 'sw' ? 'en' : 'sw';
-      localStorage.setItem('pahala-lang', next);
-      return next;
-    });
-  }, []);
+    setLanguage(language === 'en' ? 'sw' : 'en');
+  }, [language, setLanguage]);
 
   const t = useCallback(
     (key: TranslationKey): string => {
@@ -29,8 +33,13 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     [language]
   );
 
+  // Set HTML lang attribute on mount and language change
+  useEffect(() => {
+    document.documentElement.lang = language;
+  }, [language]);
+
   return (
-    <LanguageContext.Provider value={{ language, toggleLanguage, t }}>
+    <LanguageContext.Provider value={{ language, toggleLanguage, setLanguage, t }}>
       {children}
     </LanguageContext.Provider>
   );

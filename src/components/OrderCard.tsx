@@ -10,10 +10,11 @@ interface OrderCardProps {
 }
 
 const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
+  const { language, t } = useLanguage();
+
   const handleShareOrder = () => {
-    shareOrder(order);
+    shareOrder(order, language);
   };
-  const { t } = useLanguage();
 
   return (
     <div className="card-pahala card mb-3">
@@ -21,10 +22,10 @@ const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
         <div className="d-flex justify-content-between align-items-start mb-3">
           <div>
             <h6 className="mb-1 fw-bold">{order.id}</h6>
-            <small className="text-muted">{formatDate(order.createdAt)}</small>
+            <small className="text-muted">{formatDate(order.createdAt, language)}</small>
           </div>
           <span className={`status-badge ${getStatusClass(order.status)}`}>
-            {getStatusText(order.status)}
+            {getStatusText(order.status, language)}
           </span>
         </div>
 

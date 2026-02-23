@@ -1,3 +1,5 @@
+import { Language } from '../i18n/translations';
+
 // Format price in Tanzanian Shillings
 export const formatPrice = (price: number): string => {
   return new Intl.NumberFormat('sw-TZ', {
@@ -8,9 +10,10 @@ export const formatPrice = (price: number): string => {
   }).format(price);
 };
 
-// Format date
-export const formatDate = (dateString: string): string => {
-  return new Intl.DateTimeFormat('sw-TZ', {
+// Format date based on language
+export const formatDate = (dateString: string, language: Language = 'en'): string => {
+  const locale = language === 'sw' ? 'sw-TZ' : 'en-TZ';
+  return new Intl.DateTimeFormat(locale, {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
@@ -19,17 +22,18 @@ export const formatDate = (dateString: string): string => {
   }).format(new Date(dateString));
 };
 
-// Get status display text (Swahili)
-export const getStatusText = (status: string): string => {
-  const statusMap: Record<string, string> = {
-    pending: 'Inasubiri',
-    confirmed: 'Imethibitishwa',
-    processing: 'Inashughulikiwa',
-    ready: 'Tayari Kuchukuliwa',
-    completed: 'Imekamilika',
-    cancelled: 'Imeghairiwa',
-  };
-  return statusMap[status] || status;
+// Get status display text based on language
+const statusMap: Record<string, { en: string; sw: string }> = {
+  pending: { en: 'Pending', sw: 'Inasubiri' },
+  confirmed: { en: 'Confirmed', sw: 'Imethibitishwa' },
+  processing: { en: 'Processing', sw: 'Inashughulikiwa' },
+  ready: { en: 'Ready for Pickup', sw: 'Tayari Kuchukuliwa' },
+  completed: { en: 'Completed', sw: 'Imekamilika' },
+  cancelled: { en: 'Cancelled', sw: 'Imeghairiwa' },
+};
+
+export const getStatusText = (status: string, language: Language = 'en'): string => {
+  return statusMap[status]?.[language] || status;
 };
 
 // Get status badge class

@@ -10,7 +10,7 @@ const OrderDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { getOrderById } = useOrders();
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
 
   const order = id ? getOrderById(id) : undefined;
   const isNewOrder = location.state?.newOrder;
@@ -30,7 +30,7 @@ const OrderDetailPage: React.FC = () => {
   }
 
   const handleShareOrder = () => {
-    shareOrder(order);
+    shareOrder(order, language);
   };
 
   return (
@@ -56,10 +56,10 @@ const OrderDetailPage: React.FC = () => {
             <div className="d-flex justify-content-between align-items-start mb-3">
               <div>
                 <h5 className="fw-bold mb-1">{order.id}</h5>
-                <small className="text-muted">{formatDate(order.createdAt)}</small>
+                <small className="text-muted">{formatDate(order.createdAt, language)}</small>
               </div>
               <span className={`status-badge ${getStatusClass(order.status)}`}>
-                {getStatusText(order.status)}
+                {getStatusText(order.status, language)}
               </span>
             </div>
             <button onClick={handleShareOrder} className="btn btn-whatsapp btn-lg-mobile w-100">

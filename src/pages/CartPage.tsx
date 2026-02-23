@@ -10,7 +10,7 @@ import { useLanguage } from '../context/LanguageContext';
 const CartPage: React.FC = () => {
   const navigate = useNavigate();
   const { items, total, clearCart } = useCart();
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
 
   if (items.length === 0) {
     return (
@@ -32,7 +32,7 @@ const CartPage: React.FC = () => {
   }
 
   const handleWhatsAppShare = () => {
-    const message = generateCartMessage(items, total);
+    const message = generateCartMessage(items, total, language);
     openWhatsApp(message);
   };
 

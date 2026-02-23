@@ -2,6 +2,7 @@ import React from 'react';
 import { CartItem as CartItemType } from '../types';
 import { formatPrice } from '../utils/format';
 import { useCart } from '../context/CartContext';
+import { useLanguage } from '../context/LanguageContext';
 
 interface CartItemProps {
   item: CartItemType;
@@ -9,6 +10,7 @@ interface CartItemProps {
 
 const CartItem: React.FC<CartItemProps> = ({ item }) => {
   const { updateQuantity, removeItem } = useCart();
+  const { t } = useLanguage();
 
   return (
     <div className="cart-item">
@@ -55,7 +57,7 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
       </div>
       
       <div className="mt-3 pt-2 border-top d-flex justify-content-between">
-        <span className="text-muted">Subtotal</span>
+        <span className="text-muted">{t('cart_item_subtotal')}</span>
         <span className="fw-bold text-brown">
           {formatPrice(item.product.price * item.quantity)}
         </span>
