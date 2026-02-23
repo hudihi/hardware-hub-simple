@@ -1,8 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { Search } from 'lucide-react';
+import { Input } from '../components/ui/input';
 import CategoryCard from '../components/CategoryCard';
 import ProductCard from '../components/ProductCard';
-import SearchBar from '../components/SearchBar';
 import { categories, products } from '../data/products';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -25,19 +26,22 @@ const HomePage: React.FC = () => {
           <h1 className="h4 fw-bold mb-2">{t('home_welcome')}</h1>
           <p className="mb-3 opacity-75">{t('home_subtitle')}</p>
           
-          <div className="d-flex gap-2">
-            <div className="flex-grow-1">
-              <SearchBar
+          <div className="relative flex gap-2">
+            <div className="relative flex-grow">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
                 value={searchQuery}
-                onChange={setSearchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                 placeholder={t('home_search_placeholder')}
+                className="pl-9 bg-background/80 backdrop-blur-sm border-border/50 focus-visible:ring-primary"
               />
             </div>
             <button
               className="btn btn-light"
               onClick={handleSearch}
             >
-              <i className="bi bi-search"></i>
+              <Search className="h-4 w-4" />
             </button>
           </div>
         </div>
