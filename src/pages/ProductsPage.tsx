@@ -1,8 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Search } from 'lucide-react';
-import { Input } from '../components/ui/input';
 import ProductCard from '../components/ProductCard';
+import SearchBar from '../components/SearchBar';
 import { products, categories, getProductsByCategory } from '../data/products';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -43,13 +42,11 @@ const ProductsPage: React.FC = () => {
     <div className="page-container">
       <div className="container py-3">
         {/* Search Bar */}
-        <div className="relative mb-3">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
+        <div className="mb-3">
+          <SearchBar
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={setSearchQuery}
             placeholder={t('home_search_placeholder')}
-            className="pl-9 border-border/50 focus-visible:ring-primary"
           />
         </div>
 
