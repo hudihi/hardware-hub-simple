@@ -7,7 +7,7 @@ import { useLanguage } from '../../context/LanguageContext';
 const AdminOrders: React.FC = () => {
   const { orders, updateOrderStatus } = useOrders();
   const [selectedStatus, setSelectedStatus] = useState('');
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
 
   const filteredOrders = selectedStatus
     ? orders.filter((o) => o.status === selectedStatus)
@@ -40,7 +40,7 @@ const AdminOrders: React.FC = () => {
                   className={`btn btn-sm ${selectedStatus === status ? 'btn-primary' : 'btn-outline-secondary'}`}
                   onClick={() => setSelectedStatus(status)}
                 >
-                  {getStatusText(status)} ({count})
+                  {getStatusText(status, language)} ({count})
                 </button>
               );
             })}
@@ -76,7 +76,7 @@ const AdminOrders: React.FC = () => {
                       </td>
                       <td>{order.items.length} {t('admin_items')}</td>
                       <td className="text-brown fw-semibold">{formatPrice(order.total)}</td>
-                      <td><small>{formatDate(order.createdAt)}</small></td>
+                      <td><small>{formatDate(order.createdAt, language)}</small></td>
                       <td>
                         <select
                           className="form-select form-select-sm"
@@ -85,7 +85,7 @@ const AdminOrders: React.FC = () => {
                           style={{ width: 'auto' }}
                         >
                           {statusOptions.map((status) => (
-                            <option key={status} value={status}>{getStatusText(status)}</option>
+                            <option key={status} value={status}>{getStatusText(status, language)}</option>
                           ))}
                         </select>
                       </td>

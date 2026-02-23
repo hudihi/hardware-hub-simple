@@ -40,7 +40,7 @@ const Navbar: React.FC = () => {
             <button
               className="btn btn-sm btn-outline-light rounded-pill px-3"
               onClick={toggleLanguage}
-              title={language === 'sw' ? 'Switch to English' : 'Badilisha kwa Kiswahili'}
+              title={language === 'en' ? 'Switch to Swahili' : 'Badilisha kwa Kiingereza'}
             >
               <i className="bi bi-translate me-1"></i>
               {t('lang_toggle')}

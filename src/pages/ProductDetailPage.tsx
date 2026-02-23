@@ -10,7 +10,7 @@ const ProductDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
 
   const product = id ? getProductById(id) : undefined;
 
@@ -37,7 +37,9 @@ const ProductDetailPage: React.FC = () => {
 
   const handleShare = () => {
     const productUrl = window.location.href;
-    const message = `${product.name} - PAHALA.COM!\n\n${formatPrice(product.price)}/${product.unit}\n\n${productUrl}`;
+    const message = language === 'sw'
+      ? `${product.name} - PAHALA.COM!\n\n${formatPrice(product.price)}/${product.unit}\n\n${productUrl}`
+      : `${product.name} - PAHALA.COM!\n\n${formatPrice(product.price)}/${product.unit}\n\n${productUrl}`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };

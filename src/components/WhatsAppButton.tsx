@@ -2,10 +2,12 @@ import React from 'react';
 import { useLanguage } from '../context/LanguageContext';
 
 const WhatsAppButton: React.FC = () => {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
 
   const handleClick = () => {
-    const message = 'Hello! I have a question about PAHALA.COM hardware store.';
+    const message = language === 'sw'
+      ? 'Habari! Nina swali kuhusu duka la PAHALA.COM.'
+      : 'Hello! I have a question about PAHALA.COM hardware store.';
     const whatsappUrl = `https://wa.me/6281234567890?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
