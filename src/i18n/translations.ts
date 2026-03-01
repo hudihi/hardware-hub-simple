@@ -151,6 +151,8 @@ export const translations = {
   admin_save: { en: 'Save', sw: 'Hifadhi' },
   admin_edit: { en: 'Edit', sw: 'Hariri' },
   admin_delete: { en: 'Delete', sw: 'Futa' },
+  admin_add_category: { en: 'Add Category', sw: 'Ongeza Kundi' },
+  admin_manage_categories: { en: 'Manage Categories', sw: 'Dhibiti Makundi' },
 
   // Status
   status_pending: { en: 'Pending', sw: 'Inasubiri' },

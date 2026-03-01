@@ -17,6 +17,14 @@ const apiClient: AxiosInstance = axios.create({
 // Request interceptor to attach auth token
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    console.log('API Request:', {
+      method: config.method,
+      url: config.url,
+      baseURL: config.baseURL,
+      fullUrl: `${config.baseURL}${config.url}`,
+      hasAuth: !!localStorage.getItem(TOKEN_KEY)
+    });
+    
     const token = localStorage.getItem(TOKEN_KEY);
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -24,6 +32,7 @@ apiClient.interceptors.request.use(
     return config;
   },
   (error) => {
+    console.error('Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
@@ -31,9 +40,22 @@ apiClient.interceptors.request.use(
 // Response interceptor to handle 401 globally
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => {
+    console.log('API Response:', {
+      status: response.status,
+      url: response.config.url,
+      method: response.config.method?.toUpperCase()
+    });
     return response;
   },
   (error) => {
+    console.error('API Error:', {
+      status: error.response?.status,
+      url: error.config?.url,
+      method: error.config?.method?.toUpperCase(),
+      message: error.message,
+      data: error.response?.data
+    });
+    
     if (error.response?.status === 401) {
       // Token expired or invalid - clear it and redirect to login
       localStorage.removeItem(TOKEN_KEY);

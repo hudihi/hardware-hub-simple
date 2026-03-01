@@ -13,7 +13,9 @@ export interface Product {
 export interface Category {
   id: string;
   name: string;
-  icon: string;
+  description?: string;
+  slug: string;
+  icon?: string;
 }
 
 // Cart Types
