@@ -2,17 +2,43 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import CategoryCard from '../components/CategoryCard';
 import ProductCard from '../components/ProductCard';
-import SearchBar from '../components/SearchBar';
-import { categories, products } from '../data/products';
 import { useLanguage } from '../context/LanguageContext';
+import { categories, products } from '../data/products';
+import SearchBar from '@/components/SearchBar';
+
 
 const HomePage: React.FC = () => {
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [isLoading, setIsLoading] = React.useState(false);
   const featuredProducts = products.slice(0, 6);
   const { t } = useLanguage();
 
-  const handleSearch = () => {
+  // Sample suggestions and recent searches (in a real app, these would come from API/localStorage)
+  const suggestions = [
+    'Power Tools',
+    'Hand Tools',
+    'Drilling Machine',
+    'Electric Saw',
+    'Measuring Tools',
+    'Safety Equipment',
+    'Garden Tools',
+    'Painting Supplies'
+  ];
+
+  const recentSearches = [
+    'Hammer',
+    'Screwdriver Set',
+    'Power Drill'
+  ];
+
+  const handleSearch = async () => {
     if (searchQuery.trim()) {
+      setIsLoading(true);
+      // Simulate search delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setIsLoading(false);
+      
+      // Save to recent searches (in a real app, this would be saved to localStorage)
       window.location.href = `/products?search=${encodeURIComponent(searchQuery)}`;
     }
   };
@@ -24,14 +50,26 @@ const HomePage: React.FC = () => {
         <div className="container">
           <h1 className="h4 fw-bold mb-2">{t('home_welcome')}</h1>
           <p className="mb-3 opacity-75">{t('home_subtitle')}</p>
-          
+
           <SearchBar
+          value={searchQuery}
+          onChange={setSearchQuery}
+          onSubmit={handleSearch}
+          placeholder={t('home_search_placeholder')}
+          suggestions={suggestions}
+          recentSearches={recentSearches}
+          isLoading={isLoading}
+          />
+          
+          {/* <HeroSearchBar
             value={searchQuery}
             onChange={setSearchQuery}
             onSubmit={handleSearch}
             placeholder={t('home_search_placeholder')}
-            variant="hero"
-          />
+            suggestions={suggestions}
+            recentSearches={recentSearches}
+            isLoading={isLoading}
+          /> */}
         </div>
       </div>
 

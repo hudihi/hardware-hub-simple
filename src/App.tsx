@@ -1,22 +1,24 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { CartProvider } from './context/CartContext';
-import { AuthProvider } from './context/AuthContext';
-import { OrderProvider } from './context/OrderContext';
-import { LanguageProvider } from './context/LanguageContext';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import WhatsAppButton from './components/WhatsAppButton';
-import HomePage from './pages/HomePage';
-import ProductsPage from './pages/ProductsPage';
-import ProductDetailPage from './pages/ProductDetailPage';
+import { AuthProvider } from './context/AuthContext';
+import { CartProvider } from './context/CartContext';
+import { LanguageProvider } from './context/LanguageContext';
+import { OrderProvider } from './context/OrderContext';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
-import OrdersPage from './pages/OrdersPage';
+import HomePage from './pages/HomePage';
 import OrderDetailPage from './pages/OrderDetailPage';
-import AdminLayout from './pages/admin/AdminLayout';
+import OrdersPage from './pages/OrdersPage';
+import ProductDetailPage from './pages/ProductDetailPage';
+import ProductsPage from './pages/ProductsPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
-import AdminProducts from './pages/admin/AdminProducts';
+import AdminLayout from './pages/admin/AdminLayout';
+import AdminLogin from './pages/admin/AdminLogin';
 import AdminOrders from './pages/admin/AdminOrders';
+import AdminProducts from './pages/admin/AdminProducts';
+import ProtectedAdminRoute from './routes/ProtectedAdminRoute';
 
 const App: React.FC = () => {
   return (
@@ -37,7 +39,12 @@ const App: React.FC = () => {
               <Route path="/orders/:id" element={<OrderDetailPage />} />
               
               {/* Admin Routes */}
-              <Route path="/admin" element={<AdminLayout />}>
+              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/admin" element={
+                <ProtectedAdminRoute>
+                  <AdminLayout />
+                </ProtectedAdminRoute>
+              }>
                 <Route index element={<AdminDashboard />} />
                 <Route path="products" element={<AdminProducts />} />
                 <Route path="orders" element={<AdminOrders />} />

@@ -1,15 +1,28 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import SearchBar from '../components/SearchBar';
-import { products, categories, getProductsByCategory } from '../data/products';
 import { useLanguage } from '../context/LanguageContext';
+import { categories, getProductsByCategory, products } from '../data/products';
 
 const ProductsPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '');
+  const [isLoading, setIsLoading] = useState(false);
   const { t } = useLanguage();
+
+  // Sample suggestions based on products and categories
+  const suggestions = [
+    ...categories.map(cat => cat.name),
+    ...products.slice(0, 10).map(product => product.name)
+  ];
+
+  const recentSearches = [
+    'Power Tools',
+    'Hand Tools',
+    'Drilling Machine'
+  ];
 
   const filteredProducts = useMemo(() => {
     let result = products;
@@ -38,6 +51,15 @@ const ProductsPage: React.FC = () => {
     }
   };
 
+  const handleSearch = async () => {
+    if (searchQuery.trim()) {
+      setIsLoading(true);
+      // Simulate search delay
+      await new Promise(resolve => setTimeout(resolve, 300));
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="page-container">
       <div className="container py-3">
@@ -46,7 +68,11 @@ const ProductsPage: React.FC = () => {
           <SearchBar
             value={searchQuery}
             onChange={setSearchQuery}
+            onSubmit={handleSearch}
             placeholder={t('home_search_placeholder')}
+            suggestions={suggestions}
+            recentSearches={recentSearches}
+            isLoading={isLoading}
           />
         </div>
 
