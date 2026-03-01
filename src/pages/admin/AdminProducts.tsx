@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
-import { categories, products } from '../../data/products';
-import { formatPrice } from '../../utils/format';
-import ProductCreateForm from '@/components/ProductCreateForm';
+import AdminProductForm from './AdminProductForm';
 
 const AdminProducts: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const { t } = useLanguage();
 
   const filteredProducts = products.filter((product) => {
@@ -17,21 +15,14 @@ const AdminProducts: React.FC = () => {
   });
 
   return (
-    <>
-      {showCreateForm ? (
-        <ProductCreateForm onCancel={() => setShowCreateForm(false)} />
-      ) : (
-        <div>
-          <div className="d-flex justify-content-between align-items-center mb-4">
-            <h4 className="fw-bold mb-0">{t('admin_products')}</h4>
-            <button 
-              className="btn btn-primary btn-sm"
-              onClick={() => setShowCreateForm(true)}
-            >
-              <i className="bi bi-plus me-1"></i>
-              {t('admin_add_product')}
-            </button>
-          </div>
+    <div>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h4 className="fw-bold mb-0">{t('admin_products')}</h4>
+        <button className="btn btn-primary btn-sm" onClick={() => setShowForm(true)}>
+          <i className="bi bi-plus me-1"></i>
+          {t('admin_add_product')}
+        </button>
+      </div>
 
           <div className="card-pahala card mb-4">
             <div className="card-body">
@@ -97,12 +88,11 @@ const AdminProducts: React.FC = () => {
             </div>
           </div>
 
-          <div className="mt-3 text-muted small">
-            {t('admin_showing')} {filteredProducts.length} {t('admin_of')} {products.length} {t('admin_products').toLowerCase()}
-          </div>
-        </div>
-      )}
-    </>
+      <div className="mt-3 text-muted small">
+        {t('admin_showing')} {filteredProducts.length} {t('admin_of')} {products.length} {t('admin_products').toLowerCase()}
+      </div>
+      <AdminProductForm open={showForm} onClose={() => setShowForm(false)} />
+    </div>
   );
 };
 
