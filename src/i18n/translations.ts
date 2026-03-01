@@ -147,6 +147,10 @@ export const translations = {
   admin_date: { en: 'Date', sw: 'Tarehe' },
   admin_all: { en: 'All', sw: 'Yote' },
   admin_no_orders_found: { en: 'No orders found', sw: 'Hakuna maagizo yaliyopatikana' },
+  admin_cancel: { en: 'Cancel', sw: 'Ghairi' },
+  admin_save: { en: 'Save', sw: 'Hifadhi' },
+  admin_edit: { en: 'Edit', sw: 'Hariri' },
+  admin_delete: { en: 'Delete', sw: 'Futa' },
 
   // Status
   status_pending: { en: 'Pending', sw: 'Inasubiri' },

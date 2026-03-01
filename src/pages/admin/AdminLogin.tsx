@@ -455,7 +455,7 @@ const AdminLogin: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <Lock size={20} className="me-2" />
+                  {/* <Lock size={20} className="me-2" /> */}
                   Sign In
                 </>
               )}

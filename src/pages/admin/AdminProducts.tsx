@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
+import { categories, products } from '../../data/products';
+import { formatPrice } from '../../utils/format';
 import AdminProductForm from './AdminProductForm';
 
 const AdminProducts: React.FC = () => {

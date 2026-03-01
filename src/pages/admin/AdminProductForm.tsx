@@ -1,16 +1,7 @@
-import React, { useState, useRef } from 'react';
-import { categories } from '../../data/products';
+import { ImageIcon, Link, Upload, X } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { Textarea } from '../../components/ui/textarea';
-import { Label } from '../../components/ui/label';
-import { RadioGroup, RadioGroupItem } from '../../components/ui/radio-group';
-import { Checkbox } from '../../components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
-import { toast } from '@/hooks/use-toast';
-import { Upload, Link, ImageIcon, X } from 'lucide-react';
+import { productService, type Category } from '../../services/product.service';
 
 interface AdminProductFormProps {
   open: boolean;
@@ -41,6 +32,29 @@ const AdminProductForm: React.FC<AdminProductFormProps> = ({ open, onClose, onPr
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
+
+  // Fetch categories when component mounts
+  useEffect(() => {
+    const fetchCategories = async () => {
+      setIsLoadingCategories(true);
+      try {
+        const categoriesData = await productService.getCategories();
+        setCategories(categoriesData);
+      } catch (error) {
+        console.error('Failed to fetch categories:', error);
+        // Fallback to empty array
+        setCategories([]);
+      } finally {
+        setIsLoadingCategories(false);
+      }
+    };
+
+    if (open && categories.length === 0) {
+      fetchCategories();
+    }
+  }, [open, categories.length]);
 
   const [form, setForm] = useState<FormData>({
     name: '',
@@ -63,11 +77,11 @@ const AdminProductForm: React.FC<AdminProductFormProps> = ({ open, onClose, onPr
 
   const handleFileSelect = (file: File) => {
     if (!file.type.startsWith('image/')) {
-      toast({ title: t('system_error'), description: 'Please select an image file.', variant: 'destructive' });
+      alert('Please select an image file.');
       return;
     }
     if (file.size > MAX_FILE_SIZE) {
-      toast({ title: t('system_error'), description: 'Image must be less than 5MB.', variant: 'destructive' });
+      alert('Image must be less than 5MB.');
       return;
     }
     updateField('imageFile', file);
@@ -109,15 +123,37 @@ const AdminProductForm: React.FC<AdminProductFormProps> = ({ open, onClose, onPr
 
     setIsSubmitting(true);
     try {
-      // Simulate API call - in production this would POST to /products
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Prepare product data for API
+      const productData = {
+        name: form.name,
+        description: form.description,
+        price: parseFloat(form.price),
+        currency: form.currency,
+        unit_of_measure: form.unit,
+        category_id: form.category,
+        image_url: form.imageMode === 'url' ? form.imageUrl : '',
+        stock_quantity: parseInt(form.stock),
+        is_active: form.isActive,
+      };
 
-      toast({ title: t('system_added_to_cart').replace('cart', 'products'), description: form.name });
+      let createdProduct;
+      
+      if (form.imageMode === 'upload' && form.imageFile) {
+        // Create product first, then upload image
+        createdProduct = await productService.createProductWithImage(productData, form.imageFile);
+      } else {
+        // Create product without image or with URL
+        createdProduct = await productService.createProduct(productData);
+      }
+
+      alert(`Product "${form.name}" has been created successfully!`);
       resetForm();
       onProductCreated?.();
       onClose();
-    } catch {
-      toast({ title: t('system_error'), variant: 'destructive' });
+    } catch (error: any) {
+      console.error('Product creation error:', error);
+      const errorMessage = error?.details?.message || error?.message || 'An error occurred while creating the product.';
+      alert(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -135,188 +171,270 @@ const AdminProductForm: React.FC<AdminProductFormProps> = ({ open, onClose, onPr
   const currentPreview = form.imageMode === 'url' && form.imageUrl ? form.imageUrl : imagePreview;
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-lg font-bold">{t('admin_add_product')}</DialogTitle>
-        </DialogHeader>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Name */}
-          <div className="space-y-2">
-            <Label htmlFor="name">{t('checkout_name').replace('Full ', '')} *</Label>
-            <Input
-              id="name"
-              value={form.name}
-              onChange={(e) => updateField('name', e.target.value)}
-              placeholder={t('admin_search_products').replace('...', '')}
-              className={errors.name ? 'border-destructive' : ''}
+    <div className={`modal fade ${open ? 'show d-block' : ''}`} style={{ backgroundColor: open ? 'rgba(0,0,0,0.5)' : 'transparent' }} tabIndex={-1}>
+      <div className="modal-dialog modal-lg modal-dialog-centered">
+        <div className="modal-content">
+          <div className="modal-header border-0">
+            <h5 className="modal-title fw-bold text-brown">
+              <i className="bi bi-plus-circle me-2"></i>
+              {t('admin_add_product')}
+            </h5>
+            <button 
+              type="button" 
+              className="btn-close" 
+              onClick={onClose}
             />
-            {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
           </div>
-
-          {/* Description */}
-          <div className="space-y-2">
-            <Label htmlFor="description">Description *</Label>
-            <Textarea
-              id="description"
-              value={form.description}
-              onChange={(e) => updateField('description', e.target.value)}
-              placeholder="Product description..."
-              rows={3}
-              className={errors.description ? 'border-destructive' : ''}
-            />
-            {errors.description && <p className="text-sm text-destructive">{errors.description}</p>}
-          </div>
-
-          {/* Price & Category row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="price">{t('admin_price')} *</Label>
-              <Input
-                id="price"
-                type="number"
-                min="0"
-                step="0.01"
-                value={form.price}
-                onChange={(e) => updateField('price', e.target.value)}
-                placeholder="0.00"
-                className={errors.price ? 'border-destructive' : ''}
-              />
-              {errors.price && <p className="text-sm text-destructive">{errors.price}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label>{t('admin_category')} *</Label>
-              <Select value={form.category} onValueChange={(v) => updateField('category', v)}>
-                <SelectTrigger className={errors.category ? 'border-destructive' : ''}>
-                  <SelectValue placeholder={t('admin_all_categories')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map(cat => (
-                    <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.category && <p className="text-sm text-destructive">{errors.category}</p>}
-            </div>
-          </div>
-
-          {/* Currency, Unit, Stock row */}
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="currency">Currency</Label>
-              <Input id="currency" value={form.currency} onChange={(e) => updateField('currency', e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="unit">Unit</Label>
-              <Input id="unit" value={form.unit} onChange={(e) => updateField('unit', e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="stock">{t('admin_stock')}</Label>
-              <Input id="stock" type="number" min="0" value={form.stock} onChange={(e) => updateField('stock', e.target.value)} />
-            </div>
-          </div>
-
-          {/* Active checkbox */}
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="isActive"
-              checked={form.isActive}
-              onCheckedChange={(checked) => updateField('isActive', !!checked)}
-            />
-            <Label htmlFor="isActive" className="cursor-pointer">Active</Label>
-          </div>
-
-          {/* Image section */}
-          <div className="space-y-3">
-            <Label className="text-base font-semibold">Product Image</Label>
-
-            <RadioGroup
-              value={form.imageMode}
-              onValueChange={(v) => { updateField('imageMode', v as 'upload' | 'url'); clearImage(); }}
-              className="flex gap-6"
-            >
-              <div className="flex items-center gap-2">
-                <RadioGroupItem value="upload" id="img-upload" />
-                <Label htmlFor="img-upload" className="cursor-pointer flex items-center gap-1">
-                  <Upload size={14} /> Upload Image
-                </Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <RadioGroupItem value="url" id="img-url" />
-                <Label htmlFor="img-url" className="cursor-pointer flex items-center gap-1">
-                  <Link size={14} /> Image URL
-                </Label>
-              </div>
-            </RadioGroup>
-
-            {form.imageMode === 'upload' ? (
-              <div
-                className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer
-                  ${dragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-primary/50'}`}
-                onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
-                onDragLeave={() => setDragActive(false)}
-                onDrop={handleDrop}
-                onClick={() => fileInputRef.current?.click()}
-              >
+          <div className="modal-body">
+            <form onSubmit={handleSubmit}>
+              {/* Name */}
+              <div className="mb-3">
+                <label htmlFor="name" className="form-label">
+                  {t('checkout_name').replace('Full ', '')} <span className="text-danger">*</span>
+                </label>
                 <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => { if (e.target.files?.[0]) handleFileSelect(e.target.files[0]); }}
+                  type="text"
+                  className={`form-control ${errors.name ? 'is-invalid' : ''}`}
+                  id="name"
+                  value={form.name}
+                  onChange={(e) => updateField('name', e.target.value)}
+                  placeholder={t('admin_search_products').replace('...', '')}
                 />
-                <ImageIcon className="mx-auto mb-2 text-muted-foreground" size={32} />
-                <p className="text-sm text-muted-foreground">
-                  Drag & drop or click to upload
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">Max 5MB · JPG, PNG, WEBP</p>
+                {errors.name && <div className="invalid-feedback">{errors.name}</div>}
               </div>
-            ) : (
-              <div className="space-y-2">
-                <Input
-                  value={form.imageUrl}
-                  onChange={(e) => updateField('imageUrl', e.target.value)}
-                  placeholder="https://example.com/image.jpg"
-                  className={errors.imageUrl ? 'border-destructive' : ''}
-                />
-                {errors.imageUrl && <p className="text-sm text-destructive">{errors.imageUrl}</p>}
-              </div>
-            )}
 
-            {/* Image preview */}
-            {currentPreview && (
-              <div className="relative inline-block">
-                <img
-                  src={currentPreview}
-                  alt="Preview"
-                  className="h-32 w-32 object-cover rounded-lg border"
-                  onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
+              {/* Description */}
+              <div className="mb-3">
+                <label htmlFor="description" className="form-label">
+                  Description <span className="text-danger">*</span>
+                </label>
+                <textarea
+                  className={`form-control ${errors.description ? 'is-invalid' : ''}`}
+                  id="description"
+                  value={form.description}
+                  onChange={(e) => updateField('description', e.target.value)}
+                  placeholder="Product description..."
+                  rows={3}
                 />
-                <button
-                  type="button"
-                  onClick={clearImage}
-                  className="absolute -top-2 -right-2 rounded-full bg-destructive text-destructive-foreground p-0.5"
-                >
-                  <X size={14} />
-                </button>
+                {errors.description && <div className="invalid-feedback">{errors.description}</div>}
               </div>
-            )}
-          </div>
 
-          {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t">
-            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? t('checkout_loading') : t('admin_add_product')}
-            </Button>
+              {/* Price & Category row */}
+              <div className="row">
+                <div className="col-md-6 mb-3">
+                  <label htmlFor="price" className="form-label">
+                    {t('admin_price')} <span className="text-danger">*</span>
+                  </label>
+                  <div className="input-group">
+                    <span className="input-group-text">TZS</span>
+                    <input
+                      type="number"
+                      className={`form-control ${errors.price ? 'is-invalid' : ''}`}
+                      id="price"
+                      min="0"
+                      step="0.01"
+                      value={form.price}
+                      onChange={(e) => updateField('price', e.target.value)}
+                      placeholder="0.00"
+                    />
+                  </div>
+                  {errors.price && <div className="invalid-feedback">{errors.price}</div>}
+                </div>
+
+                <div className="col-md-6 mb-3">
+                  <label htmlFor="category" className="form-label">
+                    {t('admin_category')} <span className="text-danger">*</span>
+                  </label>
+                  <select
+                    className={`form-select ${errors.category ? 'is-invalid' : ''}`}
+                    id="category"
+                    value={form.category}
+                    onChange={(e) => updateField('category', e.target.value)}
+                    disabled={isLoadingCategories}
+                  >
+                    <option value="">
+                      {isLoadingCategories ? 'Loading categories...' : t('admin_all_categories')}
+                    </option>
+                    {categories.map(cat => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                  </select>
+                  {errors.category && <div className="invalid-feedback">{errors.category}</div>}
+                </div>
+              </div>
+
+              {/* Currency, Unit, Stock row */}
+              <div className="row">
+                <div className="col-md-4 mb-3">
+                  <label htmlFor="currency" className="form-label">Currency</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    id="currency"
+                    value={form.currency}
+                    onChange={(e) => updateField('currency', e.target.value)}
+                  />
+                </div>
+                <div className="col-md-4 mb-3">
+                  <label htmlFor="unit" className="form-label">Unit</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    id="unit"
+                    value={form.unit}
+                    onChange={(e) => updateField('unit', e.target.value)}
+                  />
+                </div>
+                <div className="col-md-4 mb-3">
+                  <label htmlFor="stock" className="form-label">{t('admin_stock')}</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    id="stock"
+                    min="0"
+                    value={form.stock}
+                    onChange={(e) => updateField('stock', e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Active checkbox */}
+              <div className="mb-4">
+                <div className="form-check">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id="isActive"
+                    checked={form.isActive}
+                    onChange={(e) => updateField('isActive', e.target.checked)}
+                  />
+                  <label className="form-check-label" htmlFor="isActive">
+                    Active
+                  </label>
+                </div>
+              </div>
+
+              {/* Image section */}
+              <div className="mb-4">
+                <label className="form-label fw-semibold">Product Image</label>
+                
+                {/* Image mode toggle */}
+                <div className="btn-group d-flex mb-3" role="group">
+                  <input
+                    type="radio"
+                    className="btn-check"
+                    name="imageMode"
+                    id="img-upload"
+                    checked={form.imageMode === 'upload'}
+                    onChange={() => { updateField('imageMode', 'upload'); clearImage(); }}
+                  />
+                  <label className="btn btn-outline-primary" htmlFor="img-upload">
+                    <Upload size={14} className="me-1" /> Upload Image
+                  </label>
+                  
+                  <input
+                    type="radio"
+                    className="btn-check"
+                    name="imageMode"
+                    id="img-url"
+                    checked={form.imageMode === 'url'}
+                    onChange={() => { updateField('imageMode', 'url'); clearImage(); }}
+                  />
+                  <label className="btn btn-outline-primary" htmlFor="img-url">
+                    <Link size={14} className="me-1" /> Image URL
+                  </label>
+                </div>
+
+                {form.imageMode === 'upload' ? (
+                  <div
+                    className={`border-2 border-dashed rounded-3 p-4 text-center ${
+                      dragActive ? 'border-primary bg-primary bg-opacity-10' : 'border-secondary'
+                    }`}
+                    style={{ cursor: 'pointer' }}
+                    onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
+                    onDragLeave={() => setDragActive(false)}
+                    onDrop={handleDrop}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="d-none"
+                      onChange={(e) => { if (e.target.files?.[0]) handleFileSelect(e.target.files[0]); }}
+                    />
+                    <ImageIcon className="mx-auto mb-2 text-muted" size={32} />
+                    <p className="mb-0 fw-semibold">
+                      Drop image here or <span className="text-primary text-decoration-underline">browse</span>
+                    </p>
+                    <small className="text-muted">PNG, JPG, WEBP · max 5MB</small>
+                  </div>
+                ) : (
+                  <div className="mb-3">
+                    <input
+                      type="url"
+                      className={`form-control ${errors.imageUrl ? 'is-invalid' : ''}`}
+                      value={form.imageUrl}
+                      onChange={(e) => updateField('imageUrl', e.target.value)}
+                      placeholder="https://example.com/image.jpg"
+                    />
+                    {errors.imageUrl && <div className="invalid-feedback">{errors.imageUrl}</div>}
+                  </div>
+                )}
+
+                {/* Image preview */}
+                {currentPreview && (
+                  <div className="position-relative d-inline-block">
+                    <img
+                      src={currentPreview}
+                      alt="Preview"
+                      className="rounded-3 border"
+                      style={{ width: '120px', height: '120px', objectFit: 'cover' }}
+                      onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-danger position-absolute top-0 end-0 m-1 rounded-circle"
+                      onClick={clearImage}
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </form>
           </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+          <div className="modal-footer border-0">
+            <button 
+              type="button" 
+              className="btn btn-outline-secondary" 
+              onClick={onClose}
+              disabled={isSubmitting}
+            >
+              <i className="bi bi-x-lg me-1"></i>
+              {t('admin_cancel') || 'Cancel'}
+            </button>
+            <button 
+              type="submit" 
+              className="btn btn-primary"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  {t('checkout_loading')}
+                </>
+              ) : (
+                <>
+                  <i className="bi bi-check-lg me-1"></i>
+                  {t('admin_add_product')}
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 
