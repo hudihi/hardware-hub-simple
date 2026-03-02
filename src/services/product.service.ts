@@ -36,6 +36,14 @@ export interface CreateProductRequest {
   is_active: boolean;
 }
 
+export interface PaginatedProductsResponse {
+  items: Product[];
+  total: number;
+  page: number;
+  size: number;
+  pages: number;
+}
+
 export interface ImageUploadResponse {
   url: string;
   is_primary: boolean;
@@ -168,10 +176,35 @@ class ProductService {
   async getProducts(): Promise<Product[]> {
     try {
       const response = await apiClient.get('/api/v1/products/');
-      return response.data;
+      
+      // Handle paginated response structure
+      if (response.data?.items) {
+        return response.data.items;
+      } else if (Array.isArray(response.data)) {
+        return response.data;
+      }
+      
+      return [];
     } catch (error) {
       const apiError: ApiError = {
         message: 'Failed to fetch products',
+        status: (error as any)?.response?.status,
+        details: (error as any)?.response?.data
+      };
+      throw apiError;
+    }
+  }
+
+  /**
+   * Get a single product by ID
+   */
+  async getProductById(productId: string): Promise<Product | null> {
+    try {
+      const response = await apiClient.get(`/api/v1/products/${productId}`);
+      return response.data;
+    } catch (error) {
+      const apiError: ApiError = {
+        message: 'Failed to fetch product',
         status: (error as any)?.response?.status,
         details: (error as any)?.response?.data
       };

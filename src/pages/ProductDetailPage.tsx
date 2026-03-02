@@ -1,20 +1,119 @@
-import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { getProductById } from '../data/products';
+import { ArrowLeft, CheckCircle, ChevronDown, ChevronUp, Minus, Package, Plus, Share2, ShoppingCart } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { formatPrice } from '../utils/format';
 import { useLanguage } from '../context/LanguageContext';
-import { ArrowLeft, Share2, Minus, Plus, ShoppingCart, CheckCircle, Package, ChevronDown, ChevronUp } from 'lucide-react';
+import { API_BASE_URL } from '../services/api';
+import { categoryService } from '../services/category.service';
+import { productService } from '../services/product.service';
+import { Category, Product } from '../types';
+import { formatPrice } from '../utils/format';
 
 const ProductDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { addItem } = useCart();
+  const [product, setProduct] = useState<Product | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
-  const { language, t } = useLanguage();
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const { t, language } = useLanguage();
+  const { addItem } = useCart();
   const [specsOpen, setSpecsOpen] = useState(false);
 
-  const product = id ? getProductById(id) : undefined;
+  const getCategoryName = (categoryId: string): string => {
+    const category = categories.find(cat => cat.id === categoryId);
+    return category ? category.name : categoryId;
+  };
+
+  const getImageUrl = (product: Product): string => {
+    // The product.image field already contains the mapped image_url from API
+    const imageUrl = product.image;
+    
+    // If it's already a full URL (starts with http), return as is
+    if (imageUrl && imageUrl.startsWith('http')) {
+      return imageUrl;
+    }
+    
+    // If it's a relative path starting with /media/, prepend the base URL
+    if (imageUrl && imageUrl.startsWith('/media/')) {
+      return `${API_BASE_URL}${imageUrl}`;
+    }
+    
+    // Otherwise, return the image as is (for placeholder images, etc.)
+    return imageUrl || '/placeholder.svg';
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!id) {
+        setLoading(false);
+        return;
+      }
+      
+      try {
+        // Fetch both product and categories in parallel
+        const [fetchedProduct, fetchedCategories] = await Promise.all([
+          productService.getProductById(id),
+          categoryService.getAllCategories()
+        ]);
+        
+        // Set categories first
+        setCategories(fetchedCategories);
+        
+        // Map API response to match Product interface expected by components
+        if (fetchedProduct) {
+          // Get the primary image from the images array, or fallback to image_url, then placeholder
+          const primaryImage = (fetchedProduct as any).images?.find((img: any) => img.is_primary);
+          const imageUrl = primaryImage?.url || (fetchedProduct as any).image_url || '/placeholder.svg';
+          
+          const mappedProduct = {
+            id: fetchedProduct.id,
+            name: fetchedProduct.name,
+            description: fetchedProduct.description,
+            price: fetchedProduct.price,
+            unit: fetchedProduct.unit_of_measure, // Map unit_of_measure to unit
+            image: imageUrl, // Use primary image from images array
+            category: fetchedProduct.category_id, // Map category_id to category
+            stock: fetchedProduct.stock_quantity, // Map stock_quantity to stock
+          };
+          setProduct(mappedProduct);
+        } else {
+          setProduct(null);
+        }
+        setLoading(false);
+      } catch (error) {
+        setError(error.message || 'Failed to fetch product');
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="page-container">
+        <div className="container py-5 text-center">
+          <Package size={48} className="mb-3" style={{ color: 'var(--pahala-brown-light)' }} />
+          <h5>{t('system_loading')}</h5>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="page-container">
+        <div className="container py-5 text-center">
+          <Package size={48} className="mb-3" style={{ color: 'var(--pahala-brown-light)' }} />
+          <h5>{t('system_error')}</h5>
+          <p>{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -69,12 +168,21 @@ const ProductDetailPage: React.FC = () => {
                 backgroundColor: 'var(--pahala-beige)',
               }}
             >
+              {!imageLoaded && !imageError && (
+                <div className="d-flex align-items-center justify-content-center w-100 h-100">
+                  <div className="spinner-border text-muted" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                  </div>
+                </div>
+              )}
               <img
-                src={product.image}
+                src={imageError ? '/placeholder.svg' : getImageUrl(product)}
                 alt={product.name}
-                className="w-100 h-100 object-fit-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/placeholder.svg';
+                className={`w-100 h-100 object-fit-cover ${imageLoaded ? 'd-block' : 'd-none'}`}
+                onLoad={() => setImageLoaded(true)}
+                onError={() => {
+                  setImageError(true);
+                  setImageLoaded(true);
                 }}
               />
             </div>
@@ -208,7 +316,7 @@ const ProductDetailPage: React.FC = () => {
                         <td className="text-muted">
                           {language === 'sw' ? 'Kategoria' : 'Category'}
                         </td>
-                        <td className="fw-medium text-capitalize">{product.category}</td>
+                        <td className="fw-medium text-capitalize">{getCategoryName(product.category)}</td>
                       </tr>
                     </tbody>
                   </table>

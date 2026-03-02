@@ -1,9 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Product } from '../types';
-import { formatPrice } from '../utils/format';
 import { useCart } from '../context/CartContext';
 import { useLanguage } from '../context/LanguageContext';
+import { Product } from '../types';
+import { formatPrice } from '../utils/format';
 
 interface ProductCardProps {
   product: Product;
@@ -12,6 +12,8 @@ interface ProductCardProps {
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const { addItem } = useCart();
   const { t } = useLanguage();
+  const [imageLoaded, setImageLoaded] = React.useState(false);
+  const [imageError, setImageError] = React.useState(false);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -32,15 +34,26 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   return (
     <Link to={`/products/${product.id}`} className="text-decoration-none">
       <div className="product-card h-100">
-        <img
-          src={product.image}
-          alt={product.name}
-          className="product-image"
-          loading="lazy"
-          onError={(e) => {
-            (e.target as HTMLImageElement).src = '/placeholder.svg';
-          }}
-        />
+        <div className="product-image-container position-relative">
+          {!imageLoaded && !imageError && (
+            <div className="product-image-placeholder d-flex align-items-center justify-content-center bg-light">
+              <div className="spinner-border spinner-border-sm text-muted" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          )}
+          <img
+            src={imageError ? '/placeholder.svg' : product.image}
+            alt={product.name}
+            className={`product-image ${imageLoaded ? 'd-block' : 'd-none'}`}
+            loading="lazy"
+            onLoad={() => setImageLoaded(true)}
+            onError={() => {
+              setImageError(true);
+              setImageLoaded(true);
+            }}
+          />
+        </div>
         <div className="p-3">
           <h6 className="mb-1 text-dark fw-semibold text-truncate">{product.name}</h6>
           <div className="d-flex align-items-baseline gap-1 mb-2">

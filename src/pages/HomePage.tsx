@@ -1,17 +1,71 @@
+import SearchBar from '@/components/SearchBar';
 import React from 'react';
 import { Link } from 'react-router-dom';
 import CategoryCard from '../components/CategoryCard';
 import ProductCard from '../components/ProductCard';
 import { useLanguage } from '../context/LanguageContext';
-import { categories, products } from '../data/products';
-import SearchBar from '@/components/SearchBar';
+import { categories } from '../data/products';
+import { API_BASE_URL } from '../services/api';
+import { productService } from '../services/product.service';
+import { Product } from '../types';
 
 
 const HomePage: React.FC = () => {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
-  const featuredProducts = products.slice(0, 6);
+  const [products, setProducts] = React.useState<Product[]>([]);
+  const [productsLoading, setProductsLoading] = React.useState(true);
   const { t } = useLanguage();
+
+  const getImageUrl = (apiProduct: any): string => {
+    // Get the primary image from the images array, or fallback to image_url, then placeholder
+    const primaryImage = apiProduct.images?.find((img: any) => img.is_primary);
+    const imageUrl = primaryImage?.url || apiProduct.image_url;
+    
+    // If it's already a full URL (starts with http), return as is
+    if (imageUrl && imageUrl.startsWith('http')) {
+      return imageUrl;
+    }
+    
+    // If it's a relative path starting with /media/, prepend the base URL
+    if (imageUrl && imageUrl.startsWith('/media/')) {
+      return `${API_BASE_URL}${imageUrl}`;
+    }
+    
+    // Otherwise, return placeholder
+    return '/placeholder.svg';
+  };
+
+  // Fetch products on component mount
+  React.useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const fetchedProducts = await productService.getProducts();
+        // Map API response to match Product interface expected by components
+        const mappedProducts = fetchedProducts.map(apiProduct => {
+          return {
+            id: apiProduct.id,
+            name: apiProduct.name,
+            description: apiProduct.description,
+            price: apiProduct.price,
+            unit: apiProduct.unit_of_measure, // Map unit_of_measure to unit
+            image: getImageUrl(apiProduct), // Use getImageUrl to handle uploaded images
+            category: apiProduct.category_id, // Map category_id to category
+            stock: apiProduct.stock_quantity, // Map stock_quantity to stock
+          };
+        });
+        setProducts(mappedProducts);
+      } catch (error) {
+        console.error('Failed to fetch products:', error);
+      } finally {
+        setProductsLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  const featuredProducts = products.slice(0, 6);
 
   // Sample suggestions and recent searches (in a real app, these would come from API/localStorage)
   const suggestions = [
@@ -101,13 +155,21 @@ const HomePage: React.FC = () => {
             </Link>
           </div>
           
-          <div className="row g-3">
-            {featuredProducts.map((product) => (
-              <div key={product.id} className="col-6 col-md-4 col-lg-3">
-                <ProductCard product={product} />
+          {productsLoading ? (
+            <div className="text-center py-4">
+              <div className="spinner-border text-brown" role="status">
+                <span className="visually-hidden">Loading...</span>
               </div>
-            ))}
-          </div>
+            </div>
+          ) : (
+            <div className="row g-3">
+              {featuredProducts.map((product) => (
+                <div key={product.id} className="col-6 col-md-4 col-lg-3">
+                  <ProductCard product={product} />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Contact Section */}
