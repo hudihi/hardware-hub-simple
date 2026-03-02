@@ -23,7 +23,7 @@ interface FormData {
   imageFile: File | null;
 }
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_FILE_SIZE = 1024 * 1024; // 1MB (updated to match backend requirements)
 
 const AdminProductForm: React.FC<AdminProductFormProps> = ({ open, onClose, onProductCreated }) => {
   const { t } = useLanguage();
@@ -59,7 +59,7 @@ const AdminProductForm: React.FC<AdminProductFormProps> = ({ open, onClose, onPr
   const [form, setForm] = useState<FormData>({
     name: '',
     description: '',
-    price: '',
+    price: '0',
     category: '',
     currency: 'TZS',
     unit: 'pcs',
@@ -71,7 +71,9 @@ const AdminProductForm: React.FC<AdminProductFormProps> = ({ open, onClose, onPr
   });
 
   const updateField = <K extends keyof FormData>(key: K, value: FormData[K]) => {
-    setForm(prev => ({ ...prev, [key]: value }));
+    // Ensure value is never undefined
+    const safeValue = value === undefined ? '' : value;
+    setForm(prev => ({ ...prev, [key]: safeValue }));
     if (errors[key]) setErrors(prev => ({ ...prev, [key]: undefined }));
   };
 
@@ -81,7 +83,7 @@ const AdminProductForm: React.FC<AdminProductFormProps> = ({ open, onClose, onPr
       return;
     }
     if (file.size > MAX_FILE_SIZE) {
-      alert('Image must be less than 5MB.');
+      alert('Image must be less than 1MB.');
       return;
     }
     updateField('imageFile', file);
@@ -106,12 +108,12 @@ const AdminProductForm: React.FC<AdminProductFormProps> = ({ open, onClose, onPr
 
   const validate = (): boolean => {
     const newErrors: Partial<Record<keyof FormData, string>> = {};
-    if (!form.name.trim()) newErrors.name = t('validation_required');
-    if (!form.description.trim()) newErrors.description = t('validation_required');
-    if (!form.price || parseFloat(form.price) <= 0) newErrors.price = t('validation_required');
-    if (!form.category) newErrors.category = t('validation_required');
-    if (form.imageMode === 'url' && form.imageUrl) {
-      try { new URL(form.imageUrl); } catch { newErrors.imageUrl = t('validation_email_invalid'); }
+    if (!getSafeValue('name', '').trim()) newErrors.name = t('validation_required');
+    if (!getSafeValue('description', '').trim()) newErrors.description = t('validation_required');
+    if (!getSafeValue('price', '0') || parseFloat(getSafeValue('price', '0')) <= 0) newErrors.price = t('validation_required');
+    if (!getSafeValue('category', '')) newErrors.category = t('validation_required');
+    if (getSafeValue('imageMode', 'upload') === 'url' && getSafeValue('imageUrl', '')) {
+      try { new URL(getSafeValue('imageUrl', '')); } catch { newErrors.imageUrl = t('validation_email_invalid'); }
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -124,35 +126,89 @@ const AdminProductForm: React.FC<AdminProductFormProps> = ({ open, onClose, onPr
     setIsSubmitting(true);
     try {
       // Prepare product data for API
-      const productData = {
-        name: form.name,
-        description: form.description,
-        price: parseFloat(form.price),
-        currency: form.currency,
-        unit_of_measure: form.unit,
-        category_id: form.category,
-        image_url: form.imageMode === 'url' ? form.imageUrl : '',
-        stock_quantity: parseInt(form.stock),
-        is_active: form.isActive,
+      const productData: any = {
+        name: getSafeValue('name', ''),
+        description: getSafeValue('description', ''),
+        price: parseFloat(getSafeValue('price', '0')),
+        currency: getSafeValue('currency', 'TZS'),
+        unit_of_measure: getSafeValue('unit', 'pcs'),
+        category_id: getSafeValue('category', ''),
+        stock_quantity: parseInt(getSafeValue('stock', '0')),
+        is_active: getSafeValue('isActive', true),
       };
+
+      // Only include image_url if it's a valid URL (not empty)
+      const imageUrl = getSafeValue('imageMode', 'upload') === 'url' ? getSafeValue('imageUrl', '') : '';
+      if (imageUrl && imageUrl.trim()) {
+        productData.image_url = imageUrl;
+      }
+
+      console.log('Sending product data:', productData);
+      console.log('Image mode:', getSafeValue('imageMode', 'upload'));
+      console.log('Has image file:', !!getSafeValue('imageFile', null));
+      
+      // Validate required fields before sending
+      if (!productData.name || !productData.name.trim()) {
+        throw new Error('Product name is required');
+      }
+      if (!productData.description || !productData.description.trim()) {
+        throw new Error('Product description is required');
+      }
+      if (!productData.category_id || !productData.category_id.trim()) {
+        throw new Error('Category is required');
+      }
+      if (productData.price <= 0) {
+        throw new Error('Price must be greater than 0');
+      }
 
       let createdProduct;
       
-      if (form.imageMode === 'upload' && form.imageFile) {
+      if (getSafeValue('imageMode', 'upload') === 'upload' && getSafeValue('imageFile', null)) {
         // Create product first, then upload image
-        createdProduct = await productService.createProductWithImage(productData, form.imageFile);
+        createdProduct = await productService.createProductWithImage(productData, getSafeValue('imageFile', null));
       } else {
         // Create product without image or with URL
         createdProduct = await productService.createProduct(productData);
       }
 
-      alert(`Product "${form.name}" has been created successfully!`);
+      alert(`Product "${getSafeValue('name', '')}" has been created successfully!`);
       resetForm();
       onProductCreated?.();
       onClose();
     } catch (error: any) {
       console.error('Product creation error:', error);
-      const errorMessage = error?.details?.message || error?.message || 'An error occurred while creating the product.';
+      console.error('Full error object:', error);
+      console.error('Error response:', error?.response);
+      console.error('Error response data:', error?.response?.data);
+      console.error('Error status:', error?.response?.status);
+      
+      // Try to extract detailed validation errors
+      let errorMessage = 'An error occurred while creating product.';
+      
+      if (error?.response?.data) {
+        const errorData = error.response.data;
+        console.log('Processing error data:', errorData);
+        
+        if (typeof errorData === 'string') {
+          errorMessage = errorData;
+        } else if (errorData?.detail) {
+          errorMessage = errorData.detail;
+        } else if (errorData?.message) {
+          errorMessage = errorData.message;
+        } else if (errorData?.errors) {
+          // Handle field-specific validation errors
+          const fieldErrors = Object.entries(errorData.errors)
+            .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`)
+            .join('; ');
+          errorMessage = `Validation errors: ${fieldErrors}`;
+        } else {
+          // If it's an object but we can't find specific fields, stringify it
+          errorMessage = JSON.stringify(errorData);
+        }
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
       alert(errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -161,14 +217,32 @@ const AdminProductForm: React.FC<AdminProductFormProps> = ({ open, onClose, onPr
 
   const resetForm = () => {
     setForm({
-      name: '', description: '', price: '', category: '', currency: 'TZS',
-      unit: 'pcs', stock: '0', isActive: true, imageMode: 'upload', imageUrl: '', imageFile: null,
+      name: '',
+      description: '',
+      price: '0',
+      category: '',
+      currency: 'TZS',
+      unit: 'pcs',
+      stock: '0',
+      isActive: true,
+      imageMode: 'upload',
+      imageUrl: '',
+      imageFile: null,
     });
     setImagePreview(null);
     setErrors({});
   };
 
-  const currentPreview = form.imageMode === 'url' && form.imageUrl ? form.imageUrl : imagePreview;
+  // Helper function to get safe form values
+  const getSafeValue = <K extends keyof FormData>(key: K, fallback: FormData[K]) => {
+    const value = form[key];
+    return value === undefined || value === null ? fallback : value;
+  };
+
+  const currentPreview = getSafeValue('imageMode', 'upload') === 'url' && getSafeValue('imageUrl', '') ? getSafeValue('imageUrl', '') : imagePreview;
+
+  // Don't render form if not properly initialized
+  if (!open) return null;
 
   return (
     <div className={`modal fade ${open ? 'show d-block' : ''}`} style={{ backgroundColor: open ? 'rgba(0,0,0,0.5)' : 'transparent' }} tabIndex={-1}>
@@ -196,7 +270,7 @@ const AdminProductForm: React.FC<AdminProductFormProps> = ({ open, onClose, onPr
                   type="text"
                   className={`form-control ${errors.name ? 'is-invalid' : ''}`}
                   id="name"
-                  value={form.name}
+                  value={getSafeValue('name', '')}
                   onChange={(e) => updateField('name', e.target.value)}
                   placeholder={t('admin_search_products').replace('...', '')}
                 />
@@ -211,7 +285,7 @@ const AdminProductForm: React.FC<AdminProductFormProps> = ({ open, onClose, onPr
                 <textarea
                   className={`form-control ${errors.description ? 'is-invalid' : ''}`}
                   id="description"
-                  value={form.description}
+                  value={getSafeValue('description', '')}
                   onChange={(e) => updateField('description', e.target.value)}
                   placeholder="Product description..."
                   rows={3}
@@ -233,7 +307,7 @@ const AdminProductForm: React.FC<AdminProductFormProps> = ({ open, onClose, onPr
                       id="price"
                       min="0"
                       step="0.01"
-                      value={form.price}
+                      value={getSafeValue('price', '0')}
                       onChange={(e) => updateField('price', e.target.value)}
                       placeholder="0.00"
                     />
@@ -248,7 +322,7 @@ const AdminProductForm: React.FC<AdminProductFormProps> = ({ open, onClose, onPr
                   <select
                     className={`form-select ${errors.category ? 'is-invalid' : ''}`}
                     id="category"
-                    value={form.category}
+                    value={getSafeValue('category', '')}
                     onChange={(e) => updateField('category', e.target.value)}
                     disabled={isLoadingCategories}
                   >
@@ -266,33 +340,15 @@ const AdminProductForm: React.FC<AdminProductFormProps> = ({ open, onClose, onPr
               {/* Currency, Unit, Stock row */}
               <div className="row">
                 <div className="col-md-4 mb-3">
-                  <label htmlFor="currency" className="form-label">Currency</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    id="currency"
-                    value={form.currency}
-                    onChange={(e) => updateField('currency', e.target.value)}
-                  />
-                </div>
-                <div className="col-md-4 mb-3">
-                  <label htmlFor="unit" className="form-label">Unit</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    id="unit"
-                    value={form.unit}
-                    onChange={(e) => updateField('unit', e.target.value)}
-                  />
-                </div>
-                <div className="col-md-4 mb-3">
-                  <label htmlFor="stock" className="form-label">{t('admin_stock')}</label>
+                  <label htmlFor="stock" className="form-label">
+                    {t('admin_stock') || 'Stock'}
+                  </label>
                   <input
                     type="number"
-                    className="form-control"
+                    className={`form-control ${errors.stock ? 'is-invalid' : ''}`}
                     id="stock"
                     min="0"
-                    value={form.stock}
+                    value={getSafeValue('stock', '0')}
                     onChange={(e) => updateField('stock', e.target.value)}
                   />
                 </div>
@@ -325,7 +381,7 @@ const AdminProductForm: React.FC<AdminProductFormProps> = ({ open, onClose, onPr
                     className="btn-check"
                     name="imageMode"
                     id="img-upload"
-                    checked={form.imageMode === 'upload'}
+                    checked={getSafeValue('imageMode', 'upload') === 'upload'}
                     onChange={() => { updateField('imageMode', 'upload'); clearImage(); }}
                   />
                   <label className="btn btn-outline-primary" htmlFor="img-upload">
@@ -337,7 +393,7 @@ const AdminProductForm: React.FC<AdminProductFormProps> = ({ open, onClose, onPr
                     className="btn-check"
                     name="imageMode"
                     id="img-url"
-                    checked={form.imageMode === 'url'}
+                    checked={getSafeValue('imageMode', 'upload') === 'url'}
                     onChange={() => { updateField('imageMode', 'url'); clearImage(); }}
                   />
                   <label className="btn btn-outline-primary" htmlFor="img-url">
@@ -345,7 +401,7 @@ const AdminProductForm: React.FC<AdminProductFormProps> = ({ open, onClose, onPr
                   </label>
                 </div>
 
-                {form.imageMode === 'upload' ? (
+                {getSafeValue('imageMode', 'upload') === 'upload' ? (
                   <div
                     className={`border-2 border-dashed rounded-3 p-4 text-center ${
                       dragActive ? 'border-primary bg-primary bg-opacity-10' : 'border-secondary'
@@ -367,14 +423,14 @@ const AdminProductForm: React.FC<AdminProductFormProps> = ({ open, onClose, onPr
                     <p className="mb-0 fw-semibold">
                       Drop image here or <span className="text-primary text-decoration-underline">browse</span>
                     </p>
-                    <small className="text-muted">PNG, JPG, WEBP · max 5MB</small>
+                    <small className="text-muted">PNG, JPG, WEBP · max 1MB</small>
                   </div>
                 ) : (
                   <div className="mb-3">
                     <input
                       type="url"
                       className={`form-control ${errors.imageUrl ? 'is-invalid' : ''}`}
-                      value={form.imageUrl}
+                      value={getSafeValue('imageUrl', '')}
                       onChange={(e) => updateField('imageUrl', e.target.value)}
                       placeholder="https://example.com/image.jpg"
                     />
@@ -402,35 +458,39 @@ const AdminProductForm: React.FC<AdminProductFormProps> = ({ open, onClose, onPr
                   </div>
                 )}
               </div>
+
+              {/* Form buttons */}
+              <div className="d-flex justify-content-end gap-2">
+                <button 
+                  type="button" 
+                  className="btn btn-outline-secondary" 
+                  onClick={onClose}
+                  disabled={isSubmitting}
+                >
+                  <i className="bi bi-x-lg me-1"></i>
+                  {t('admin_cancel') || 'Cancel'}
+                </button>
+                <button 
+                  type="submit" 
+                  className="btn btn-primary"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                      {t('checkout_loading')}
+                    </>
+                  ) : (
+                    <>
+                      <i className="bi bi-check-lg me-1"></i>
+                      {t('admin_add_product')}
+                    </>
+                  )}
+                </button>
+              </div>
             </form>
           </div>
           <div className="modal-footer border-0">
-            <button 
-              type="button" 
-              className="btn btn-outline-secondary" 
-              onClick={onClose}
-              disabled={isSubmitting}
-            >
-              <i className="bi bi-x-lg me-1"></i>
-              {t('admin_cancel') || 'Cancel'}
-            </button>
-            <button 
-              type="submit" 
-              className="btn btn-primary"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <>
-                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                  {t('checkout_loading')}
-                </>
-              ) : (
-                <>
-                  <i className="bi bi-check-lg me-1"></i>
-                  {t('admin_add_product')}
-                </>
-              )}
-            </button>
           </div>
         </div>
       </div>

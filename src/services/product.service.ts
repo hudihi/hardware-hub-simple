@@ -76,7 +76,8 @@ class ProductService {
     try {
       const response = await apiClient.post('/api/v1/products/', productData);
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Failed to create product:', error);
       const apiError: ApiError = {
         message: 'Failed to create product',
         status: (error as any)?.response?.status,
@@ -90,26 +91,34 @@ class ProductService {
    * Upload image for a product
    * Note: This requires the product to be created first
    */
-  async uploadProductImage(productId: string, imageFile: File): Promise<ImageUploadResponse> {
+  async uploadProductImage(productId: string, file: File, isPrimary: boolean = false): Promise<ImageUploadResponse> {
+    if (!file) {
+      throw new Error("File is undefined or null");
+    }
+
+    const formData = new FormData();
+
+    // MUST match backend parameter name exactly
+    formData.append("file", file);
+    formData.append("is_primary", String(isPrimary));
+
+    console.log("Uploading file:", file);
+    console.log("FormData entries:");
+    for (const pair of formData.entries()) {
+      console.log(pair[0], pair[1]);
+    }
+
     try {
-      const formData = new FormData();
-      formData.append('image', imageFile);
-      
       const response = await apiClient.post(
         `/api/v1/admin/products/${productId}/images/upload`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        }
+        formData
       );
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       const apiError: ApiError = {
         message: 'Failed to upload image',
-        status: (error as any)?.response?.status,
-        details: (error as any)?.response?.data
+        status: error.response?.status,
+        details: error.response?.data
       };
       throw apiError;
     }
@@ -123,17 +132,33 @@ class ProductService {
     imageFile?: File
   ): Promise<Product> {
     try {
+      console.log('Creating product with data:', productData);
+      
       // First create the product
       const product = await this.createProduct(productData);
+      console.log('Product created successfully:', product);
       
       // If there's an image file, upload it
       if (imageFile && product.id) {
-        await this.uploadProductImage(product.id, imageFile);
+        console.log('Uploading image for product:', product.id);
+        await this.uploadProductImage(product.id, imageFile, true); // Set as primary image
+        console.log('Image upload completed');
+      } else {
+        console.log('No image file provided or product ID missing');
       }
       
       return product;
-    } catch (error) {
-      throw error;
+    } catch (error: any) {
+      console.error('Failed to create product with image:', error);
+      
+      // Preserve the original error structure for proper error handling
+      const apiError: ApiError = {
+        message: error?.message || 'Failed to create product with image',
+        status: error?.status || error?.response?.status,
+        details: error?.details || error?.response?.data
+      };
+      
+      throw apiError;
     }
   }
 
