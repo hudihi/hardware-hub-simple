@@ -1,8 +1,8 @@
 import React from 'react';
-import { CartItem as CartItemType } from '../types';
-import { formatPrice } from '../utils/format';
 import { useCart } from '../context/CartContext';
 import { useLanguage } from '../context/LanguageContext';
+import { CartItem as CartItemType } from '../types';
+import { formatPrice } from '../utils/format';
 
 interface CartItemProps {
   item: CartItemType;

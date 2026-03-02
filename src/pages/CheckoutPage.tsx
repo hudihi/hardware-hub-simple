@@ -1,17 +1,16 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import { useOrders } from '../context/OrderContext';
+import { useCart } from '../context/CartContext';
+import { useLanguage } from '../context/LanguageContext';
+import { checkoutService, CheckoutSummaryResponse } from '../services/checkout.service';
 import { formatPrice } from '../utils/format';
 import { shareOrder } from '../utils/whatsapp';
-import { useLanguage } from '../context/LanguageContext';
 
 const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
-  const { items, total, clearCart } = useCart();
+  const { items, total, clearCart, cartId } = useCart();
   const { user, register, isAuthenticated } = useAuth();
-  const { createOrder } = useOrders();
   const { t } = useLanguage();
 
   const [formData, setFormData] = useState({
@@ -28,9 +27,93 @@ const CheckoutPage: React.FC = () => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [checkoutSummary, setCheckoutSummary] = useState<CheckoutSummaryResponse | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [shouldNavigate, setShouldNavigate] = useState(false);
+
+  // Navigate to cart if no items
+  useEffect(() => {
+    if (items.length === 0) {
+      setShouldNavigate(true);
+    }
+  }, [items.length]);
+
+  useEffect(() => {
+    if (shouldNavigate) {
+      navigate('/cart');
+    }
+  }, [shouldNavigate, navigate]);
+
+  // Load checkout summary when component mounts or cart changes
+  useEffect(() => {
+    let isMounted = true;
+    
+    const loadCheckoutSummary = async () => {
+      if (!cartId || !isMounted) return;
+      
+      try {
+        setSummaryLoading(true);
+        const summary = await checkoutService.getCheckoutSummary(cartId);
+        if (isMounted) {
+          setCheckoutSummary(summary);
+          setError(''); // Clear any previous errors
+        }
+      } catch (error: any) {
+        if (isMounted) {
+          console.error('Failed to load checkout summary:', error);
+          
+          // Handle specific error cases
+          if (error.message?.includes('already checked out')) {
+            setError('This cart has already been used for checkout. Redirecting you to create a new cart...');
+            // Clear the checked out cart and create a new one immediately
+            clearCart(true); // This will create a new cart
+            // Redirect to cart page so user can add items
+            setTimeout(() => {
+              if (isMounted) {
+                navigate('/cart');
+              }
+            }, 1500);
+          } else if (error.message?.includes('Cart not found') || error.message?.includes('empty')) {
+            setError('Your cart appears to be empty. Please add items to proceed.');
+            // Optionally redirect to cart page after a delay
+            setTimeout(() => {
+              if (isMounted) {
+                navigate('/cart');
+              }
+            }, 3000);
+          } else {
+            // For other errors, create a fallback summary from local cart data
+            console.log('Creating fallback summary from local cart data');
+            const fallbackSummary = {
+              cart_id: cartId || '',
+              items: items.map(item => ({
+                product_id: item.product.id,
+                product_name: item.product.name,
+                unit_price: item.product.price,
+                quantity: item.quantity,
+                total_price: item.product.price * item.quantity
+              })),
+              total_amount: total
+            };
+            setCheckoutSummary(fallbackSummary);
+            setError('Using local cart data. Some features may be limited.');
+          }
+        }
+      } finally {
+        if (isMounted) {
+          setSummaryLoading(false);
+        }
+      }
+    };
+
+    loadCheckoutSummary();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [cartId, navigate, clearCart, items, total]);
 
   if (items.length === 0) {
-    navigate('/cart');
     return null;
   }
 
@@ -45,6 +128,11 @@ const CheckoutPage: React.FC = () => {
     setError('');
 
     try {
+      if (!cartId) {
+        setError('Cart not found');
+        return;
+      }
+
       if (!isAuthenticated) {
         const success = await register({
           name: formData.name,
@@ -66,31 +154,52 @@ const CheckoutPage: React.FC = () => {
         }
       }
 
-      const order = createOrder(
-        items,
-        {
-          id: user?.id || `cust-${Date.now()}`,
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-          address: {
-            street: formData.street,
-            city: formData.city,
-            province: formData.province,
-            postalCode: formData.postalCode,
-          },
-        },
-        formData.notes
-      );
+      // Process checkout using API
+      const checkoutData = {
+        cart_id: cartId,
+        customer_name: formData.name,
+        customer_phone: formData.phone,
+        customer_address: `${formData.street}, ${formData.city}, ${formData.province}, ${formData.postalCode}`,
+        customer_city: formData.city,
+        order_notes: formData.notes,
+        payment_method: 'PAY_ON_DELIVERY' as const,
+      };
 
-      clearCart();
+      const order = await checkoutService.processCheckout(checkoutData);
+      
+      clearCart(false); // Clear cart but don't create new one immediately
       navigate(`/orders/${order.id}`, { state: { newOrder: true } });
 
       if (window.confirm(t('checkout_wa_confirm'))) {
-        shareOrder(order);
+        // Create a mock order object for WhatsApp sharing
+        const mockOrder = {
+          id: order.id,
+          items: items.map(item => ({
+            product: item.product,
+            quantity: item.quantity
+          })),
+          total: total,
+          customer: {
+            id: user?.id || `cust-${Date.now()}`,
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+            address: {
+              street: formData.street,
+              city: formData.city,
+              province: formData.province,
+              postalCode: formData.postalCode
+            }
+          },
+          notes: formData.notes,
+          status: 'pending' as const,
+          createdAt: new Date().toISOString()
+        };
+        shareOrder(mockOrder);
       }
-    } catch (err) {
-      setError(t('checkout_error'));
+    } catch (err: any) {
+      console.error('Checkout error:', err);
+      setError(err.response?.data?.message || t('checkout_error'));
     } finally {
       setLoading(false);
     }
@@ -215,21 +324,51 @@ const CheckoutPage: React.FC = () => {
               <h6 className="fw-bold mb-3">
                 <i className="bi bi-receipt me-2"></i>
                 {t('checkout_summary')}
+                {summaryLoading && (
+                  <span className="spinner-border spinner-border-sm ms-2" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                  </span>
+                )}
               </h6>
 
-              {items.map((item) => (
-                <div key={item.product.id} className="d-flex justify-content-between mb-2 small">
-                  <span>{item.quantity}x {item.product.name}</span>
-                  <span>{formatPrice(item.product.price * item.quantity)}</span>
+              {summaryLoading ? (
+                <div className="text-center py-3">
+                  <div className="spinner-border spinner-border-sm me-2" role="status"></div>
+                  Loading order summary...
                 </div>
-              ))}
+              ) : checkoutSummary ? (
+                <>
+                  {checkoutSummary.items.map((item, index) => (
+                    <div key={`${item.product_id}-${index}`} className="d-flex justify-content-between mb-2 small">
+                      <span>{item.quantity}x {item.product_name}</span>
+                      <span>{formatPrice(item.total_price)}</span>
+                    </div>
+                  ))}
 
-              <hr />
+                  <hr />
 
-              <div className="d-flex justify-content-between">
-                <span className="fw-bold">{t('cart_total')}</span>
-                <span className="fw-bold text-brown fs-5">{formatPrice(total)}</span>
-              </div>
+                  <div className="d-flex justify-content-between">
+                    <span className="fw-bold">{t('cart_total')}</span>
+                    <span className="fw-bold text-brown fs-5">{formatPrice(checkoutSummary.total_amount)}</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {items.map((item) => (
+                    <div key={item.product.id} className="d-flex justify-content-between mb-2 small">
+                      <span>{item.quantity}x {item.product.name}</span>
+                      <span>{formatPrice(item.product.price * item.quantity)}</span>
+                    </div>
+                  ))}
+
+                  <hr />
+
+                  <div className="d-flex justify-content-between">
+                    <span className="fw-bold">{t('cart_total')}</span>
+                    <span className="fw-bold text-brown fs-5">{formatPrice(total)}</span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 

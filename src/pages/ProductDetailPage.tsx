@@ -19,6 +19,8 @@ const ProductDetailPage: React.FC = () => {
   const [quantity, setQuantity] = useState(1);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [showShareOptions, setShowShareOptions] = useState(false);
+  const [shareUrl, setShareUrl] = useState<string>('');
   const { t, language } = useLanguage();
   const { addItem } = useCart();
   const [specsOpen, setSpecsOpen] = useState(false);
@@ -129,18 +131,64 @@ const ProductDetailPage: React.FC = () => {
     );
   }
 
-  const handleAddToCart = () => {
-    for (let i = 0; i < quantity; i++) {
-      addItem(product);
+  const handleAddToCart = async () => {
+    try {
+      for (let i = 0; i < quantity; i++) {
+        await addItem(product);
+      }
+      navigate('/cart');
+    } catch (error) {
+      console.error('Failed to add items to cart:', error);
+      // Show error message to user
+      alert('Failed to add items to cart. Please try again.');
     }
-    navigate('/cart');
   };
 
-  const handleShare = () => {
-    const productUrl = window.location.href;
-    const message = `${product.name} - PAHALA.COM!\n\n${formatPrice(product.price)}/${product.unit}\n\n${productUrl}`;
+  const handleShare = async () => {
+    try {
+      // Call the share API endpoint
+      const response = await fetch(`${API_BASE_URL}/api/v1/products/${product.id}/share`);
+      const shareData = await response.json();
+      
+      // Use the share URL from API response, or fallback to current page URL
+      const url = shareData.share_url || window.location.href;
+      setShareUrl(url);
+      setShowShareOptions(true);
+    } catch (error) {
+      console.error('Failed to get share URL:', error);
+      // Fallback to current page URL
+      setShareUrl(window.location.href);
+      setShowShareOptions(true);
+    }
+  };
+
+  const shareOnWhatsApp = () => {
+    const message = `${product.name} - PAHALA.COM!\n\n${formatPrice(product.price)}/${product.unit}\n\n${shareUrl}`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
+    setShowShareOptions(false);
+  };
+
+  const shareOnFacebook = () => {
+    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+    window.open(facebookUrl, '_blank');
+    setShowShareOptions(false);
+  };
+
+  const shareOnTwitter = () => {
+    const message = `${product.name} - PAHALA.COM! ${formatPrice(product.price)}/${product.unit}`;
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(message)}&url=${encodeURIComponent(shareUrl)}`;
+    window.open(twitterUrl, '_blank');
+    setShowShareOptions(false);
+  };
+
+  const copyLink = () => {
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      alert('Link copied to clipboard!');
+      setShowShareOptions(false);
+    }).catch(() => {
+      alert('Failed to copy link');
+    });
   };
 
   return (
@@ -355,6 +403,69 @@ const ProductDetailPage: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Share Options Modal */}
+      {showShareOptions && (
+        <div 
+          className="position-fixed start-0 top-0 w-100 h-100 d-flex align-items-center justify-content-center"
+          style={{ 
+            backgroundColor: 'rgba(0, 0, 0, 0.5)', 
+            zIndex: 1000 
+          }}
+          onClick={() => setShowShareOptions(false)}
+        >
+          <div 
+            className="bg-white rounded-3 p-4 mx-3"
+            style={{ maxWidth: 320, width: '100%' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h5 className="mb-3 text-center">
+              {language === 'sw' ? 'Shiriki Bidhaa' : 'Share Product'}
+            </h5>
+            
+            <div className="d-grid gap-2">
+              <button
+                className="btn btn-outline-success d-flex align-items-center justify-content-center gap-2"
+                onClick={shareOnWhatsApp}
+              >
+                <i className="bi bi-whatsapp"></i>
+                WhatsApp
+              </button>
+              
+              <button
+                className="btn btn-outline-primary d-flex align-items-center justify-content-center gap-2"
+                onClick={shareOnFacebook}
+              >
+                <i className="bi bi-facebook"></i>
+                Facebook
+              </button>
+              
+              <button
+                className="btn btn-outline-info d-flex align-items-center justify-content-center gap-2"
+                onClick={shareOnTwitter}
+              >
+                <i className="bi bi-twitter"></i>
+                Twitter
+              </button>
+              
+              <button
+                className="btn btn-outline-secondary d-flex align-items-center justify-content-center gap-2"
+                onClick={copyLink}
+              >
+                <i className="bi bi-link-45deg"></i>
+                {language === 'sw' ? 'Nakili Kiungo' : 'Copy Link'}
+              </button>
+              
+              <button
+                className="btn btn-secondary mt-2"
+                onClick={() => setShowShareOptions(false)}
+              >
+                {language === 'sw' ? 'Ghairi' : 'Cancel'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
