@@ -1,5 +1,42 @@
 import apiClient from './api';
 
+// Dashboard Types
+export interface DashboardSummary {
+  total_orders: number;
+  total_revenue: number;
+  pending_orders: number;
+  confirmed_orders: number;
+  delivered_orders: number;
+  cancelled_orders: number;
+  total_products: number;
+}
+
+export interface RecentOrder {
+  id: string;
+  cart_id: string;
+  customer_name: string;
+  customer_phone: string;
+  customer_address: string;
+  customer_city: string;
+  order_notes: string;
+  payment_method: string;
+  status: string;
+  total_amount: number;
+  items: any[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RevenueOverview {
+  total_revenue: number;
+  order_count: number;
+}
+
+export interface PopularProduct {
+  product_id: string;
+  total_quantity_sold: number;
+}
+
 // Admin Order Types
 export interface AdminOrder {
   id: string;
@@ -244,6 +281,114 @@ export const adminService = {
   isValidStatusTransition: (fromStatus: string, toStatus: string): boolean => {
     const validTransitions = adminService.getValidStatusTransitions(fromStatus);
     return validTransitions.includes(toStatus);
+  },
+
+  /**
+   * Get dashboard summary statistics
+   */
+  getDashboardSummary: async (): Promise<DashboardSummary> => {
+    try {
+      console.log('Fetching dashboard summary');
+      const response = await apiClient.get('/api/v1/admin/dashboard/summary');
+      console.log('Dashboard summary response:', response.data);
+      
+      if (!response.data) {
+        throw new Error('Invalid dashboard summary response from server');
+      }
+      
+      return response.data;
+    } catch (error: any) {
+      console.error('Failed to get dashboard summary:', error);
+      
+      if (error.response?.status === 401) {
+        throw new Error('Authentication required. Please log in as admin.');
+      } else if (error.response?.status === 403) {
+        throw new Error('Access denied. Admin privileges required.');
+      }
+      
+      throw error;
+    }
+  },
+
+  /**
+   * Get recent orders for dashboard
+   */
+  getRecentOrders: async (): Promise<RecentOrder[]> => {
+    try {
+      console.log('Fetching recent orders');
+      const response = await apiClient.get('/api/v1/admin/dashboard/recent-orders');
+      console.log('Recent orders response:', response.data);
+      
+      if (!Array.isArray(response.data)) {
+        throw new Error('Invalid recent orders response from server');
+      }
+      
+      return response.data;
+    } catch (error: any) {
+      console.error('Failed to get recent orders:', error);
+      
+      if (error.response?.status === 401) {
+        throw new Error('Authentication required. Please log in as admin.');
+      } else if (error.response?.status === 403) {
+        throw new Error('Access denied. Admin privileges required.');
+      }
+      
+      throw error;
+    }
+  },
+
+  /**
+   * Get revenue overview
+   */
+  getRevenueOverview: async (): Promise<RevenueOverview> => {
+    try {
+      console.log('Fetching revenue overview');
+      const response = await apiClient.get('/api/v1/admin/dashboard/revenue');
+      console.log('Revenue overview response:', response.data);
+      
+      if (!response.data) {
+        throw new Error('Invalid revenue overview response from server');
+      }
+      
+      return response.data;
+    } catch (error: any) {
+      console.error('Failed to get revenue overview:', error);
+      
+      if (error.response?.status === 401) {
+        throw new Error('Authentication required. Please log in as admin.');
+      } else if (error.response?.status === 403) {
+        throw new Error('Access denied. Admin privileges required.');
+      }
+      
+      throw error;
+    }
+  },
+
+  /**
+   * Get popular products
+   */
+  getPopularProducts: async (): Promise<PopularProduct[]> => {
+    try {
+      console.log('Fetching popular products');
+      const response = await apiClient.get('/api/v1/admin/dashboard/popular-products');
+      console.log('Popular products response:', response.data);
+      
+      if (!Array.isArray(response.data)) {
+        throw new Error('Invalid popular products response from server');
+      }
+      
+      return response.data;
+    } catch (error: any) {
+      console.error('Failed to get popular products:', error);
+      
+      if (error.response?.status === 401) {
+        throw new Error('Authentication required. Please log in as admin.');
+      } else if (error.response?.status === 403) {
+        throw new Error('Access denied. Admin privileges required.');
+      }
+      
+      throw error;
+    }
   },
 };
 

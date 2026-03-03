@@ -1,24 +1,83 @@
-import React from 'react';
-import { useOrders } from '../../context/OrderContext';
-import { products } from '../../data/products';
-import { formatPrice } from '../../utils/format';
+import React, { useEffect, useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
+import { adminService, DashboardSummary, PopularProduct, RecentOrder, RevenueOverview } from '../../services/admin.service';
+import { formatPrice, getStatusClass, getStatusText } from '../../utils/format';
 
 const AdminDashboard: React.FC = () => {
-  const { orders } = useOrders();
   const { t } = useLanguage();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
+  const [revenue, setRevenue] = useState<RevenueOverview | null>(null);
+  const [popularProducts, setPopularProducts] = useState<PopularProduct[]>([]);
 
-  const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
-  const pendingOrders = orders.filter((o) => o.status === 'pending').length;
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      // Fetch all dashboard data in parallel
+      const [summaryData, recentOrdersData, revenueData, popularProductsData] = await Promise.all([
+        adminService.getDashboardSummary(),
+        adminService.getRecentOrders(),
+        adminService.getRevenueOverview(),
+        adminService.getPopularProducts()
+      ]);
+      
+      setSummary(summaryData);
+      setRecentOrders(recentOrdersData);
+      setRevenue(revenueData);
+      setPopularProducts(popularProductsData);
+      
+      console.log('Dashboard data loaded successfully');
+    } catch (error: any) {
+      console.error('Failed to load dashboard data:', error);
+      setError(error.message || 'Failed to load dashboard data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const stats = [
-    { label: t('admin_total_products'), value: products.length, icon: 'bi-box-seam', color: 'primary' },
-    { label: t('admin_total_orders'), value: orders.length, icon: 'bi-receipt', color: 'success' },
-    { label: t('admin_pending_orders'), value: pendingOrders, icon: 'bi-clock', color: 'warning' },
-    { label: t('admin_total_revenue'), value: formatPrice(totalRevenue), icon: 'bi-currency-dollar', color: 'info' },
+    { label: t('admin_total_products'), value: summary?.total_products || 0, icon: 'bi-box-seam', color: 'primary' },
+    { label: t('admin_total_orders'), value: summary?.total_orders || 0, icon: 'bi-receipt', color: 'success' },
+    { label: t('admin_pending_orders'), value: summary?.pending_orders || 0, icon: 'bi-clock', color: 'warning' },
+    { label: t('admin_total_revenue'), value: formatPrice(summary?.total_revenue || 0), icon: 'bi-currency-dollar', color: 'info' },
   ];
 
-  const recentOrders = orders.slice(0, 5);
+  if (loading) {
+    return (
+      <div>
+        <h4 className="fw-bold mb-4">{t('admin_dashboard')}</h4>
+        <div className="text-center py-5">
+          <div className="spinner-border" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+          <p className="mt-3 text-muted">Loading dashboard data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div>
+        <h4 className="fw-bold mb-4">{t('admin_dashboard')}</h4>
+        <div className="alert alert-danger">
+          <h5>{t('error')}</h5>
+          <p>{error}</p>
+          <button className="btn btn-primary" onClick={fetchDashboardData}>
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -67,12 +126,15 @@ const AdminDashboard: React.FC = () => {
                   {recentOrders.map((order) => (
                     <tr key={order.id}>
                       <td className="fw-semibold">{order.id}</td>
-                      <td>{order.customer.name}</td>
-                      <td>{order.items.length} {t('admin_items')}</td>
-                      <td className="text-brown fw-semibold">{formatPrice(order.total)}</td>
                       <td>
-                        <span className={`badge ${order.status === 'pending' ? 'bg-warning' : order.status === 'completed' ? 'bg-success' : 'bg-info'}`}>
-                          {order.status === 'pending' ? t('status_pending') : order.status === 'completed' ? t('status_completed') : order.status}
+                        <div>{order.customer_name}</div>
+                        <small className="text-muted">{order.customer_phone}</small>
+                      </td>
+                      <td>{order.items.length} {t('admin_items')}</td>
+                      <td className="text-brown fw-semibold">{formatPrice(order.total_amount)}</td>
+                      <td>
+                        <span className={`badge ${getStatusClass(order.status)}`}>
+                          {getStatusText(order.status, 'en')}
                         </span>
                       </td>
                     </tr>
