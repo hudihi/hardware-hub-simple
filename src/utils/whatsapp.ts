@@ -1,6 +1,7 @@
+import { Language } from '../i18n/translations';
+import communicationService from '../services/communication.service';
 import { CartItem, Order } from '../types';
 import { formatPrice } from './format';
-import { Language } from '../i18n/translations';
 
 // WhatsApp number for the store (replace with actual number)
 const WHATSAPP_NUMBER = '6281234567890';
@@ -112,19 +113,54 @@ export const openWhatsApp = (message: string): void => {
   window.open(link, '_blank');
 };
 
-// Share product via WhatsApp
-export const shareProduct = (
-  productName: string,
-  productPrice: number,
-  productUrl: string,
+// Share product via WhatsApp using API
+export const shareProduct = async (
+  productId: string,
+  productName?: string,
+  productPrice?: number,
+  productUrl?: string,
   language: Language = 'en'
-): void => {
-  const message = generateProductShareMessage(productName, productPrice, productUrl, language);
-  openWhatsApp(message);
+): Promise<void> => {
+  try {
+    // Use API to get share data
+    const shareData = await communicationService.shareProduct(productId);
+    
+    // Open WhatsApp with the API-provided URL and message
+    window.open(shareData.whatsapp_url, '_blank');
+  } catch (error) {
+    console.error('Failed to share product via API, falling back to local generation:', error);
+    
+    // Fallback to local generation if API fails
+    if (productName && productPrice && productUrl) {
+      const message = generateProductShareMessage(productName, productPrice, productUrl, language);
+      openWhatsApp(message);
+    } else {
+      throw error;
+    }
+  }
 };
 
-// Share order via WhatsApp
-export const shareOrder = (order: Order, language: Language = 'en'): void => {
-  const message = generateOrderMessage(order, language);
-  openWhatsApp(message);
+// Share order via WhatsApp using API
+export const shareOrder = async (
+  orderId: string,
+  order?: Order,
+  language: Language = 'en'
+): Promise<void> => {
+  try {
+    // Use API to get share data
+    const shareData = await communicationService.shareOrder(orderId);
+    
+    // Open WhatsApp with the API-provided URL and message
+    window.open(shareData.whatsapp_url, '_blank');
+  } catch (error) {
+    console.error('Failed to share order via API, falling back to local generation:', error);
+    
+    // Fallback to local generation if API fails
+    if (order) {
+      const message = generateOrderMessage(order, language);
+      openWhatsApp(message);
+    } else {
+      throw error;
+    }
+  }
 };

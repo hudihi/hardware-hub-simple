@@ -37,6 +37,32 @@ export interface PopularProduct {
   total_quantity_sold: number;
 }
 
+// Product Types
+export interface AdminProduct {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  currency: string;
+  unit_of_measure: string;
+  category_id: string;
+  category_name?: string;
+  image_url?: string;
+  stock_quantity: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  images: any[];
+}
+
+export interface AdminProductsResponse {
+  items: AdminProduct[];
+  total: number;
+  page: number;
+  size: number;
+  pages: number;
+}
+
 // Admin Order Types
 export interface AdminOrder {
   id: string;
@@ -385,6 +411,155 @@ export const adminService = {
         throw new Error('Authentication required. Please log in as admin.');
       } else if (error.response?.status === 403) {
         throw new Error('Access denied. Admin privileges required.');
+      }
+      
+      throw error;
+    }
+  },
+
+  /**
+   * Get all products for admin management
+   */
+  getAllProducts: async (page: number = 1, size: number = 10, category_id?: string, search?: string): Promise<AdminProductsResponse> => {
+    try {
+      console.log('Fetching admin products with params:', { page, size, category_id, search });
+      
+      const validatedPage = Math.max(1, page);
+      const validatedSize = Math.max(1, Math.min(size, 100));
+      
+      const params: any = {
+        page: validatedPage,
+        size: validatedSize
+      };
+      
+      if (category_id) {
+        params.category_id = category_id;
+      }
+      if (search) {
+        params.search = search;
+      }
+      
+      const response = await apiClient.get('/api/v1/products/', { params });
+      
+      console.log('Admin products response:', response.data);
+      
+      if (!response.data) {
+        throw new Error('Invalid response format from server');
+      }
+      
+      const productsData = response.data;
+      
+      if (Array.isArray(productsData)) {
+        return {
+          items: productsData,
+          total: productsData.length,
+          page: validatedPage,
+          size: validatedSize,
+          pages: 1
+        };
+      }
+      
+      if (productsData.items && Array.isArray(productsData.items)) {
+        return {
+          items: productsData.items,
+          total: productsData.total || productsData.items.length,
+          page: productsData.page || validatedPage,
+          size: productsData.size || validatedSize,
+          pages: productsData.pages || 1
+        };
+      }
+      
+      console.warn('Unexpected response format:', productsData);
+      throw new Error('Unable to parse products response');
+      
+    } catch (error: any) {
+      console.error('Failed to get admin products:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      
+      if (error.response?.status === 401) {
+        throw new Error('Authentication required. Please log in as admin.');
+      } else if (error.response?.status === 403) {
+        throw new Error('Access denied. Admin privileges required.');
+      } else if (error.response?.status === 422) {
+        const validationErrors = error.response?.data?.detail || error.response?.data?.errors;
+        const errorMessage = validationErrors || 'Invalid request parameters';
+        throw new Error(`Validation error: ${errorMessage}`);
+      }
+      
+      throw error;
+    }
+  },
+
+  /**
+   * Create a new product
+   */
+  createProduct: async (productData: Partial<AdminProduct>): Promise<AdminProduct> => {
+    try {
+      console.log('Creating product:', productData);
+      const response = await apiClient.post('/api/v1/admin/products/', productData);
+      console.log('Product created successfully:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('Failed to create product:', error);
+      
+      if (error.response?.status === 401) {
+        throw new Error('Authentication required. Please log in as admin.');
+      } else if (error.response?.status === 403) {
+        throw new Error('Access denied. Admin privileges required.');
+      } else if (error.response?.status === 422) {
+        const validationErrors = error.response?.data?.detail || error.response?.data?.errors;
+        throw new Error(`Validation error: ${validationErrors}`);
+      }
+      
+      throw error;
+    }
+  },
+
+  /**
+   * Update an existing product
+   */
+  updateProduct: async (productId: string, productData: Partial<AdminProduct>): Promise<AdminProduct> => {
+    try {
+      console.log('Updating product:', productId, productData);
+      const response = await apiClient.put(`/api/v1/admin/products/${productId}`, productData);
+      console.log('Product updated successfully:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('Failed to update product:', error);
+      
+      if (error.response?.status === 401) {
+        throw new Error('Authentication required. Please log in as admin.');
+      } else if (error.response?.status === 403) {
+        throw new Error('Access denied. Admin privileges required.');
+      } else if (error.response?.status === 404) {
+        throw new Error('Product not found.');
+      } else if (error.response?.status === 422) {
+        const validationErrors = error.response?.data?.detail || error.response?.data?.errors;
+        throw new Error(`Validation error: ${validationErrors}`);
+      }
+      
+      throw error;
+    }
+  },
+
+  /**
+   * Delete a product
+   */
+  deleteProduct: async (productId: string): Promise<void> => {
+    try {
+      console.log('Deleting product:', productId);
+      await apiClient.delete(`/api/v1/admin/products/${productId}`);
+      console.log('Product deleted successfully');
+    } catch (error: any) {
+      console.error('Failed to delete product:', error);
+      
+      if (error.response?.status === 401) {
+        throw new Error('Authentication required. Please log in as admin.');
+      } else if (error.response?.status === 403) {
+        throw new Error('Access denied. Admin privileges required.');
+      } else if (error.response?.status === 404) {
+        throw new Error('Product not found.');
       }
       
       throw error;

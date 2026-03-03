@@ -8,6 +8,7 @@ const AdminDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [actualProductCount, setActualProductCount] = useState<number>(0);
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
   const [revenue, setRevenue] = useState<RevenueOverview | null>(null);
   const [popularProducts, setPopularProducts] = useState<PopularProduct[]>([]);
@@ -22,19 +23,26 @@ const AdminDashboard: React.FC = () => {
       setError('');
       
       // Fetch all dashboard data in parallel
-      const [summaryData, recentOrdersData, revenueData, popularProductsData] = await Promise.all([
+      const [summaryData, recentOrdersData, revenueData, popularProductsData, productsData] = await Promise.all([
         adminService.getDashboardSummary(),
         adminService.getRecentOrders(),
         adminService.getRevenueOverview(),
-        adminService.getPopularProducts()
+        adminService.getPopularProducts(),
+        adminService.getAllProducts(1, 100) // Get all products to count them
       ]);
       
       setSummary(summaryData);
+      setActualProductCount(productsData.total); // Use actual count from products API
       setRecentOrders(recentOrdersData);
       setRevenue(revenueData);
       setPopularProducts(popularProductsData);
       
       console.log('Dashboard data loaded successfully');
+      console.log('Product count discrepancy:', {
+        dashboard: summaryData.total_products,
+        actual: productsData.total,
+        items: productsData.items.length
+      });
     } catch (error: any) {
       console.error('Failed to load dashboard data:', error);
       setError(error.message || 'Failed to load dashboard data');
@@ -44,7 +52,7 @@ const AdminDashboard: React.FC = () => {
   };
 
   const stats = [
-    { label: t('admin_total_products'), value: summary?.total_products || 0, icon: 'bi-box-seam', color: 'primary' },
+    { label: t('admin_total_products'), value: actualProductCount, icon: 'bi-box-seam', color: 'primary' },
     { label: t('admin_total_orders'), value: summary?.total_orders || 0, icon: 'bi-receipt', color: 'success' },
     { label: t('admin_pending_orders'), value: summary?.pending_orders || 0, icon: 'bi-clock', color: 'warning' },
     { label: t('admin_total_revenue'), value: formatPrice(summary?.total_revenue || 0), icon: 'bi-currency-dollar', color: 'info' },

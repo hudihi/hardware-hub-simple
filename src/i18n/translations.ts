@@ -171,6 +171,7 @@ export const translations = {
   admin_date: { en: 'Date', sw: 'Tarehe' },
   admin_all: { en: 'All', sw: 'Yote' },
   admin_no_orders_found: { en: 'No orders found', sw: 'Hakuna maagizo yaliyopatikana' },
+  admin_no_products_found: { en: 'No products found', sw: 'Hakuna bidhaa zilizopatikana' },
   admin_cancel: { en: 'Cancel', sw: 'Ghairi' },
   admin_save: { en: 'Save', sw: 'Hifadhi' },
   admin_edit: { en: 'Edit', sw: 'Hariri' },

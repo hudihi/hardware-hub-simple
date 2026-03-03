@@ -1,12 +1,14 @@
 import { ImageIcon, Link, Upload, X } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
+import { AdminProduct, adminService } from '../../services/admin.service';
 import { productService, type Category } from '../../services/product.service';
 
 interface AdminProductFormProps {
   open: boolean;
   onClose: () => void;
   onProductCreated?: () => void;
+  editingProduct?: AdminProduct | null;
 }
 
 interface FormData {
@@ -25,7 +27,7 @@ interface FormData {
 
 const MAX_FILE_SIZE = 1024 * 1024; // 1MB (updated to match backend requirements)
 
-const AdminProductForm: React.FC<AdminProductFormProps> = ({ open, onClose, onProductCreated }) => {
+const AdminProductForm: React.FC<AdminProductFormProps> = ({ open, onClose, onProductCreated, editingProduct }) => {
   const { t } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -55,6 +57,43 @@ const AdminProductForm: React.FC<AdminProductFormProps> = ({ open, onClose, onPr
       fetchCategories();
     }
   }, [open, categories.length]);
+
+  // Populate form when editingProduct changes
+  useEffect(() => {
+    if (editingProduct) {
+      const primaryImage = editingProduct.images?.find((img: any) => img.is_primary);
+      setForm({
+        name: editingProduct.name || '',
+        description: editingProduct.description || '',
+        price: editingProduct.price?.toString() || '0',
+        category: editingProduct.category_id || '',
+        currency: editingProduct.currency || 'TZS',
+        unit: editingProduct.unit_of_measure || 'pcs',
+        stock: editingProduct.stock_quantity?.toString() || '0',
+        isActive: editingProduct.is_active ?? true,
+        imageMode: primaryImage?.url ? 'url' : 'upload',
+        imageUrl: primaryImage?.url || editingProduct.image_url || '',
+        imageFile: null,
+      });
+      setImagePreview(primaryImage?.url || editingProduct.image_url || null);
+    } else {
+      // Reset form for new product
+      setForm({
+        name: '',
+        description: '',
+        price: '0',
+        category: '',
+        currency: 'TZS',
+        unit: 'pcs',
+        stock: '0',
+        isActive: true,
+        imageMode: 'upload',
+        imageUrl: '',
+        imageFile: null,
+      });
+      setImagePreview(null);
+    }
+  }, [editingProduct]);
 
   const [form, setForm] = useState<FormData>({
     name: '',
@@ -161,17 +200,24 @@ const AdminProductForm: React.FC<AdminProductFormProps> = ({ open, onClose, onPr
         throw new Error('Price must be greater than 0');
       }
 
-      let createdProduct;
+      let resultProduct;
       
-      if (getSafeValue('imageMode', 'upload') === 'upload' && getSafeValue('imageFile', null)) {
-        // Create product first, then upload image
-        createdProduct = await productService.createProductWithImage(productData, getSafeValue('imageFile', null));
+      if (editingProduct) {
+        // Update existing product
+        resultProduct = await adminService.updateProduct(editingProduct.id, productData);
+        alert(`Product "${getSafeValue('name', '')}" has been updated successfully!`);
       } else {
-        // Create product without image or with URL
-        createdProduct = await productService.createProduct(productData);
+        // Create new product
+        if (getSafeValue('imageMode', 'upload') === 'upload' && getSafeValue('imageFile', null)) {
+          // Create product first, then upload image
+          resultProduct = await productService.createProductWithImage(productData, getSafeValue('imageFile', null));
+        } else {
+          // Create product without image or with URL
+          resultProduct = await productService.createProduct(productData);
+        }
+        alert(`Product "${getSafeValue('name', '')}" has been created successfully!`);
       }
 
-      alert(`Product "${getSafeValue('name', '')}" has been created successfully!`);
       resetForm();
       onProductCreated?.();
       onClose();
@@ -183,7 +229,7 @@ const AdminProductForm: React.FC<AdminProductFormProps> = ({ open, onClose, onPr
       console.error('Error status:', error?.response?.status);
       
       // Try to extract detailed validation errors
-      let errorMessage = 'An error occurred while creating product.';
+      let errorMessage = `An error occurred while ${editingProduct ? 'updating' : 'creating'} product.`;
       
       if (error?.response?.data) {
         const errorData = error.response.data;
@@ -250,8 +296,8 @@ const AdminProductForm: React.FC<AdminProductFormProps> = ({ open, onClose, onPr
         <div className="modal-content">
           <div className="modal-header border-0">
             <h5 className="modal-title fw-bold text-brown">
-              <i className="bi bi-plus-circle me-2"></i>
-              {t('admin_add_product')}
+              <i className={`bi ${editingProduct ? 'bi-pencil' : 'bi-plus-circle'} me-2`}></i>
+              {editingProduct ? 'Edit Product' : t('admin_add_product')}
             </h5>
             <button 
               type="button" 
@@ -483,7 +529,7 @@ const AdminProductForm: React.FC<AdminProductFormProps> = ({ open, onClose, onPr
                   ) : (
                     <>
                       <i className="bi bi-check-lg me-1"></i>
-                      {t('admin_add_product')}
+                      {editingProduct ? 'Update Product' : t('admin_add_product')}
                     </>
                   )}
                 </button>

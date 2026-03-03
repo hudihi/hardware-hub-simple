@@ -4,8 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useLanguage } from '../context/LanguageContext';
 import { checkoutService, CheckoutSummaryResponse } from '../services/checkout.service';
+import { communicationService } from '../services/communication.service';
 import { formatPrice } from '../utils/format';
-import { shareOrder } from '../utils/whatsapp';
 
 const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
@@ -170,32 +170,15 @@ const CheckoutPage: React.FC = () => {
       clearCart(false); // Clear cart but don't create new one immediately
       navigate(`/orders/${order.id}`, { state: { newOrder: true } });
 
+      // Ask user if they want to share the order on WhatsApp
       if (window.confirm(t('checkout_wa_confirm'))) {
-        // Create a mock order object for WhatsApp sharing
-        const mockOrder = {
-          id: order.id,
-          items: items.map(item => ({
-            product: item.product,
-            quantity: item.quantity
-          })),
-          total: total,
-          customer: {
-            id: user?.id || `cust-${Date.now()}`,
-            name: formData.name,
-            email: formData.email,
-            phone: formData.phone,
-            address: {
-              street: formData.street,
-              city: formData.city,
-              province: formData.province,
-              postalCode: formData.postalCode
-            }
-          },
-          notes: formData.notes,
-          status: 'pending' as const,
-          createdAt: new Date().toISOString()
-        };
-        shareOrder(mockOrder);
+        try {
+          // Use the real API endpoint to share the order
+          await communicationService.shareOrder(order.id);
+        } catch (error) {
+          console.error('Failed to share order:', error);
+          // Don't show error to user, just log it
+        }
       }
     } catch (err: any) {
       console.error('Checkout error:', err);

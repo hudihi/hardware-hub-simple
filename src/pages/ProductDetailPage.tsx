@@ -5,6 +5,7 @@ import { useCart } from '../context/CartContext';
 import { useLanguage } from '../context/LanguageContext';
 import { API_BASE_URL } from '../services/api';
 import { categoryService } from '../services/category.service';
+import { communicationService } from '../services/communication.service';
 import { productService } from '../services/product.service';
 import { Category, Product } from '../types';
 import { formatPrice } from '../utils/format';
@@ -146,19 +147,12 @@ const ProductDetailPage: React.FC = () => {
 
   const handleShare = async () => {
     try {
-      // Call the share API endpoint
-      const response = await fetch(`${API_BASE_URL}/api/v1/products/${product.id}/share`);
-      const shareData = await response.json();
-      
-      // Use the share URL from API response, or fallback to current page URL
-      const url = shareData.share_url || window.location.href;
-      setShareUrl(url);
-      setShowShareOptions(true);
+      // Use the API endpoint to share product
+      const response = await communicationService.shareProduct(product.id);
+      window.open(response.whatsapp_url, '_blank');
     } catch (error) {
-      console.error('Failed to get share URL:', error);
-      // Fallback to current page URL
-      setShareUrl(window.location.href);
-      setShowShareOptions(true);
+      console.error('Failed to share product:', error);
+      alert('Failed to share product. Please try again.');
     }
   };
 
