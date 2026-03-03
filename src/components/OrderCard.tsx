@@ -46,7 +46,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
       notes: order.order_notes || '',
       createdAt: orderCreatedAt
     } : order;
-    shareOrder(shareOrderData, language);
+    shareOrder(orderId, shareOrderData, language);
   };
 
   return (

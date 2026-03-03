@@ -26,9 +26,10 @@ export interface CheckoutSummaryResponse {
 }
 
 export interface CheckoutResponse {
-  id: string;
+  order_id: string;
   status: string;
-  created_at: string;
+  total_amount?: number;
+  message?: string;
 }
 
 export interface CustomerOrder {
