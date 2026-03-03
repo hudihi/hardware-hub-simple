@@ -16,6 +16,7 @@ import ProductsPage from './pages/ProductsPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminLogin from './pages/admin/AdminLogin';
+import AdminOrderDetails from './pages/admin/AdminOrderDetails';
 import AdminOrders from './pages/admin/AdminOrders';
 import AdminProducts from './pages/admin/AdminProducts';
 import ProtectedAdminRoute from './routes/ProtectedAdminRoute';
@@ -48,6 +49,7 @@ const App: React.FC = () => {
                 <Route index element={<AdminDashboard />} />
                 <Route path="products" element={<AdminProducts />} />
                 <Route path="orders" element={<AdminOrders />} />
+                <Route path="orders/:id" element={<AdminOrderDetails />} />
               </Route>
             </Routes>
             <WhatsAppButton />

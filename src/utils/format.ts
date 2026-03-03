@@ -39,12 +39,12 @@ export const getStatusText = (status: string, language: Language = 'en'): string
 // Get status badge class
 export const getStatusClass = (status: string): string => {
   const classMap: Record<string, string> = {
-    pending: 'status-pending',
-    confirmed: 'status-confirmed',
-    processing: 'status-confirmed',
-    ready: 'status-confirmed',
-    completed: 'status-completed',
-    cancelled: 'bg-danger text-white',
+    pending: 'bg-warning text-dark',           // Yellow bg, dark text
+    confirmed: 'bg-info text-white',            // Blue bg, white text
+    processing: 'bg-primary text-white',          // Primary bg, white text
+    ready: 'bg-success text-white',             // Green bg, white text
+    completed: 'bg-success text-white',           // Green bg, white text
+    cancelled: 'bg-danger text-white',            // Red bg, white text
   };
-  return classMap[status] || '';
+  return classMap[status] || 'bg-secondary text-white'; // Default: gray bg, white text
 };
