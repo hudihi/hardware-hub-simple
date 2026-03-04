@@ -3,16 +3,15 @@ version: '3.8'
 services:
   # Frontend application
   hardware-hub-simple:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/hudihi/hardware-hub-simple:latest
+    container_name: pahala-ui
     ports:
       - "8080:8080"
     environment:
       - NODE_ENV=production
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
       interval: 30s
       timeout: 10s
       retries: 3

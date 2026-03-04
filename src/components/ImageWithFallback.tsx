@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { processImageUrl } from '../utils/imageUrlUtils';
-import imageOptimizer from '../utils/imageUtils';
 
 interface ImageWithFallbackProps {
   src: string;
@@ -30,23 +29,8 @@ const ImageWithFallback: React.FC<ImageWithFallbackProps> = ({
   
   // Process the image URL using centralized utility
   const processedSrc = processImageUrl(src);
-  const [optimizedSrc] = useState(() => 
-    imageOptimizer.getOptimizedUrl(processedSrc, width, height)
-  );
 
-  // Preload image
-  React.useEffect(() => {
-    if (processedSrc && processedSrc !== fallbackSrc) {
-      imageOptimizer.preloadImage(processedSrc)
-        .then(() => setImageLoaded(true))
-        .catch(() => setImageError(true));
-    } else {
-      setImageError(true);
-      setImageLoaded(true);
-    }
-  }, [processedSrc, fallbackSrc]);
-
-  const finalSrc = imageError ? fallbackSrc : optimizedSrc;
+  const finalSrc = imageError ? fallbackSrc : processedSrc;
 
   return (
     <div className="image-with-fallback-container" style={{ position: 'relative', display: 'inline-block' }}>
