@@ -2,10 +2,10 @@ import React, { useEffect, useState } from 'react';
 import AdminCategoryForm from '../../components/AdminCategoryForm';
 import { useLanguage } from '../../context/LanguageContext';
 import { AdminProduct, adminService } from '../../services/admin.service';
-import { API_BASE_URL } from '../../services/api';
 import categoryService from '../../services/category.service';
 import { Category } from '../../types';
 import { formatPrice } from '../../utils/format';
+import { getProductImageUrl } from '../../utils/imageUrlUtils';
 import AdminProductForm from './AdminProductForm';
 
 const AdminProducts: React.FC = () => {
@@ -109,26 +109,6 @@ const AdminProducts: React.FC = () => {
   const getCategoryName = (categoryId: string): string => {
     const category = categoriesList.find(cat => cat.id === categoryId);
     return category?.name || categoryId;
-  };
-
-  // Helper function to get full image URL
-  const getImageUrl = (product: AdminProduct): string => {
-    // Get the primary image from the images array, or fallback to image_url, then placeholder
-    const primaryImage = product.images?.find((img: any) => img.is_primary);
-    const imageUrl = primaryImage?.url || product.image_url;
-    
-    // If it's already a full URL (starts with http), return as is
-    if (imageUrl && imageUrl.startsWith('http')) {
-      return imageUrl;
-    }
-    
-    // If it's a relative path starting with /media/, prepend the base URL
-    if (imageUrl && imageUrl.startsWith('/media/')) {
-      return `${API_BASE_URL}${imageUrl}`;
-    }
-    
-    // Otherwise, return placeholder
-    return '/placeholder.svg';
   };
 
   const handlePageChange = (page: number) => {
@@ -301,7 +281,7 @@ const AdminProducts: React.FC = () => {
                       <td>
                         <div className="d-flex align-items-center gap-2">
                           <img 
-                            src={getImageUrl(product)} 
+                            src={getProductImageUrl(product)} 
                             alt={product.name} 
                             className="rounded" 
                             style={{ width: '40px', height: '40px', objectFit: 'cover' }} 

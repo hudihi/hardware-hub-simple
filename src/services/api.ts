@@ -2,7 +2,7 @@ import type { InternalAxiosRequestConfig } from 'axios';
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 
 // API Configuration
-const API_BASE_URL = import.meta.env.DEV ? '' : 'https://api.pahala.store';
+const API_BASE_URL = 'https://api.pahala.store';
 const TOKEN_KEY = 'pahala_admin_token';
 
 // Create axios instance with default configuration

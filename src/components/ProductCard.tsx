@@ -4,6 +4,7 @@ import { useCart } from '../context/CartContext';
 import { useLanguage } from '../context/LanguageContext';
 import { Product } from '../types';
 import { formatPrice } from '../utils/format';
+import ImageWithFallback from './ImageWithFallback';
 
 interface ProductCardProps {
   product: Product;
@@ -12,8 +13,6 @@ interface ProductCardProps {
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const { addItem } = useCart();
   const { t } = useLanguage();
-  const [imageLoaded, setImageLoaded] = React.useState(false);
-  const [imageError, setImageError] = React.useState(false);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -35,23 +34,13 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     <Link to={`/products/${product.id}`} className="text-decoration-none">
       <div className="product-card h-100">
         <div className="product-image-container position-relative">
-          {!imageLoaded && !imageError && (
-            <div className="product-image-placeholder d-flex align-items-center justify-content-center bg-light">
-              <div className="spinner-border spinner-border-sm text-muted" role="status">
-                <span className="visually-hidden">Loading...</span>
-              </div>
-            </div>
-          )}
-          <img
-            src={imageError ? '/placeholder.svg' : product.image}
+          <ImageWithFallback
+            src={product.image}
             alt={product.name}
-            className={`product-image ${imageLoaded ? 'd-block' : 'd-none'}`}
-            loading="lazy"
-            onLoad={() => setImageLoaded(true)}
-            onError={() => {
-              setImageError(true);
-              setImageLoaded(true);
-            }}
+            className="product-image w-100"
+            width={300}
+            height={300}
+            style={{ borderRadius: '0.375rem 0.375rem 0 0' }}
           />
         </div>
         <div className="p-3">

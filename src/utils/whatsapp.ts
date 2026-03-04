@@ -4,7 +4,7 @@ import { CartItem, Order } from '../types';
 import { formatPrice } from './format';
 
 // WhatsApp number for the store (replace with actual number)
-const WHATSAPP_NUMBER = '6281234567890';
+const WHATSAPP_NUMBER = '621979787';
 
 // Generate WhatsApp link with message
 export const generateWhatsAppLink = (message: string): string => {

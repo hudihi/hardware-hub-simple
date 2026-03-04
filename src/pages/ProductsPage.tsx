@@ -4,9 +4,9 @@ import ProductCard from '../components/ProductCard';
 import SearchBar from '../components/SearchBar';
 import { useLanguage } from '../context/LanguageContext';
 import { categories } from '../data/products';
-import { API_BASE_URL } from '../services/api';
 import { productService } from '../services/product.service';
 import { Product } from '../types';
+import { getProductImageUrl } from '../utils/imageUrlUtils';
 
 const ProductsPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -17,25 +17,6 @@ const ProductsPage: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const { t } = useLanguage();
 
-  const getImageUrl = (apiProduct: any): string => {
-    // Get the primary image from the images array, or fallback to image_url, then placeholder
-    const primaryImage = apiProduct.images?.find((img: any) => img.is_primary);
-    const imageUrl = primaryImage?.url || apiProduct.image_url;
-    
-    // If it's already a full URL (starts with http), return as is
-    if (imageUrl && imageUrl.startsWith('http')) {
-      return imageUrl;
-    }
-    
-    // If it's a relative path starting with /media/, prepend the base URL
-    if (imageUrl && imageUrl.startsWith('/media/')) {
-      return `${API_BASE_URL}${imageUrl}`;
-    }
-    
-    // Otherwise, return placeholder
-    return '/placeholder.svg';
-  };
-
   // Fetch products on component mount
   useEffect(() => {
     const fetchProducts = async () => {
@@ -43,13 +24,16 @@ const ProductsPage: React.FC = () => {
         const fetchedProducts = await productService.getProducts();
         // Map API response to match Product interface expected by components
         const mappedProducts = fetchedProducts.map(apiProduct => {
+          const imageUrl = getProductImageUrl(apiProduct);
+          console.log(`Product: ${apiProduct.name}, Image URL: ${imageUrl}`);
+          console.log('API Product data:', apiProduct);
           return {
             id: apiProduct.id,
             name: apiProduct.name,
             description: apiProduct.description,
             price: apiProduct.price,
             unit: apiProduct.unit_of_measure, // Map unit_of_measure to unit
-            image: getImageUrl(apiProduct), // Use getImageUrl to handle uploaded images
+            image: imageUrl, // Use centralized utility to handle uploaded images
             category: apiProduct.category_id, // Map category_id to category
             stock: apiProduct.stock_quantity, // Map stock_quantity to stock
           };

@@ -1,8 +1,9 @@
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
-import { API_BASE_URL } from '../services/api';
 import { CartItemResponse, cartService } from '../services/cart.service';
 import { productService } from '../services/product.service';
 import { CartItem, Product } from '../types';
+import { getProductImageUrl } from '../utils/imageUrlUtils';
+import imageOptimizer from '../utils/imageUtils';
 
 interface CartContextType {
   items: CartItem[];
@@ -38,13 +39,14 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const products = await Promise.all(productPromises);
       
       const mappedProducts = products.filter(Boolean).map(product => {
-        // Map API response to Product interface
-        const primaryImage = (product as any).images?.find((img: any) => img.is_primary);
-        let imageUrl = primaryImage?.url || (product as any).image_url || '/placeholder.svg';
+        // Use centralized utility to get the best image URL
+        const imageUrl = getProductImageUrl(product);
         
-        // If it's a relative path starting with /media/, prepend the base URL
-        if (imageUrl && imageUrl.startsWith('/media/')) {
-          imageUrl = `${API_BASE_URL}${imageUrl}`;
+        // Preload the image for faster display
+        if (imageUrl && imageUrl !== '/placeholder.svg') {
+          imageOptimizer.preloadImage(imageUrl).catch(() => {
+            // Silently fail - the image will show placeholder on error
+          });
         }
         
         return {

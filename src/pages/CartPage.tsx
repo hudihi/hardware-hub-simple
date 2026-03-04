@@ -3,9 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import CartItem from '../components/CartItem';
 import EmptyState from '../components/EmptyState';
 import { useCart } from '../context/CartContext';
-import { formatPrice } from '../utils/format';
-import { generateCartMessage, openWhatsApp } from '../utils/whatsapp';
 import { useLanguage } from '../context/LanguageContext';
+import { formatPrice } from '../utils/format';
 
 const CartPage: React.FC = () => {
   const navigate = useNavigate();
@@ -31,11 +30,6 @@ const CartPage: React.FC = () => {
     );
   }
 
-  const handleWhatsAppShare = () => {
-    const message = generateCartMessage(items, total, language);
-    openWhatsApp(message);
-  };
-
   return (
     <div className="page-container">
       <div className="container py-3">
@@ -43,7 +37,7 @@ const CartPage: React.FC = () => {
           <h1 className="section-header mb-0">{t('cart_title')}</h1>
           <button
             className="btn btn-link text-danger p-0 small"
-            onClick={clearCart}
+            onClick={() => clearCart()}
           >
             {t('cart_clear')}
           </button>
@@ -78,13 +72,6 @@ const CartPage: React.FC = () => {
               >
                 <i className="bi bi-lock me-2"></i>
                 {t('cart_checkout')}
-              </button>
-              <button
-                className="btn btn-whatsapp btn-lg-mobile"
-                onClick={handleWhatsAppShare}
-              >
-                <i className="bi bi-whatsapp me-2"></i>
-                {t('cart_share_wa')}
               </button>
             </div>
           </div>

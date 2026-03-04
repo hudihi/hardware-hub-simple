@@ -3,12 +3,12 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useLanguage } from '../context/LanguageContext';
-import { API_BASE_URL } from '../services/api';
 import { categoryService } from '../services/category.service';
 import { communicationService } from '../services/communication.service';
 import { productService } from '../services/product.service';
 import { Category, Product } from '../types';
 import { formatPrice } from '../utils/format';
+import { processImageUrl } from '../utils/imageUrlUtils';
 
 const ProductDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -32,21 +32,8 @@ const ProductDetailPage: React.FC = () => {
   };
 
   const getImageUrl = (product: Product): string => {
-    // The product.image field already contains the mapped image_url from API
-    const imageUrl = product.image;
-    
-    // If it's already a full URL (starts with http), return as is
-    if (imageUrl && imageUrl.startsWith('http')) {
-      return imageUrl;
-    }
-    
-    // If it's a relative path starting with /media/, prepend the base URL
-    if (imageUrl && imageUrl.startsWith('/media/')) {
-      return `${API_BASE_URL}${imageUrl}`;
-    }
-    
-    // Otherwise, return the image as is (for placeholder images, etc.)
-    return imageUrl || '/placeholder.svg';
+    // Use centralized utility to process the image URL
+    return processImageUrl(product.image);
   };
 
   useEffect(() => {

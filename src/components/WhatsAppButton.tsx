@@ -8,7 +8,7 @@ const WhatsAppButton: React.FC = () => {
     const message = language === 'sw'
       ? 'Habari! Nina swali kuhusu duka la PAHALA.COM.'
       : 'Hello! I have a question about PAHALA.COM hardware store.';
-    const whatsappUrl = `https://wa.me/6281234567890?text=${encodeURIComponent(message)}`;
+    const whatsappUrl = `https://wa.me/621979787?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
 

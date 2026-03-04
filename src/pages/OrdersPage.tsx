@@ -139,10 +139,10 @@ const OrdersPage: React.FC = () => {
           <div className="card-body text-center">
             <p className="mb-3 text-muted small">{t('orders_help')}</p>
             <div className="d-flex gap-2 justify-content-center flex-wrap">
-              <a href="https://wa.me/6281234567890" target="_blank" rel="noopener noreferrer" className="btn btn-whatsapp btn-sm">
+              <a href="https://wa.me/621979787" target="_blank" rel="noopener noreferrer" className="btn btn-whatsapp btn-sm">
                 <i className="bi bi-whatsapp me-1"></i> WhatsApp
               </a>
-              <a href="tel:+6281234567890" className="btn btn-outline-primary btn-sm">
+              <a href="tel:+255621979787" className="btn btn-outline-primary btn-sm">
                 <i className="bi bi-telephone me-1"></i> {t('home_call')}
               </a>
             </div>

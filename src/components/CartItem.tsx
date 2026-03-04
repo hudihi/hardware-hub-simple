@@ -3,6 +3,7 @@ import { useCart } from '../context/CartContext';
 import { useLanguage } from '../context/LanguageContext';
 import { CartItem as CartItemType } from '../types';
 import { formatPrice } from '../utils/format';
+import ImageWithFallback from './ImageWithFallback';
 
 interface CartItemProps {
   item: CartItemType;
@@ -15,13 +16,13 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
   return (
     <div className="cart-item">
       <div className="d-flex gap-3">
-        <img
+        <ImageWithFallback
           src={item.product.image}
           alt={item.product.name}
           className="item-image"
-          onError={(e) => {
-            (e.target as HTMLImageElement).src = '/placeholder.svg';
-          }}
+          width={80}
+          height={80}
+          style={{ borderRadius: '0.375rem', flexShrink: 0 }}
         />
         <div className="flex-grow-1">
           <h6 className="mb-1 fw-semibold">{item.product.name}</h6>
