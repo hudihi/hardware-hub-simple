@@ -5,9 +5,6 @@ on:
   push:
     branches:
       - "main"
-      - "v*" # version
-      - "feature/*"
-      - "feat/*"
 
 env:
   REGISTRY: ghcr.io
@@ -49,14 +46,11 @@ jobs:
           images: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=ref,event=branch
-            type=ref,event=tag
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}            
             type=ref,event=pr
-            type=sha
+            type=sha,prefix=sha-,format=short
           flavor: |
-            latest=auto
-            prefix=
-            suffix=
+            latest=false
 
       - name: Build and push hash tagged image
         id: build
