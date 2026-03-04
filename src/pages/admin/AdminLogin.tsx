@@ -1,4 +1,4 @@
-import { AlertCircle, Eye, EyeOff, Lock, Mail, Shield } from 'lucide-react';
+import { AlertCircle, Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
@@ -170,16 +170,16 @@ const AdminLogin: React.FC = () => {
         }
 
         .logo-container {
-          width: 80px;
-          height: 80px;
-          background: linear-gradient(135deg, var(--pahala-brown) 0%, var(--pahala-brown-dark) 100%);
-          border-radius: 50%;
+          width: auto;
+          height: auto;
+          background: none;
+          border-radius: none;
           display: flex;
           align-items: center;
           justify-content: center;
           margin: 0 auto 1.5rem;
-          box-shadow: var(--shadow-soft);
-          animation: pulse 2s ease-in-out infinite;
+          box-shadow: none;
+          animation: slideInDown 0.8s ease-out 0.2s both;
         }
 
         .form-group {
@@ -373,8 +373,12 @@ const AdminLogin: React.FC = () => {
         <div className="login-card">
           {/* Header */}
           <div className="login-header">
-            <div className="logo-container">
-              <Shield size={40} color="white" />
+            <div className="logo-container d-flex align-items-center justify-content-center">
+              <img 
+                src="/PAHELA_27_FEBRUARY_2025.svg" 
+                alt="PAHALA" 
+                style={{ height: '100px', width: 'auto' }}
+              />
             </div>
             <h1 className="h3 mb-2 fw-bold" style={{ color: 'var(--pahala-brown-dark)' }}>
               Admin Login

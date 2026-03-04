@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../context/LanguageContext';
 
 const AdminLayout: React.FC = () => {
@@ -17,10 +17,16 @@ const AdminLayout: React.FC = () => {
     <div className="d-flex min-vh-100">
       <div className="admin-sidebar d-none d-md-block p-3" style={{ width: '240px' }}>
         <div className="text-white mb-4">
-          <h5 className="fw-bold mb-0">
-            <i className="bi bi-shop me-2"></i>
-            {t('admin_title')}
-          </h5>
+          <div className="d-flex align-items-center">
+            <img 
+              src="/PAHELA_27_FEBRUARY_2025.svg" 
+              alt="PAHALA" 
+              style={{ height: '40px', marginRight: '12px' }}
+            />
+            <h5 className="fw-bold mb-0">
+              {t('admin_title')}
+            </h5>
+          </div>
         </div>
 
         <nav className="nav flex-column">
@@ -51,7 +57,14 @@ const AdminLayout: React.FC = () => {
 
       <div className="d-md-none position-fixed top-0 start-0 end-0 bg-white shadow-sm z-3">
         <div className="container py-2 d-flex justify-content-between align-items-center">
-          <h6 className="mb-0 fw-bold text-brown">{t('admin_title')}</h6>
+          <div className="d-flex align-items-center">
+            <img 
+              src="/PAHELA_27_FEBRUARY_2025.svg" 
+              alt="PAHALA" 
+              style={{ height: '32px', marginRight: '10px' }}
+            />
+            <h6 className="mb-0 fw-bold text-brown">{t('admin_title')}</h6>
+          </div>
           <div className="d-flex gap-2">
             {menuItems.map((item) => (
               <Link

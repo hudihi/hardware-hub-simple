@@ -18,8 +18,12 @@ const Navbar: React.FC = () => {
       {/* Top Navbar - Desktop */}
       <nav className="navbar navbar-pahala navbar-expand-md sticky-top d-none d-md-flex">
         <div className="container">
-          <Link className="navbar-brand" to="/">
-            <i className="bi bi-shop me-2"></i>
+          <Link className="navbar-brand d-flex align-items-center" to="/">
+            <img 
+              src="/PAHELA_27_FEBRUARY_2025.svg" 
+              alt="PAHALA" 
+              style={{ height: '40px', marginRight: '10px' }}
+            />
             PAHALA.COM
           </Link>
 
@@ -52,8 +56,12 @@ const Navbar: React.FC = () => {
       {/* Mobile Header */}
       <div className="navbar-pahala py-3 d-md-none">
         <div className="container d-flex justify-content-between align-items-center">
-          <Link to="/" className="text-white text-decoration-none fw-bold fs-5">
-            <i className="bi bi-shop me-2"></i>
+          <Link to="/" className="text-white text-decoration-none fw-bold fs-5 d-flex align-items-center">
+            <img 
+              src="/PAHELA_27_FEBRUARY_2025.svg" 
+              alt="PAHALA" 
+              style={{ height: '36px', marginRight: '10px' }}
+            />
             PAHALA.COM
           </Link>
           <div className="d-flex align-items-center gap-2">

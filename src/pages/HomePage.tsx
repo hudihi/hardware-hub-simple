@@ -182,7 +182,7 @@ const HomePage: React.FC = () => {
             </p>
             <div className="d-flex gap-2 justify-content-center flex-wrap">
               <a
-                href="https://wa.me/621979787"
+                href="https://wa.me/+255694352388"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-whatsapp btn-lg-mobile"
@@ -191,7 +191,7 @@ const HomePage: React.FC = () => {
                 WhatsApp
               </a>
               <a
-                href="tel:+621979787"
+                href="tel:+255694352388"
                 className="btn btn-outline-primary btn-lg-mobile"
               >
                 <i className="bi bi-telephone me-2"></i>
