@@ -1,10 +1,10 @@
-# Hardware Hub Simple - PAHALA.COM
+# Hardware Hub Simple - Pahala Store
 
 A modern, responsive e-commerce web application for an online hardware store built with React and TypeScript.
 
 ## Overview
 
-Hardware Hub Simple (PAHALA.COM) is a full-featured e-commerce platform designed for hardware stores. The application provides a seamless shopping experience for customers and comprehensive management tools for administrators.
+Hardware Hub Simple (Pahala Store) is a full-featured e-commerce platform designed for hardware stores. The application provides a seamless shopping experience for customers and comprehensive management tools for administrators.
 
 ## Features
 
