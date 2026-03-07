@@ -9,6 +9,7 @@ import { productService } from '../services/product.service';
 import { Category, Product } from '../types';
 import { formatPrice } from '../utils/format';
 import { processImageUrl } from '../utils/imageUrlUtils';
+import { generateProductShareMessage, openWhatsAppShare } from '../utils/whatsapp';
 
 const ProductDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -144,9 +145,15 @@ const ProductDetailPage: React.FC = () => {
   };
 
   const shareOnWhatsApp = () => {
-    const message = `${product.name} - Pahala Store!\n\n${formatPrice(product.price)}/${product.unit}\n\n${shareUrl}`;
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
+    const message = generateProductShareMessage(
+      product.name,
+      product.price,
+      shareUrl,
+      product.image,
+      product.description,
+      language
+    );
+    openWhatsAppShare(message);
     setShowShareOptions(false);
   };
 
@@ -257,7 +264,7 @@ const ProductDetailPage: React.FC = () => {
             </div>
 
             {/* Description */}
-            <p className="text-muted mb-4" style={{ lineHeight: 1.7 }}>
+            <p className="text-muted mb-4 whitespace-pre-line" style={{ lineHeight: 1.7 }}>
               {product.description}
             </p>
 

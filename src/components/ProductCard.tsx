@@ -4,6 +4,7 @@ import { useCart } from '../context/CartContext';
 import { useLanguage } from '../context/LanguageContext';
 import { Product } from '../types';
 import { formatPrice } from '../utils/format';
+import { generateProductShareMessage, openWhatsAppShare } from '../utils/whatsapp';
 import ImageWithFallback from './ImageWithFallback';
 
 interface ProductCardProps {
@@ -12,7 +13,7 @@ interface ProductCardProps {
 
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const { addItem } = useCart();
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -25,9 +26,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     e.stopPropagation();
     
     const productUrl = `${window.location.origin}/products/${product.id}`;
-    const message = `${product.name} - Pahala Store\n\n${formatPrice(product.price)}/${product.unit}\n\n${productUrl}`;
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
+    const message = generateProductShareMessage(
+      product.name,
+      product.price,
+      productUrl,
+      product.image,
+      product.description,
+      language
+    );
+    openWhatsAppShare(message);
   };
 
   return (
