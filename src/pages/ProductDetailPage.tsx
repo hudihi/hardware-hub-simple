@@ -144,7 +144,7 @@ const ProductDetailPage: React.FC = () => {
   };
 
   const shareOnWhatsApp = () => {
-    const message = `${product.name} - PAHALA.COM!\n\n${formatPrice(product.price)}/${product.unit}\n\n${shareUrl}`;
+    const message = `${product.name} - Pahala Store!\n\n${formatPrice(product.price)}/${product.unit}\n\n${shareUrl}`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
     setShowShareOptions(false);
@@ -157,7 +157,7 @@ const ProductDetailPage: React.FC = () => {
   };
 
   const shareOnTwitter = () => {
-    const message = `${product.name} - PAHALA.COM! ${formatPrice(product.price)}/${product.unit}`;
+    const message = `${product.name} - Pahala Store! ${formatPrice(product.price)}/${product.unit}`;
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(message)}&url=${encodeURIComponent(shareUrl)}`;
     window.open(twitterUrl, '_blank');
     setShowShareOptions(false);

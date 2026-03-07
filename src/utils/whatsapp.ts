@@ -20,8 +20,8 @@ export const generateProductShareMessage = (
   language: Language = 'en'
 ): string => {
   const labels = {
-    en: { check: 'Check out this product from PAHALA.COM!', price: 'Price' },
-    sw: { check: 'Angalia bidhaa hii kutoka PAHALA.COM!', price: 'Bei' },
+    en: { check: 'Check out this product from Pahala Store!', price: 'Price' },
+    sw: { check: 'Angalia bidhaa hii kutoka Pahala Store!', price: 'Bei' },
   };
   const l = labels[language];
   return `${l.check}\n\n*${productName}*\n${l.price}: ${formatPrice(productPrice)}\n\n${productUrl}`;
@@ -31,7 +31,7 @@ export const generateProductShareMessage = (
 export const generateOrderMessage = (order: Order, language: Language = 'en'): string => {
   const labels = {
     en: {
-      header: '🛒 *ORDER SUMMARY - PAHALA.COM*',
+      header: '🛒 *ORDER SUMMARY - Pahala Store*',
       orderNum: 'Order Number',
       items: '📦 *Items:*',
       total: '💰 *Total',
@@ -40,7 +40,7 @@ export const generateOrderMessage = (order: Order, language: Language = 'en'): s
       notes: '📝 *Notes:*',
     },
     sw: {
-      header: '🛒 *MUHTASARI WA AGIZO - PAHALA.COM*',
+      header: '🛒 *MUHTASARI WA AGIZO - Pahala Store*',
       orderNum: 'Nambari ya Agizo',
       items: '📦 *Bidhaa:*',
       total: '💰 *Jumla',
@@ -79,13 +79,13 @@ export const generateOrderMessage = (order: Order, language: Language = 'en'): s
 export const generateCartMessage = (items: CartItem[], total: number, language: Language = 'en'): string => {
   const labels = {
     en: {
-      header: '🛒 *My Cart - PAHALA.COM*',
+      header: '🛒 *My Cart - Pahala Store*',
       items: '📦 *Items:*',
       total: '💰 *Total',
       cta: 'I would like to order these items.',
     },
     sw: {
-      header: '🛒 *Kikapu Changu - PAHALA.COM*',
+      header: '🛒 *Kikapu Changu - Pahala Store*',
       items: '📦 *Bidhaa:*',
       total: '💰 *Jumla',
       cta: 'Ningependa kuagiza bidhaa hizi.',

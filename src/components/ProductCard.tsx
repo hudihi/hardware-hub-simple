@@ -25,7 +25,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     e.stopPropagation();
     
     const productUrl = `${window.location.origin}/products/${product.id}`;
-    const message = `${product.name} - PAHALA.COM\n\n${formatPrice(product.price)}/${product.unit}\n\n${productUrl}`;
+    const message = `${product.name} - Pahala Store\n\n${formatPrice(product.price)}/${product.unit}\n\n${productUrl}`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };

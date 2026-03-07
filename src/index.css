@@ -1,4 +1,4 @@
-/* PAHALA.COM - Hardware Store Design System */
+/* Pahala Store - Hardware Store Design System */
 @import 'bootstrap/dist/css/bootstrap.min.css';
 @import 'bootstrap-icons/font/bootstrap-icons.css';
 @tailwind base;
@@ -14,7 +14,7 @@
   }
 }
 
-/* Custom CSS Variables for PAHALA.COM Brand */
+/* Custom CSS Variables for Pahala Store Brand */
 :root {
   /* shadcn/ui CSS Variables */
   --background: 0 0% 100%;

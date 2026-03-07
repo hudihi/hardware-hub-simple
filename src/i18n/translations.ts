@@ -8,7 +8,7 @@ export const translations = {
   nav_cart: { en: 'Cart', sw: 'Kikapu' },
 
   // Home
-  home_welcome: { en: 'Welcome to PAHALA.COM', sw: 'Karibu PAHALA.COM' },
+  home_welcome: { en: 'Welcome to Pahala Store', sw: 'Karibu Pahala Store' },
   home_subtitle: { en: 'Your trusted hardware store', sw: 'Duka lako la vifaa vya ujenzi la kuaminika' },
   home_search_placeholder: { en: 'Search products...', sw: 'Tafuta bidhaa...' },
   home_categories: { en: 'Categories', sw: 'Makundi' },
@@ -199,9 +199,9 @@ export const translations = {
   wa_notes: { en: 'Notes', sw: 'Maelezo' },
   wa_my_cart: { en: 'My Cart', sw: 'Kikapu Changu' },
   wa_want_to_order: { en: 'I would like to order these items.', sw: 'Ningependa kuagiza bidhaa hizi.' },
-  wa_check_product: { en: 'Check out this product from PAHALA.COM!', sw: 'Angalia bidhaa hii kutoka PAHALA.COM!' },
+  wa_check_product: { en: 'Check out this product from Pahala Store!', sw: 'Angalia bidhaa hii kutoka Pahala Store!' },
   wa_price: { en: 'Price', sw: 'Bei' },
-  wa_hello: { en: 'Hello! I have a question about PAHALA.COM hardware store.', sw: 'Habari! Nina swali kuhusu duka la PAHALA.COM.' },
+  wa_hello: { en: 'Hello! I have a question about Pahala Store hardware store.', sw: 'Habari! Nina swali kuhusu duka la Pahala Store.' },
 
   // System messages
   system_loading: { en: 'Loading...', sw: 'Inapakia...' },

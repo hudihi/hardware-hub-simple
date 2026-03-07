@@ -24,7 +24,7 @@ const Navbar: React.FC = () => {
               alt="PAHALA" 
               style={{ height: '40px', marginRight: '10px' }}
             />
-            PAHALA.COM
+            Pahala Store
           </Link>
 
           <div className="d-flex align-items-center gap-3">
@@ -62,7 +62,7 @@ const Navbar: React.FC = () => {
               alt="PAHALA" 
               style={{ height: '36px', marginRight: '10px' }}
             />
-            PAHALA.COM
+            Pahala Store
           </Link>
           <div className="d-flex align-items-center gap-2">
             <button
