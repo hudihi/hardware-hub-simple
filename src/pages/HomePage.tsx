@@ -4,17 +4,18 @@ import { Link } from 'react-router-dom';
 import CategoryCard from '../components/CategoryCard';
 import ProductCard from '../components/ProductCard';
 import { useLanguage } from '../context/LanguageContext';
-import { categories } from '../data/products';
 import { API_BASE_URL } from '../services/api';
 import { productService } from '../services/product.service';
-import { Product } from '../types';
-
+import { Category, Product } from '../types';
+import { getCategoryIcon } from '../utils/categoryIcons';
 
 const HomePage: React.FC = () => {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
   const [products, setProducts] = React.useState<Product[]>([]);
+  const [categories, setCategories] = React.useState<Category[]>([]);
   const [productsLoading, setProductsLoading] = React.useState(true);
+  const [categoriesLoading, setCategoriesLoading] = React.useState(true);
   const { t } = useLanguage();
 
   const getImageUrl = (apiProduct: any): string => {
@@ -62,7 +63,29 @@ const HomePage: React.FC = () => {
       }
     };
 
+    const fetchCategories = async () => {
+      try {
+        const fetchedCategories = await productService.getCategories();
+        // Map API categories to match Category interface expected by components
+        const mappedCategories = fetchedCategories.map(apiCategory => {
+          return {
+            id: apiCategory.id,
+            name: apiCategory.name,
+            slug: apiCategory.name.toLowerCase().replace(/\s+/g, '-'), // Generate slug from name
+            icon: getCategoryIcon(apiCategory.name), // Generate icon based on name
+            description: apiCategory.description
+          };
+        });
+        setCategories(mappedCategories);
+      } catch (error) {
+        console.error('Failed to fetch categories:', error);
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+
     fetchProducts();
+    fetchCategories();
   }, []);
 
   const featuredProducts = products.slice(0, 6);
@@ -138,11 +161,23 @@ const HomePage: React.FC = () => {
           </div>
           
           <div className="row g-2">
-            {categories.map((category) => (
-              <div key={category.id} className="col-4 col-md-2">
-                <CategoryCard category={category} />
-              </div>
-            ))}
+            {categoriesLoading ? (
+              Array.from({ length: 6 }).map((_, index) => (
+                <div key={index} className="col-4 col-md-2">
+                  <div className="category-card-placeholder">
+                    <div className="spinner-border spinner-border-sm text-brown" role="status">
+                      <span className="visually-hidden">Loading...</span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              categories.map((category) => (
+                <div key={category.id} className="col-4 col-md-2">
+                  <CategoryCard category={category} />
+                </div>
+              ))
+            )}
           </div>
         </div>
 
