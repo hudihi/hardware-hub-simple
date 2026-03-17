@@ -5,8 +5,7 @@ export interface CheckoutRequest {
   cart_id: string;
   customer_name: string;
   customer_phone: string;
-  customer_address: string;
-  customer_city: string;
+  customer_location: string;
   order_notes: string;
   payment_method: 'PAY_ON_DELIVERY';
 }

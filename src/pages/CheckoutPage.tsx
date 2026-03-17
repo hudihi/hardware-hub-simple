@@ -135,8 +135,7 @@ const CheckoutPage: React.FC = () => {
         cart_id: cartId,
         customer_name: formData.name,
         customer_phone: formData.phone,
-        customer_address: formData.location, // Simplified location
-        customer_city: formData.location,
+        customer_location: formData.location,
         order_notes: formData.notes,
         payment_method: 'PAY_ON_DELIVERY' as const,
       };
