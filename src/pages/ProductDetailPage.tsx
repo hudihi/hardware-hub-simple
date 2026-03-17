@@ -84,6 +84,62 @@ const ProductDetailPage: React.FC = () => {
     fetchData();
   }, [id]);
 
+  // Update Open Graph meta tags for social media sharing
+  useEffect(() => {
+    if (product) {
+      // Update or create meta tags
+      const updateMetaTag = (property: string, content: string) => {
+        let tag = document.querySelector(`meta[property="${property}"]`) as HTMLMetaElement;
+        if (!tag) {
+          tag = document.createElement('meta');
+          tag.setAttribute('property', property);
+          document.head.appendChild(tag);
+        }
+        tag.setAttribute('content', content);
+      };
+
+      const updateMetaName = (name: string, content: string) => {
+        let tag = document.querySelector(`meta[name="${name}"]`) as HTMLMetaElement;
+        if (!tag) {
+          tag = document.createElement('meta');
+          tag.setAttribute('name', name);
+          document.head.appendChild(tag);
+        }
+        tag.setAttribute('content', content);
+      };
+
+      // Update title
+      document.title = `${product.name} - Pahala Store - Ufundi Bila Mipaka`;
+      
+      // Update Open Graph tags
+      updateMetaTag('og:title', product.name);
+      updateMetaTag('og:description', language === 'sw' 
+        ? `Angalia ${product.name} kutoka Pahala Store. ${formatPrice(product.price || 0)}/${product.unit}`
+        : `Check out ${product.name} from Pahala Store. ${formatPrice(product.price || 0)}/${product.unit}`);
+      updateMetaTag('og:image', getImageUrl(product));
+      updateMetaTag('og:url', shareUrl);
+      updateMetaTag('og:type', 'product');
+      
+      // Update Twitter card tags
+      updateMetaName('twitter:card', 'summary_large_image');
+      updateMetaName('twitter:title', product.name);
+      updateMetaName('twitter:description', language === 'sw' 
+        ? `Angalia ${product.name} kutoka Pahala Store. ${formatPrice(product.price || 0)}/${product.unit}`
+        : `Check out ${product.name} from Pahala Store. ${formatPrice(product.price || 0)}/${product.unit}`);
+      updateMetaName('twitter:image', getImageUrl(product));
+
+      // Cleanup function to restore original meta tags when component unmounts
+      return () => {
+        document.title = 'Pahala Store - Ufundi Bila Mipaka';
+        updateMetaTag('og:title', 'Pahala Store - Ufundi Bila Mipaka');
+        updateMetaTag('og:description', 'Ufundi Bila Mipaka. Zana na vifaa kwa mafundi, wajenzi na wabunifu.');
+        updateMetaTag('og:image', '/PAHELA_27_FEBRUARY_2025.svg');
+        updateMetaTag('og:url', window.location.origin);
+        updateMetaTag('og:type', 'website');
+      };
+    }
+  }, [product, shareUrl, language]);
+
   if (loading) {
     return (
       <div className="page-container">
@@ -198,6 +254,7 @@ const ProductDetailPage: React.FC = () => {
                 title={getShareContent().title}
                 text={getShareContent().text}
                 url={getShareContent().url}
+                image={getImageUrl(product)}
                 className="btn btn-outline-secondary btn-sm rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
                 style={{ width: 38, height: 38 }}
               >

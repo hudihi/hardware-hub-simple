@@ -9,6 +9,7 @@ interface ShareButtonProps {
   className?: string;
   children?: React.ReactNode;
   style?: React.CSSProperties;
+  image?: string; // Product image for rich media sharing
 }
 
 const ShareButton: React.FC<ShareButtonProps> = ({ 
@@ -17,7 +18,8 @@ const ShareButton: React.FC<ShareButtonProps> = ({
   url, 
   className = '',
   children,
-  style 
+  style,
+  image 
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [copiedText, setCopiedText] = useState('');
@@ -64,11 +66,24 @@ const ShareButton: React.FC<ShareButtonProps> = ({
   const handleShare = async () => {
     if (isNativeShareSupported) {
       try {
-        await navigator.share({
+        const shareData: ShareData = {
           title,
           text,
           url
-        });
+        };
+        
+        // Add image file if available and supported
+        if (image && navigator.canShare && navigator.canShare({ files: [] })) {
+          try {
+            // For native sharing with images, we'd need to fetch the image and convert to File
+            // This is complex and may not work on all platforms, so we'll focus on the URL/meta approach
+            console.log('Image available for sharing:', image);
+          } catch (error) {
+            console.log('Image preparation failed:', error);
+          }
+        }
+        
+        await navigator.share(shareData);
         console.log('Content shared successfully');
       } catch (error) {
         console.log('Share failed or was cancelled:', error);
@@ -76,7 +91,7 @@ const ShareButton: React.FC<ShareButtonProps> = ({
         setIsModalOpen(true);
       }
     } else {
-    setIsModalOpen(true);
+      setIsModalOpen(true);
     }
   };
 
@@ -112,6 +127,7 @@ const ShareButton: React.FC<ShareButtonProps> = ({
       name: 'WhatsApp',
       icon: MessageCircle,
       action: () => {
+        // WhatsApp will automatically fetch OG tags from the URL
         const message = encodeURIComponent(`${text}\n\n${url}`);
         window.open(`https://wa.me/?text=${message}`, '_blank');
       },
@@ -122,6 +138,7 @@ const ShareButton: React.FC<ShareButtonProps> = ({
       name: 'Telegram',
       icon: Send,
       action: () => {
+        // Telegram will automatically fetch OG tags from the URL
         const message = encodeURIComponent(`${text}\n\n${url}`);
         window.open(`https://t.me/share/url?text=${message}&url=${encodeURIComponent(url)}`, '_blank');
       },
@@ -143,6 +160,7 @@ const ShareButton: React.FC<ShareButtonProps> = ({
       name: 'Twitter/X',
       icon: Twitter,
       action: () => {
+        // Twitter cards will use OG tags for image preview
         const tweetText = encodeURIComponent(`${text} ${url}`);
         window.open(`https://twitter.com/intent/tweet?text=${tweetText}`, '_blank');
       },
@@ -153,6 +171,7 @@ const ShareButton: React.FC<ShareButtonProps> = ({
       name: 'Facebook',
       icon: Facebook,
       action: () => {
+        // Facebook will automatically fetch OG tags including image
         window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
       },
       color: 'text-blue-700',
