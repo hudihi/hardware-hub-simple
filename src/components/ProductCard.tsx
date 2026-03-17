@@ -4,8 +4,8 @@ import { useCart } from '../context/CartContext';
 import { useLanguage } from '../context/LanguageContext';
 import { Product } from '../types';
 import { formatPrice } from '../utils/format';
-import { generateProductShareMessage, openWhatsAppShare } from '../utils/whatsapp';
 import ImageWithFallback from './ImageWithFallback';
+import ShareButton from './ShareButton';
 
 interface ProductCardProps {
   product: Product;
@@ -21,20 +21,13 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     addItem(product);
   };
 
-  const handleShare = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    const productUrl = `${window.location.origin}/products/${product.id}`;
-    const message = generateProductShareMessage(
-      product.name,
-      product.price,
-      productUrl,
-      product.image,
-      product.description,
-      language
-    );
-    openWhatsAppShare(message);
+  const getShareContent = () => {
+    const title = product.name;
+    const text = language === 'sw' 
+      ? `Angalia bidhaa hii kutoka Pahala Store!\n\n${product.name}\n${formatPrice(product.price)}/${product.unit}`
+      : `Check out this product from Pahala Store!\n\n${product.name}\n${formatPrice(product.price)}/${product.unit}`;
+    const url = `${window.location.origin}/products/${product.id}`;
+    return { title, text, url };
   };
 
   return (
@@ -64,13 +57,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               <i className="bi bi-cart-plus me-1"></i>
               {t('products_add')}
             </button>
-            <button
-              onClick={handleShare}
+            <ShareButton
+              title={getShareContent().title}
+              text={getShareContent().text}
+              url={getShareContent().url}
               className="btn btn-outline-secondary btn-sm"
-              title={t('products_share')}
+              aria-label={t('products_share')}
             >
               <i className="bi bi-share"></i>
-            </button>
+            </ShareButton>
           </div>
         </div>
       </div>
