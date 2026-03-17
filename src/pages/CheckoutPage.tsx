@@ -16,13 +16,8 @@ const CheckoutPage: React.FC = () => {
 
   const [formData, setFormData] = useState({
     name: user?.name || '',
-    email: user?.email || '',
     phone: user?.phone || '',
-    password: '',
-    street: user?.address?.street || '',
-    city: user?.address?.city || '',
-    province: user?.address?.province || '',
-    postalCode: user?.address?.postalCode || '',
+    location: user?.address?.city || '', // Simplified location field
     notes: '',
   });
 
@@ -132,35 +127,16 @@ const CheckoutPage: React.FC = () => {
         return;
       }
 
-      if (!isAuthenticated) {
-        const success = await register({
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-          password: formData.password,
-          address: {
-            street: formData.street,
-            city: formData.city,
-            province: formData.province,
-            postalCode: formData.postalCode,
-          },
-        });
-
-        if (!success) {
-          setError(t('checkout_email_taken'));
-          setCheckoutStatus("form");
-          setLoading(false);
-          return;
-        }
-      }
+      // For guest checkout, no registration needed
+      // Just proceed with checkout directly
 
       // Process checkout using API
       const checkoutData = {
         cart_id: cartId,
         customer_name: formData.name,
         customer_phone: formData.phone,
-        customer_address: `${formData.street}, ${formData.city}, ${formData.province}, ${formData.postalCode}`,
-        customer_city: formData.city,
+        customer_address: formData.location, // Simplified location
+        customer_city: formData.location,
         order_notes: formData.notes,
         payment_method: 'PAY_ON_DELIVERY' as const,
       };
@@ -298,55 +274,17 @@ const CheckoutPage: React.FC = () => {
                 </div>
 
                 <div className="mb-3">
-                  <label className="form-label">{t('checkout_email')} *</label>
-                  <input type="email" className="form-control" name="email" value={formData.email} onChange={handleChange} required placeholder={t('checkout_email_ph')} disabled={isAuthenticated} />
-                </div>
-
-                <div className="mb-3">
                   <label className="form-label">{t('checkout_phone')} *</label>
                   <input type="tel" className="form-control" name="phone" value={formData.phone} onChange={handleChange} required placeholder={t('checkout_phone_ph')} />
                 </div>
 
-                {!isAuthenticated && (
-                  <div className="mb-0">
-                    <label className="form-label">{t('checkout_password')} *</label>
-                    <input type="password" className="form-control" name="password" value={formData.password} onChange={handleChange} required minLength={6} placeholder={t('checkout_password_ph')} />
-                    <small className="text-muted">{t('checkout_password_hint')}</small>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Delivery Address */}
-            <div className="card-pahala card mb-3">
-              <div className="card-body">
-                <h6 className="fw-bold mb-3">
-                  <i className="bi bi-geo-alt me-2"></i>
-                  {t('checkout_address')}
-                </h6>
-
-                <div className="mb-3">
-                  <label className="form-label">{t('checkout_street')} *</label>
-                  <input type="text" className="form-control" name="street" value={formData.street} onChange={handleChange} required placeholder={t('checkout_street_ph')} />
-                </div>
-
-                <div className="row g-3">
-                  <div className="col-6">
-                    <label className="form-label">{t('checkout_city')} *</label>
-                    <input type="text" className="form-control" name="city" value={formData.city} onChange={handleChange} required placeholder={t('checkout_city')} />
-                  </div>
-                  <div className="col-6">
-                    <label className="form-label">{t('checkout_province')} *</label>
-                    <input type="text" className="form-control" name="province" value={formData.province} onChange={handleChange} required placeholder={t('checkout_province')} />
-                  </div>
-                </div>
-
-                <div className="mt-3">
-                  <label className="form-label">{t('checkout_postal')} *</label>
-                  <input type="text" className="form-control" name="postalCode" value={formData.postalCode} onChange={handleChange} required placeholder={t('checkout_postal')} />
+                <div className="mb-0">
+                  <label className="form-label">Location *</label>
+                  <input type="text" className="form-control" name="location" value={formData.location} onChange={handleChange} required placeholder="Enter your location (city/area)" />
                 </div>
               </div>
             </div>
+
 
             {/* Order Notes */}
             <div className="card-pahala card mb-3">

@@ -93,8 +93,7 @@ export const generateOrderMessage = (order: Order, language: Language = 'en'): s
   message += `${l.payment}\n\n`;
   message += `${l.address}\n`;
   message += `${order.customer.name}\n`;
-  message += `${order.customer.address.street}\n`;
-  message += `${order.customer.address.city}, ${order.customer.address.province} ${order.customer.address.postalCode}\n`;
+  message += `${order.customer.location}\n`;
   message += `📞 ${order.customer.phone}\n`;
 
   if (order.notes) {

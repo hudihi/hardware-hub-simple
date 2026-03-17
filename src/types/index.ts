@@ -42,8 +42,7 @@ export interface Customer {
   id: string;
   name: string;
   phone: string;
-  email: string;
-  address: Address;
+  location: string; // Simplified location field
 }
 
 export interface Address {

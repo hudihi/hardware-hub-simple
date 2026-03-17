@@ -1,9 +1,9 @@
 import React from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { useOrders } from '../context/OrderContext';
-import { formatPrice, formatDate, getStatusText, getStatusClass } from '../utils/format';
-import { shareOrder } from '../utils/whatsapp';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import { useOrders } from '../context/OrderContext';
+import { formatDate, formatPrice, getStatusClass, getStatusText } from '../utils/format';
+import { shareOrder } from '../utils/whatsapp';
 
 const OrderDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -30,7 +30,7 @@ const OrderDetailPage: React.FC = () => {
   }
 
   const handleShareOrder = () => {
-    shareOrder(order, language);
+    shareOrder(order.id, order, language);
   };
 
   return (
@@ -93,8 +93,7 @@ const OrderDetailPage: React.FC = () => {
           <div className="card-body">
             <h6 className="fw-bold mb-3"><i className="bi bi-geo-alt me-2"></i>{t('order_address')}</h6>
             <p className="mb-1 fw-semibold">{order.customer.name}</p>
-            <p className="mb-1 text-muted small">{order.customer.address.street}</p>
-            <p className="mb-1 text-muted small">{order.customer.address.city}, {order.customer.address.province} {order.customer.address.postalCode}</p>
+            <p className="mb-1 text-muted small">{order.customer.location}</p>
             <p className="mb-0 text-muted small"><i className="bi bi-telephone me-1"></i>{order.customer.phone}</p>
           </div>
         </div>
