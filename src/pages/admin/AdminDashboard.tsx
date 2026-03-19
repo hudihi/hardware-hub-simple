@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
+import LiveMap from '../../components/admin/LiveMap';
 import { useLanguage } from '../../context/LanguageContext';
+import { useLiveLocations } from '../../hooks/useLiveLocations';
 import { adminService, DashboardSummary, PopularProduct, RecentOrder, RevenueOverview } from '../../services/admin.service';
 import { formatPrice, getStatusClass, getStatusText } from '../../utils/format';
 
@@ -12,6 +14,9 @@ const AdminDashboard: React.FC = () => {
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
   const [revenue, setRevenue] = useState<RevenueOverview | null>(null);
   const [popularProducts, setPopularProducts] = useState<PopularProduct[]>([]);
+  
+  // Live locations hook
+  const { users: liveUsers, isConnected, error: locationError, reconnect } = useLiveLocations();
 
   useEffect(() => {
     fetchDashboardData();
@@ -109,6 +114,34 @@ const AdminDashboard: React.FC = () => {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Live Locations Map */}
+      <div className="card-pahala card mb-4">
+        <div className="card-header bg-white d-flex justify-content-between align-items-center">
+          <h6 className="mb-0 fw-bold">Live User Locations</h6>
+          <div className="d-flex align-items-center gap-2">
+            <div
+              className={`rounded-circle ${isConnected ? 'bg-success' : 'bg-danger'}`}
+              style={{ width: '8px', height: '8px' }}
+            />
+            <small className="text-muted">
+              {isConnected ? 'Connected' : 'Disconnected'}
+            </small>
+            {locationError && (
+              <button 
+                className="btn btn-sm btn-outline-secondary"
+                onClick={reconnect}
+                title="Reconnect"
+              >
+                <i className="bi bi-arrow-clockwise"></i>
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="card-body p-0">
+          <LiveMap users={liveUsers} height="400px" />
+        </div>
       </div>
 
       <div className="card-pahala card">
