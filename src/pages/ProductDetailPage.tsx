@@ -9,9 +9,10 @@ import { productService } from '../services/product.service';
 import { Category, Product } from '../types';
 import { formatPrice } from '../utils/format';
 import { processImageUrl } from '../utils/imageUrlUtils';
+import { extractProductIdFromSlug } from '../utils/slug';
 
 const ProductDetailPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { slugWithId } = useParams<{ slugWithId: string }>();
   const navigate = useNavigate();
   const [product, setProduct] = useState<Product | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -25,6 +26,9 @@ const ProductDetailPage: React.FC = () => {
   const { addItem } = useCart();
   const [specsOpen, setSpecsOpen] = useState(false);
 
+  // Extract product ID from slug
+  const productId = slugWithId ? extractProductIdFromSlug(slugWithId) : null;
+
   const getCategoryName = (categoryId: string): string => {
     const category = categories.find(cat => cat.id === categoryId);
     return category ? category.name : categoryId;
@@ -37,23 +41,24 @@ const ProductDetailPage: React.FC = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!id) {
+      if (!productId) {
         setLoading(false);
+        setError('Invalid product URL');
         return;
       }
       
       try {
         // Fetch both product and categories in parallel
         const [fetchedProduct, fetchedCategories] = await Promise.all([
-          productService.getProductById(id),
+          productService.findProductByShortId(productId),
           categoryService.getAllCategories()
         ]);
         
         // Set categories first
         setCategories(fetchedCategories);
         
-        // Set share URL
-        setShareUrl(`${window.location.origin}/products/${id}`);
+        // Set share URL using the full slug
+        setShareUrl(`${window.location.origin}/products/${slugWithId}`);
         
         // Map API response to match Product interface expected by components
         if (fetchedProduct) {
@@ -82,7 +87,7 @@ const ProductDetailPage: React.FC = () => {
       }
     };
     fetchData();
-  }, [id]);
+  }, [productId, slugWithId]);
 
   // Update Open Graph meta tags for social media sharing
   useEffect(() => {

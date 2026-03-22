@@ -1,6 +1,8 @@
 // WebSocket service for real-time location updates
 // Follows SOLID principles - single responsibility for WebSocket communication
 
+import { getOrCreateUserId, STORAGE_KEYS } from './user.service';
+
 export interface LocationUser {
   user_id: string;
   latitude: number;
@@ -25,19 +27,19 @@ class WebSocketService {
 
   /**
    * Connect to WebSocket endpoint
-   * @param userId - User ID for the connection
    * @param token - Optional auth token
    */
-  connect(userId: string, token?: string): void {
+  connect(token?: string): void {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       console.log('WebSocket already connected');
       return;
     }
 
-    this.userId = userId;
+    // Get or create user ID automatically
+    this.userId = getOrCreateUserId();
     
     // Build WebSocket URL with optional token
-    const wsUrl = this.buildWebSocketUrl(userId, token);
+    const wsUrl = this.buildWebSocketUrl(this.userId, token);
     
     try {
       this.ws = new WebSocket(wsUrl);
@@ -45,8 +47,49 @@ class WebSocketService {
       console.log('Connecting to WebSocket:', wsUrl);
     } catch (error) {
       console.error('Failed to create WebSocket connection:', error);
-      this.handleReconnect();
+      this.handleConnectionError(error);
     }
+  }
+
+  /**
+   * Handle connection errors gracefully
+   */
+  private handleConnectionError(error: any): void {
+    console.error('WebSocket connection failed:', error);
+    
+    // Check if it's a 403 Forbidden error
+    if (error?.message?.includes('403') || error?.code === 403) {
+      console.warn('403 Forbidden - generating new UUID and retrying...');
+      // Clear existing ID and generate new one
+      localStorage.removeItem(STORAGE_KEYS.USER_ID);
+      sessionStorage.removeItem(STORAGE_KEYS.USER_ID);
+      
+      // Retry with new UUID after short delay
+      setTimeout(() => {
+        const newUserId = getOrCreateUserId();
+        console.log('Retrying with new UUID:', newUserId);
+        this.connect();
+      }, 2000);
+      return;
+    }
+    
+    // Notify callbacks about connection failure
+    const errorMessage: LocationMessage = {
+      type: 'users_update',
+      data: []
+    };
+    
+    this.messageCallbacks.forEach(callback => {
+      try {
+        callback(errorMessage);
+      } catch (callbackError) {
+        console.error('Error in error callback:', callbackError);
+      }
+    });
+    
+    // Don't attempt reconnection for production endpoint failures
+    // This prevents endless retry loops when backend is not running
+    console.log('WebSocket endpoint not available - map will work without live updates');
   }
 
   /**
@@ -91,20 +134,34 @@ class WebSocketService {
   }
 
   private buildWebSocketUrl(userId: string, token?: string): string {
-    // Get WebSocket base URL from environment or use default
-    const wsBaseUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:8000';
-    const url = new URL(`/ws/locations/${userId}`, wsBaseUrl.replace('ws://', 'http://').replace('wss://', 'https://'));
+    // Check if we're in development mode
+    const isDevelopment = import.meta.env.DEV;
     
-    // Convert back to WebSocket protocol
-    const protocol = wsBaseUrl.includes('wss://') ? 'wss:' : 'ws:';
-    url.protocol = protocol;
-    
-    // Add token as query parameter if provided
-    if (token) {
-      url.searchParams.set('token', token);
+    if (isDevelopment) {
+      // Use proxied WebSocket URL for development
+      let wsUrl = `ws://localhost:8080/ws/locations/${userId}`;
+      
+      // Add token as query parameter if provided
+      if (token) {
+        wsUrl += `?token=${encodeURIComponent(token)}`;
+      }
+      
+      return wsUrl;
+    } else {
+      // Production WebSocket URL
+      const wsBaseUrl = 'wss://api.pahala.store';
+      const url = new URL(`/ws/locations/${userId}`, wsBaseUrl.replace('wss://', 'https://'));
+      
+      // Convert back to WebSocket protocol
+      url.protocol = 'wss:';
+      
+      // Add token as query parameter if provided
+      if (token) {
+        url.searchParams.set('token', token);
+      }
+      
+      return url.toString();
     }
-    
-    return url.toString();
   }
 
   private setupEventListeners(): void {
@@ -126,8 +183,19 @@ class WebSocketService {
 
     this.ws.onclose = (event) => {
       console.log('WebSocket connection closed:', event.code, event.reason);
-      if (!event.wasClean && this.userId) {
+      
+      // Only attempt reconnection for clean closures or specific error codes
+      // Don't reconnect for connection failures (code 1006) to prevent endless loops
+      if (event.wasClean && this.userId) {
         this.handleReconnect();
+      } else if (event.code === 1000 || event.code === 1001) {
+        // Normal closure - reconnect if we have a user ID
+        if (this.userId) {
+          this.handleReconnect();
+        }
+      } else {
+        console.log('Connection failed - map will work without live updates');
+        this.handleConnectionError(new Error(`WebSocket closed with code ${event.code}`));
       }
     };
 

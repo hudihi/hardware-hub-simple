@@ -1,6 +1,6 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
-import { websocketService, LocationUser, LocationMessage } from '../services/websocket.service';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { LocationMessage, LocationUser, websocketService } from '../services/websocket.service';
 
 // Interface for the hook's return value
 interface UseLiveLocationsReturn {
@@ -50,27 +50,21 @@ export const useLiveLocations = (): UseLiveLocationsReturn => {
 
   // Connect to WebSocket
   const connectWebSocket = useCallback(() => {
-    if (!user?.id) {
-      console.warn('Cannot connect to WebSocket: No user ID available');
-      setError('Authentication required for live locations');
-      return;
-    }
-
     try {
       // Get auth token if available
       const token = localStorage.getItem('token') || undefined;
       
-      // Connect to WebSocket
-      websocketService.connect(user.id, token);
+      // Connect to WebSocket (user ID is generated automatically)
+      websocketService.connect(token);
       setIsConnected(true);
       setError(null);
-      console.log('Connecting to live locations for user:', user.id);
+      console.log('Connecting to live locations...');
     } catch (err) {
       console.error('Failed to connect to WebSocket:', err);
       setError('Failed to connect to location service');
       setIsConnected(false);
     }
-  }, [user?.id]);
+  }, []);
 
   // Monitor WebSocket connection state
   const monitorConnection = useCallback(() => {
@@ -78,26 +72,21 @@ export const useLiveLocations = (): UseLiveLocationsReturn => {
       const currentState = websocketService.isConnected();
       if (currentState !== isConnected) {
         setIsConnected(currentState);
-        if (!currentState && user?.id) {
+        if (!currentState) {
           setError('Connection to location service lost');
         }
       }
     }, 1000);
 
     return () => clearInterval(checkInterval);
-  }, [isConnected, user?.id]);
+  }, [isConnected]);
 
   // Initialize WebSocket connection and set up event listeners
   useEffect(() => {
-    if (!user?.id) {
-      console.log('No user available for WebSocket connection');
-      return;
-    }
-
     // Register message handler
     const unsubscribe = websocketService.onMessage(handleMessage);
 
-    // Connect to WebSocket
+    // Connect to WebSocket (anonymous ID is generated automatically)
     connectWebSocket();
 
     // Start connection monitoring
@@ -112,15 +101,12 @@ export const useLiveLocations = (): UseLiveLocationsReturn => {
       }
       // Note: We don't disconnect here to allow connection to persist across component re-renders
     };
-  }, [user?.id, handleMessage, connectWebSocket, monitorConnection]);
+  }, [handleMessage, connectWebSocket, monitorConnection]);
 
-  // Cleanup on user logout
+  // Cleanup on user logout (optional - keep connection for anonymous tracking)
   useEffect(() => {
     if (!user) {
-      setUsers([]);
-      setIsConnected(false);
-      websocketService.disconnect();
-      console.log('User logged out, disconnecting from WebSocket');
+      console.log('User logged out, but keeping WebSocket connection for anonymous tracking');
     }
   }, [user]);
 

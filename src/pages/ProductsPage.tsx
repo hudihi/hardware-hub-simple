@@ -23,9 +23,11 @@ const ProductsPage: React.FC = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const fetchedProducts = await productService.getProducts();
+        const fetchedProducts = await productService.getProducts(1, 100);
+        // Extract items from paginated response
+        const productsData = fetchedProducts.items || [];
         // Map API response to match Product interface expected by components
-        const mappedProducts = fetchedProducts.map(apiProduct => {
+        const mappedProducts = productsData.map(apiProduct => {
           const imageUrl = getProductImageUrl(apiProduct);
           console.log(`Product: ${apiProduct.name}, Image URL: ${imageUrl}`);
           console.log('API Product data:', apiProduct);

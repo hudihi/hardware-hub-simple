@@ -2,7 +2,7 @@ import SearchBar from '@/components/SearchBar';
 import React from 'react';
 import { Link } from 'react-router-dom';
 import CategoryCard from '../components/CategoryCard';
-import ProductCard from '../components/ProductCard';
+import OptimizedProductGrid from '../components/OptimizedProductGrid';
 import { useLanguage } from '../context/LanguageContext';
 import { API_BASE_URL } from '../services/api';
 import { productService } from '../services/product.service';
@@ -41,9 +41,11 @@ const HomePage: React.FC = () => {
   React.useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const fetchedProducts = await productService.getProducts();
+        const fetchedProducts = await productService.getProducts(1, 100);
+        // Extract items from paginated response
+        const productsData = fetchedProducts.items || [];
         // Map API response to match Product interface expected by components
-        const mappedProducts = fetchedProducts.map(apiProduct => {
+        const mappedProducts = productsData.map(apiProduct => {
           return {
             id: apiProduct.id,
             name: apiProduct.name,
@@ -190,21 +192,11 @@ const HomePage: React.FC = () => {
             </Link>
           </div>
           
-          {productsLoading ? (
-            <div className="text-center py-4">
-              <div className="spinner-border text-brown" role="status">
-                <span className="visually-hidden">Loading...</span>
-              </div>
-            </div>
-          ) : (
-            <div className="row g-3">
-              {featuredProducts.map((product) => (
-                <div key={product.id} className="col-6 col-md-4 col-lg-3">
-                  <ProductCard product={product} />
-                </div>
-              ))}
-            </div>
-          )}
+          <OptimizedProductGrid
+            initialProducts={featuredProducts}
+            pageSize={20}
+            showLoadMore={false}
+          />
         </div>
 
         {/* Contact Section */}

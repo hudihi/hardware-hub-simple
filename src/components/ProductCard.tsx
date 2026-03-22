@@ -4,6 +4,7 @@ import { useCart } from '../context/CartContext';
 import { useLanguage } from '../context/LanguageContext';
 import { Product } from '../types';
 import { formatPrice } from '../utils/format';
+import { createProductUrl } from '../utils/slug';
 import ImageWithFallback from './ImageWithFallback';
 import ShareButton from './ShareButton';
 
@@ -26,12 +27,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     const text = language === 'sw' 
       ? `Angalia bidhaa hii kutoka Pahala Store!\n\n${product.name}\n${formatPrice(product.price)}/${product.unit}`
       : `Check out this product from Pahala Store!\n\n${product.name}\n${formatPrice(product.price)}/${product.unit}`;
-    const url = `${window.location.origin}/products/${product.id}`;
+    const url = `${window.location.origin}${createProductUrl(product.id, product.name)}`;
     return { title, text, url };
   };
 
   return (
-    <Link to={`/products/${product.id}`} className="text-decoration-none">
+    <Link to={createProductUrl(product.id, product.name)} className="text-decoration-none">
       <div className="product-card h-100">
         <div className="product-image-container position-relative">
           <ImageWithFallback

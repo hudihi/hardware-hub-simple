@@ -171,9 +171,49 @@ class ProductService {
   }
 
   /**
-   * Get all products
+   * Get all products (paginated)
    */
-  async getProducts(): Promise<Product[]> {
+  async getProducts(page: number = 1, size: number = 100): Promise<PaginatedProductsResponse> {
+    try {
+      const response = await apiClient.get('/api/v1/products/', {
+        params: { page, size }
+      });
+      
+      // Handle paginated response structure
+      if (response.data?.items) {
+        return response.data;
+      } else if (Array.isArray(response.data)) {
+        // If backend returns array, convert to paginated format
+        return {
+          items: response.data,
+          total: response.data.length,
+          page: page,
+          size: size,
+          pages: 1
+        };
+      }
+      
+      return {
+        items: [],
+        total: 0,
+        page: page,
+        size: size,
+        pages: 0
+      };
+    } catch (error) {
+      const apiError: ApiError = {
+        message: 'Failed to fetch products',
+        status: (error as any)?.response?.status,
+        details: (error as any)?.response?.data
+      };
+      throw apiError;
+    }
+  }
+
+  /**
+   * Get all products (legacy method for backward compatibility)
+   */
+  async getProductsLegacy(): Promise<Product[]> {
     try {
       const response = await apiClient.get('/api/v1/products/');
       
@@ -205,6 +245,46 @@ class ProductService {
     } catch (error) {
       const apiError: ApiError = {
         message: 'Failed to fetch product',
+        status: (error as any)?.response?.status,
+        details: (error as any)?.response?.data
+      };
+      throw apiError;
+    }
+  }
+
+  /**
+   * Find product by short ID (first 8 characters of UUID)
+   * This searches through products efficiently to find a match
+   */
+  async findProductByShortId(shortId: string): Promise<Product | null> {
+    try {
+      let page = 1;
+      const pageSize = 50; // Use smaller page size to avoid 422 errors
+      
+      // Search through pages until we find the product or exhaust all products
+      while (true) {
+        const response = await this.getProducts(page, pageSize);
+        
+        // Check if current page contains the product
+        const product = response.items.find(p => p.id.startsWith(shortId));
+        
+        if (product) {
+          return product;
+        }
+        
+        // If we've reached the end of products, stop searching
+        if (page >= response.pages || response.items.length === 0) {
+          break;
+        }
+        
+        page++;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error finding product by short ID:', error);
+      const apiError: ApiError = {
+        message: 'Failed to find product by short ID',
         status: (error as any)?.response?.status,
         details: (error as any)?.response?.data
       };
