@@ -17,6 +17,7 @@ const HomePage: React.FC = () => {
   const [categories, setCategories] = React.useState<Category[]>([]);
   const [productsLoading, setProductsLoading] = React.useState(true);
   const [categoriesLoading, setCategoriesLoading] = React.useState(true);
+  const [featuredLoading, setFeaturedLoading] = React.useState(true);
   const { t } = useLanguage();
 
   // Fetch products on component mount
@@ -53,6 +54,7 @@ const HomePage: React.FC = () => {
         console.error('Failed to fetch products:', error);
       } finally {
         setProductsLoading(false);
+        setFeaturedLoading(false); // Featured products loaded
       }
     };
 
@@ -183,11 +185,19 @@ const HomePage: React.FC = () => {
             </Link>
           </div>
           
-          <OptimizedProductGrid
-            initialProducts={featuredProducts}
-            pageSize={20}
-            showLoadMore={false}
-          />
+          {featuredLoading ? (
+            <div className="text-center py-4">
+              <div className="spinner-border spinner-border-sm text-brown" role="status">
+                <span className="visually-hidden">Loading featured products...</span>
+              </div>
+            </div>
+          ) : (
+            <OptimizedProductGrid
+              initialProducts={featuredProducts}
+              pageSize={20}
+              showLoadMore={false}
+            />
+          )}
         </div>
 
         {/* Contact Section */}
