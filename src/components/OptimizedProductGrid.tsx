@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { optimizedProductService } from '../services/optimizedProduct.service';
 import { Product } from '../types';
 import ProductCard from './ProductCard';
@@ -195,8 +196,14 @@ const OptimizedProductGrid: React.FC<OptimizedProductGridProps> = ({
         <div className="text-center mt-4 mb-5">
           <p className="text-muted">
             <i className="bi bi-check-circle text-success me-2"></i>
-            You've reached the end of our product catalog
+            Explore more amazing products in our full catalog
           </p>
+          <div className="mt-3">
+            <Link to="/products" className="btn btn-primary">
+              <i className="bi bi-grid-3x3-gap me-2"></i>
+              View All Products
+            </Link>
+          </div>
         </div>
       )}
 
