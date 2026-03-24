@@ -89,10 +89,14 @@ const OptimizedProductGrid: React.FC<OptimizedProductGridProps> = ({
 
   // Initial load
   useEffect(() => {
-    if (initialProducts.length === 0) {
+    if (initialProducts.length > 0) {
+      // Use the provided initial products instead of fetching
+      setProducts(initialProducts as Product[]);
+      setHasMore(false); // No more products since we're using initial data
+    } else {
       loadMore();
     }
-  }, []);
+  }, [initialProducts]);
 
   // Clear cache
   const clearCache = useCallback(() => {

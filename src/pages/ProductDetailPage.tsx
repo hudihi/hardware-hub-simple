@@ -19,7 +19,6 @@ const ProductDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
-  const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [shareUrl, setShareUrl] = useState<string>('');
   const { t, language } = useLanguage();
@@ -35,8 +34,7 @@ const ProductDetailPage: React.FC = () => {
   };
 
   const getImageUrl = (product: Product): string => {
-    // Use centralized utility to process the image URL
-    return processImageUrl(product.image);
+    return product.image;
   };
 
   useEffect(() => {
@@ -64,7 +62,8 @@ const ProductDetailPage: React.FC = () => {
         if (fetchedProduct) {
           // Get the primary image from the images array, or fallback to image_url, then placeholder
           const primaryImage = (fetchedProduct as any).images?.find((img: any) => img.is_primary);
-          const imageUrl = primaryImage?.url || (fetchedProduct as any).image_url || '/placeholder.svg';
+          const rawImageUrl = primaryImage?.url || (fetchedProduct as any).image_url || '/placeholder.svg';
+          const processedImageUrl = processImageUrl(rawImageUrl);
           
           const mappedProduct = {
             id: fetchedProduct.id,
@@ -72,7 +71,7 @@ const ProductDetailPage: React.FC = () => {
             description: fetchedProduct.description,
             price: fetchedProduct.price,
             unit: fetchedProduct.unit_of_measure, // Map unit_of_measure to unit
-            image: imageUrl, // Use primary image from images array
+            image: processedImageUrl, // Use processed image URL
             category: fetchedProduct.category_id, // Map category_id to category
             stock: fetchedProduct.stock_quantity, // Map stock_quantity to stock
           };
@@ -228,21 +227,13 @@ const ProductDetailPage: React.FC = () => {
                 backgroundColor: 'var(--pahala-beige)',
               }}
             >
-              {!imageLoaded && !imageError && (
-                <div className="d-flex align-items-center justify-content-center w-100 h-100">
-                  <div className="spinner-border text-muted" role="status">
-                    <span className="visually-hidden">Loading...</span>
-                  </div>
-                </div>
-              )}
               <img
                 src={imageError ? '/placeholder.svg' : getImageUrl(product)}
                 alt={product.name}
-                className={`w-100 h-100 object-fit-cover ${imageLoaded ? 'd-block' : 'd-none'}`}
-                onLoad={() => setImageLoaded(true)}
+                className="w-100 h-100 object-fit-cover"
+                loading="eager"
                 onError={() => {
                   setImageError(true);
-                  setImageLoaded(true);
                 }}
               />
             </div>

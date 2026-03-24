@@ -9,32 +9,27 @@ import { API_BASE_URL } from '../services/api';
 export const processImageUrl = (imageUrl: string | null | undefined): string => {
   // Handle null/undefined
   if (!imageUrl) {
-    console.log('processImageUrl: null/undefined -> /placeholder.svg');
     return '/placeholder.svg';
   }
   
   // If it's already a full URL (starts with http), return as is
   if (imageUrl.startsWith('http')) {
-    console.log(`processImageUrl: external URL -> ${imageUrl}`);
     return imageUrl;
   }
   
   // If it's a relative path starting with /media/, prepend the base URL
   if (imageUrl.startsWith('/media/')) {
     const fullUrl = `${API_BASE_URL}${imageUrl}`;
-    console.log(`processImageUrl: media path -> ${fullUrl}`);
     return fullUrl;
   }
   
   // If it starts with / but not /media/, it might be a local path
   if (imageUrl.startsWith('/') && !imageUrl.startsWith('/media/')) {
     const fullUrl = `${API_BASE_URL}${imageUrl}`;
-    console.log(`processImageUrl: other local path -> ${fullUrl}`);
     return fullUrl;
   }
   
   // Otherwise, return as is (might be a relative path or placeholder)
-  console.log(`processImageUrl: fallback -> ${imageUrl}`);
   return imageUrl;
 };
 
@@ -46,29 +41,26 @@ export const processImageUrl = (imageUrl: string | null | undefined): string => 
  * @returns Best image URL for the product
  */
 export const getProductImageUrl = (product: any): string => {
-  console.log(`getProductImageUrl: Processing product ${product.name}`);
-  
   // First try to get primary image from images array (for uploaded images)
   const primaryImage = product.images?.find((img: any) => img.is_primary);
   if (primaryImage?.url) {
-    console.log(`getProductImageUrl: Found primary image: ${primaryImage.url}`);
-    return processImageUrl(primaryImage.url);
+    const result = processImageUrl(primaryImage.url);
+    return result;
   }
   
   // Fall back to image_url field (for external URLs)
   if (product.image_url) {
-    console.log(`getProductImageUrl: Using image_url: ${product.image_url}`);
-    return processImageUrl(product.image_url);
+    const result = processImageUrl(product.image_url);
+    return result;
   }
   
   // Try the image field if it exists
   if (product.image) {
-    console.log(`getProductImageUrl: Using image field: ${product.image}`);
-    return processImageUrl(product.image);
+    const result = processImageUrl(product.image);
+    return result;
   }
   
   // Default to placeholder
-  console.log('getProductImageUrl: No image found, using placeholder');
   return '/placeholder.svg';
 };
 

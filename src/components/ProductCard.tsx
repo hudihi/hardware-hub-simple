@@ -5,7 +5,6 @@ import { useLanguage } from '../context/LanguageContext';
 import { Product } from '../types';
 import { formatPrice } from '../utils/format';
 import { createProductUrl } from '../utils/slug';
-import ImageWithFallback from './ImageWithFallback';
 import ShareButton from './ShareButton';
 
 interface ProductCardProps {
@@ -15,6 +14,7 @@ interface ProductCardProps {
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const { addItem } = useCart();
   const { language, t } = useLanguage();
+  const [imageError, setImageError] = React.useState(false);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -35,13 +35,17 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     <Link to={createProductUrl(product.id, product.name)} className="text-decoration-none">
       <div className="product-card h-100">
         <div className="product-image-container position-relative">
-          <ImageWithFallback
-            src={product.image}
+          <img
+            src={imageError ? '/placeholder.svg' : product.image}
             alt={product.name}
             className="product-image w-100"
             width={300}
             height={300}
-            style={{ borderRadius: '0.375rem 0.375rem 0 0' }}
+            style={{ borderRadius: '0.375rem 0.375rem 0 0', objectFit: 'cover' }}
+            loading="eager"
+            onError={() => {
+              setImageError(true);
+            }}
           />
         </div>
         <div className="p-3">

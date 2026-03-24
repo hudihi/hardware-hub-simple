@@ -4,10 +4,11 @@ import { Link } from 'react-router-dom';
 import CategoryCard from '../components/CategoryCard';
 import OptimizedProductGrid from '../components/OptimizedProductGrid';
 import { useLanguage } from '../context/LanguageContext';
-import { API_BASE_URL } from '../services/api';
+import apiClient from '../services/api';
 import { productService } from '../services/product.service';
 import { Category, Product } from '../types';
 import { getCategoryIcon } from '../utils/categoryIcons';
+import { processImageUrl } from '../utils/imageUrlUtils';
 
 const HomePage: React.FC = () => {
   const [searchQuery, setSearchQuery] = React.useState('');
@@ -18,41 +19,31 @@ const HomePage: React.FC = () => {
   const [categoriesLoading, setCategoriesLoading] = React.useState(true);
   const { t } = useLanguage();
 
-  const getImageUrl = (apiProduct: any): string => {
-    // Get the primary image from the images array, or fallback to image_url, then placeholder
-    const primaryImage = apiProduct.images?.find((img: any) => img.is_primary);
-    const imageUrl = primaryImage?.url || apiProduct.image_url;
-    
-    // If it's already a full URL (starts with http), return as is
-    if (imageUrl && imageUrl.startsWith('http')) {
-      return imageUrl;
-    }
-    
-    // If it's a relative path starting with /media/, prepend the base URL
-    if (imageUrl && imageUrl.startsWith('/media/')) {
-      return `${API_BASE_URL}${imageUrl}`;
-    }
-    
-    // Otherwise, return placeholder
-    return '/placeholder.svg';
-  };
-
   // Fetch products on component mount
   React.useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const fetchedProducts = await productService.getProducts(1, 100);
-        // Extract items from paginated response
-        const productsData = fetchedProducts.items || [];
+        // Get raw API response instead of processed Product items, sorted by most recent
+        const response = await apiClient.get('/api/v1/products/', {
+          params: { page: 1, size: 100, ordering: '-created_at' }
+        });
+        
+        // Extract items from raw API response
+        const productsData = response.data?.items || [];
         // Map API response to match Product interface expected by components
-        const mappedProducts = productsData.map(apiProduct => {
+        const mappedProducts = productsData.map((apiProduct: any) => {
+          // Use the same image processing as ProductDetailPage
+          const primaryImage = apiProduct.images?.find((img: any) => img.is_primary);
+          const rawImageUrl = primaryImage?.url || apiProduct.image_url || '/placeholder.svg';
+          const processedImageUrl = processImageUrl(rawImageUrl);
+          
           return {
             id: apiProduct.id,
             name: apiProduct.name,
             description: apiProduct.description,
             price: apiProduct.price,
             unit: apiProduct.unit_of_measure, // Map unit_of_measure to unit
-            image: getImageUrl(apiProduct), // Use getImageUrl to handle uploaded images
+            image: processedImageUrl, // Use processed image URL like ProductDetailPage
             category: apiProduct.category_id, // Map category_id to category
             stock: apiProduct.stock_quantity, // Map stock_quantity to stock
           };
@@ -90,7 +81,7 @@ const HomePage: React.FC = () => {
     fetchCategories();
   }, []);
 
-  const featuredProducts = products.slice(0, 6);
+  const featuredProducts = products.slice(0, 20);
 
   // Sample suggestions and recent searches (in a real app, these would come from API/localStorage)
   const suggestions = [
