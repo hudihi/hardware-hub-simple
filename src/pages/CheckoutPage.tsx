@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import PhoneInput from '../components/PhoneInput';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -27,6 +28,8 @@ const CheckoutPage: React.FC = () => {
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [checkoutStatus, setCheckoutStatus] = useState<CheckoutStatus>("form");
   const [orderId, setOrderId] = useState('');
+  const [normalizedPhone, setNormalizedPhone] = useState('');
+  const [isPhoneValid, setIsPhoneValid] = useState(false);
 
   // Navigate to cart if no items and not in checkout flow
   useEffect(() => {
@@ -127,14 +130,22 @@ const CheckoutPage: React.FC = () => {
         return;
       }
 
+      // Validate phone number
+      if (!isPhoneValid || !normalizedPhone) {
+        setError('Please enter a valid phone number');
+        setCheckoutStatus("form");
+        setLoading(false);
+        return;
+      }
+
       // For guest checkout, no registration needed
       // Just proceed with checkout directly
 
-      // Process checkout using API
+      // Process checkout using API with normalized phone number
       const checkoutData = {
         cart_id: cartId,
         customer_name: formData.name,
-        customer_phone: formData.phone,
+        customer_phone: normalizedPhone, // Use normalized phone number
         customer_location: formData.location,
         order_notes: formData.notes,
         payment_method: 'PAY_ON_DELIVERY' as const,
@@ -274,7 +285,16 @@ const CheckoutPage: React.FC = () => {
 
                 <div className="mb-3">
                   <label className="form-label">{t('checkout_phone')} *</label>
-                  <input type="tel" className="form-control" name="phone" value={formData.phone} onChange={handleChange} required placeholder={t('checkout_phone_ph')} />
+                  <PhoneInput
+                    value={normalizedPhone}
+                    onChange={(phone, isValid) => {
+                      setNormalizedPhone(phone);
+                      setIsPhoneValid(isValid);
+                      setFormData(prev => ({ ...prev, phone: phone }));
+                    }}
+                    defaultCountryCode="TZ"
+                    required
+                  />
                 </div>
 
                 <div className="mb-0">

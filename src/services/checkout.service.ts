@@ -1,3 +1,4 @@
+import { getDefaultCountry, validateAndNormalizePhoneNumber } from '../utils/phone';
 import apiClient from './api';
 
 // Types for checkout
@@ -106,8 +107,25 @@ export const checkoutService = {
         throw new Error('Valid phone number is required');
       }
 
-      // Clean and validate phone number
-      const cleanPhone = phoneNumber.trim().replace(/\s+/g, '');
+      // Normalize phone number for consistent lookup
+      let normalizedPhone = phoneNumber;
+      
+      // If phone doesn't start with country code, try to normalize it
+      if (!phoneNumber.match(/^[1-9]\d{10,14}$/)) {
+        try {
+          const defaultCountry = getDefaultCountry();
+          const validation = validateAndNormalizePhoneNumber(phoneNumber, defaultCountry);
+          if (validation.isValid && validation.normalizedNumber) {
+            normalizedPhone = validation.normalizedNumber;
+          }
+        } catch (error) {
+          console.warn('Phone normalization failed in order lookup:', error);
+        }
+      }
+
+      // Clean phone number (remove spaces, dashes, etc.)
+      const cleanPhone = normalizedPhone.trim().replace(/\s+/g, '');
+      
       if (cleanPhone.length < 10) {
         throw new Error('Invalid phone number format');
       }

@@ -88,7 +88,7 @@ export const authService = {
    */
   loginAdmin: async (credentials: LoginRequest): Promise<LoginResponse> => {
     try {
-      const response = await apiClient.post('/api/v1/admin/login', credentials);
+      const response = await apiClient.post('/api/v1/admin/auth/login', credentials);
       
       // Extract access_token from response
       const { access_token } = response.data;

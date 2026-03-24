@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, Address } from '../types';
+import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import { Address, User } from '../types';
+import { getDefaultCountry, validateAndNormalizePhoneNumber } from '../utils/phone';
 
 interface AuthContextType {
   user: User | null;
@@ -74,10 +75,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return false;
       }
 
-      // Create new user
+      // Normalize phone number
+      let normalizedPhone = userData.phone;
+      try {
+        const defaultCountry = getDefaultCountry();
+        const phoneValidation = validateAndNormalizePhoneNumber(userData.phone, defaultCountry);
+        if (phoneValidation.isValid && phoneValidation.normalizedNumber) {
+          normalizedPhone = phoneValidation.normalizedNumber;
+        }
+      } catch (error) {
+        console.warn('Phone normalization failed, using original:', error);
+      }
+
+      // Create new user with normalized phone
       const newUser = {
         id: `user-${Date.now()}`,
         ...userData,
+        phone: normalizedPhone, // Use normalized phone number
       };
 
       // Save to users list
