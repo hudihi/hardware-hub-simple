@@ -148,7 +148,7 @@ const CheckoutPage: React.FC = () => {
         customer_phone: normalizedPhone, // Use normalized phone number
         customer_location: formData.location,
         order_notes: formData.notes,
-        payment_method: 'PAY_ON_DELIVERY' as const,
+        payment_method: 'PRIMESTACK_PAY' as const,
       };
 
       const order = await checkoutService.processCheckout(checkoutData);
@@ -324,10 +324,10 @@ const CheckoutPage: React.FC = () => {
                   {t('checkout_payment')}
                 </h6>
                 <div className="d-flex align-items-center gap-3 p-3 bg-cream rounded">
-                  <i className="bi bi-cash-coin fs-4 text-brown"></i>
+                  <i className="bi bi-credit-card fs-4 text-brown"></i>
                   <div>
-                    <div className="fw-semibold">{t('checkout_cod_title')}</div>
-                    <small className="text-muted">{t('checkout_cod_desc')}</small>
+                    <div className="fw-semibold">Pay Now</div>
+                    <small className="text-muted">Complete payment securely online</small>
                   </div>
                   <i className="bi bi-check-circle-fill text-success ms-auto"></i>
                 </div>

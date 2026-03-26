@@ -8,7 +8,7 @@ export interface CheckoutRequest {
   customer_phone: string;
   customer_location: string;
   order_notes: string;
-  payment_method: 'PAY_ON_DELIVERY';
+  payment_method: 'PRIMESTACK_PAY';
 }
 
 export interface CheckoutSummaryItem {
@@ -93,6 +93,24 @@ export const checkoutService = {
       console.error('Failed to process checkout:', error);
       console.error('Error response:', error.response?.data);
       console.error('Error status:', error.response?.status);
+      console.error('Error headers:', error.response?.headers);
+      
+      // Enhanced error details for debugging
+      if (error.response?.status === 400) {
+        const errorData = error.response?.data;
+        console.error('400 Bad Request Details:', {
+          detail: errorData?.detail,
+          message: errorData?.message,
+          errors: errorData?.errors,
+          payment_method: checkoutData.payment_method,
+          full_response: errorData
+        });
+        
+        // Provide more specific error message
+        const errorMessage = errorData?.detail || errorData?.message || 'Invalid request data';
+        throw new Error(`Checkout failed: ${errorMessage}`);
+      }
+      
       throw error;
     }
   },
