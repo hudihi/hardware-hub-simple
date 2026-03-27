@@ -6,10 +6,12 @@ import { useOrderFlow, usePaymentSimulation } from '../hooks/useOrderFlow';
 
 const PaymentStatusPage: React.FC = () => {
   const navigate = useNavigate();
-  const { orderState, updatePaymentStatus } = useOrderFlow();
-  const { simulatePaymentProcessing } = usePaymentSimulation();
+  const { orderState, updatePaymentStatus, retryPayment } = useOrderFlow();
+  const { simulatePaymentProcessing, retryPaymentWithSimulation } = usePaymentSimulation();
   const [timeRemaining, setTimeRemaining] = useState(15); // 15 seconds
   const [paymentCompleted, setPaymentCompleted] = useState(false);
+  const [isRetryingPayment, setIsRetryingPayment] = useState(false);
+  const [retryError, setRetryError] = useState('');
 
   // Redirect if no active order
   useEffect(() => {
@@ -57,10 +59,37 @@ const PaymentStatusPage: React.FC = () => {
     );
   }
 
-  const handleRetryPayment = () => {
-    // Reset payment status and restart
-    updatePaymentStatus('NOT_STARTED');
-    navigate('/payment-processing');
+  const handleRetryPayment = async () => {
+    if (!orderState) {
+      setRetryError('No order found');
+      return;
+    }
+
+    setIsRetryingPayment(true);
+    setRetryError('');
+
+    try {
+      // Call the retry payment API with simulation
+      await retryPaymentWithSimulation(
+        orderState.order_id,
+        () => {
+          // On successful retry completion
+          setPaymentCompleted(true);
+          setTimeout(() => {
+            navigate('/order-confirmation');
+          }, 2000);
+        },
+        () => {
+          // On retry failure
+          setRetryError('Payment retry failed. Please try again.');
+        }
+      );
+    } catch (error: any) {
+      console.error('Retry payment error:', error);
+      setRetryError(error.message || 'Failed to retry payment');
+    } finally {
+      setIsRetryingPayment(false);
+    }
   };
 
   const handleCancelPayment = () => {
@@ -143,19 +172,35 @@ const PaymentStatusPage: React.FC = () => {
               <div className="w-2 h-2 bg-yellow-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
             </div>
 
+            {/* Error Message */}
+            {retryError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-600 text-center">{retryError}</p>
+              </div>
+            )}
+
             {/* Action Buttons */}
             <div className="space-y-3">
               <Button 
                 variant="outline" 
                 className="w-full"
                 onClick={handleRetryPayment}
+                disabled={isRetryingPayment}
               >
-                Retry Payment
+                {isRetryingPayment ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                    Retrying Payment...
+                  </>
+                ) : (
+                  'Retry Payment'
+                )}
               </Button>
               <Button 
                 variant="ghost" 
                 className="w-full"
                 onClick={handleCancelPayment}
+                disabled={isRetryingPayment}
               >
                 Cancel Payment
               </Button>

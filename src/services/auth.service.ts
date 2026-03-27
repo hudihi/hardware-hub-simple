@@ -1,4 +1,4 @@
-import apiClient from './api';
+import apiClient, { CUSTOMER_TOKEN_KEY } from './api';
 
 // Types for authentication
 export interface LoginRequest {
@@ -21,6 +21,26 @@ export interface JWTPayload {
 export interface ApiError {
   message: string;
   status?: number;
+}
+
+// OTP Types
+export interface OTPRequest {
+  phone: string;
+}
+
+export interface OTPResponse {
+  message: string;
+}
+
+export interface OTPVerifyRequest {
+  phone: string;
+  code: string;
+}
+
+export interface OTPVerifyResponse {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
 }
 
 // JWT Helper Functions
@@ -162,6 +182,81 @@ export const authService = {
     if (!token) return null;
 
     return jwtUtils.decodeToken(token);
+  },
+
+  /**
+   * Request OTP for phone number
+   * @param phone - Phone number to send OTP to
+   * @returns Promise<OTPResponse>
+   */
+  requestOTP: async (phone: string): Promise<OTPResponse> => {
+    try {
+      const response = await apiClient.post('/api/v1/customer/auth/request-otp', { phone });
+      return response.data;
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || 
+                        error.message || 
+                        'Failed to send OTP. Please try again.';
+      throw new Error(errorMessage);
+    }
+  },
+
+  /**
+   * Verify OTP code
+   * @param phone - Phone number
+   * @param code - OTP code to verify
+   * @returns Promise<OTPVerifyResponse>
+   */
+  verifyOTP: async (phone: string, code: string): Promise<OTPVerifyResponse> => {
+    try {
+      const response = await apiClient.post('/api/v1/customer/auth/verify-otp', { phone, otp: code });
+      
+      // Extract access token from response
+      const { access_token, token_type, expires_in } = response.data;
+      
+      if (!access_token) {
+        throw new Error('No access token received from server');
+      }
+
+      // Store the customer token (different from admin token)
+      localStorage.setItem(CUSTOMER_TOKEN_KEY, access_token);
+
+      return response.data;
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || 
+                        error.message || 
+                        'OTP verification failed. Please try again.';
+      throw new Error(errorMessage);
+    }
+  },
+
+  /**
+   * Get stored customer authentication token
+   */
+  getCustomerToken: (): string | null => {
+    return localStorage.getItem(CUSTOMER_TOKEN_KEY);
+  },
+
+  /**
+   * Set customer authentication token
+   */
+  setCustomerToken: (token: string): void => {
+    localStorage.setItem(CUSTOMER_TOKEN_KEY, token);
+  },
+
+  /**
+   * Remove customer authentication token
+   */
+  removeCustomerToken: (): void => {
+    localStorage.removeItem(CUSTOMER_TOKEN_KEY);
+  },
+
+  /**
+   * Check if customer is authenticated
+   */
+  isCustomerAuthenticated: (): boolean => {
+    const token = authService.getCustomerToken();
+    return !!token;
   }
 };
 

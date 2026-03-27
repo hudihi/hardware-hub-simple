@@ -3,7 +3,8 @@ import axios, { AxiosInstance, AxiosResponse } from 'axios';
 
 // API Configuration
 const API_BASE_URL = 'https://api.pahala.store';
-const TOKEN_KEY = 'pahala_admin_token';
+const ADMIN_TOKEN_KEY = 'pahala_admin_token';
+const CUSTOMER_TOKEN_KEY = 'pahala_customer_token';
 
 // Create axios instance with default configuration
 const apiClient: AxiosInstance = axios.create({
@@ -17,15 +18,31 @@ const apiClient: AxiosInstance = axios.create({
 // Request interceptor to attach auth token
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    // Determine which token to use based on the endpoint
+    let token = null;
+    let tokenType = 'none';
+    
+    if (config.url?.includes('/admin/')) {
+      token = localStorage.getItem(ADMIN_TOKEN_KEY);
+      tokenType = 'admin';
+    } else if (config.url?.includes('/customer/')) {
+      token = localStorage.getItem(CUSTOMER_TOKEN_KEY);
+      tokenType = 'customer';
+    } else {
+      // Try admin token first, then customer token for other endpoints
+      token = localStorage.getItem(ADMIN_TOKEN_KEY) || localStorage.getItem(CUSTOMER_TOKEN_KEY);
+      tokenType = token === localStorage.getItem(ADMIN_TOKEN_KEY) ? 'admin' : 'customer';
+    }
+    
     console.log('API Request:', {
       method: config.method,
       url: config.url,
       baseURL: config.baseURL,
       fullUrl: `${config.baseURL}${config.url}`,
-      hasAuth: !!localStorage.getItem(TOKEN_KEY)
+      tokenType,
+      hasAuth: !!token
     });
     
-    const token = localStorage.getItem(TOKEN_KEY);
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -57,9 +74,19 @@ apiClient.interceptors.response.use(
     });
     
     if (error.response?.status === 401) {
-      // Token expired or invalid - clear it and redirect to login
-      localStorage.removeItem(TOKEN_KEY);
-      window.location.href = '/admin/login';
+      // Token expired or invalid - clear appropriate token and redirect
+      if (error.config?.url?.includes('/admin/')) {
+        localStorage.removeItem(ADMIN_TOKEN_KEY);
+        window.location.href = '/admin/login';
+      } else if (error.config?.url?.includes('/customer/')) {
+        localStorage.removeItem(CUSTOMER_TOKEN_KEY);
+        window.location.href = '/checkout';
+      } else {
+        // Clear both tokens and redirect to home
+        localStorage.removeItem(ADMIN_TOKEN_KEY);
+        localStorage.removeItem(CUSTOMER_TOKEN_KEY);
+        window.location.href = '/';
+      }
     }
     return Promise.reject(error);
   }
@@ -67,23 +94,48 @@ apiClient.interceptors.response.use(
 
 // Helper functions for token management
 export const tokenManager = {
-  getStoredToken: (): string | null => {
-    return localStorage.getItem(TOKEN_KEY);
+  getAdminToken: (): string | null => {
+    return localStorage.getItem(ADMIN_TOKEN_KEY);
   },
   
-  setToken: (token: string): void => {
-    localStorage.setItem(TOKEN_KEY, token);
+  getCustomerToken: (): string | null => {
+    return localStorage.getItem(CUSTOMER_TOKEN_KEY);
   },
   
-  clearToken: (): void => {
-    localStorage.removeItem(TOKEN_KEY);
+  setAdminToken: (token: string): void => {
+    localStorage.setItem(ADMIN_TOKEN_KEY, token);
+  },
+  
+  setCustomerToken: (token: string): void => {
+    localStorage.setItem(CUSTOMER_TOKEN_KEY, token);
+  },
+  
+  clearAdminToken: (): void => {
+    localStorage.removeItem(ADMIN_TOKEN_KEY);
+  },
+  
+  clearCustomerToken: (): void => {
+    localStorage.removeItem(CUSTOMER_TOKEN_KEY);
+  },
+  
+  clearAllTokens: (): void => {
+    localStorage.removeItem(ADMIN_TOKEN_KEY);
+    localStorage.removeItem(CUSTOMER_TOKEN_KEY);
+  },
+  
+  isAdminAuthenticated: (): boolean => {
+    return !!localStorage.getItem(ADMIN_TOKEN_KEY);
+  },
+  
+  isCustomerAuthenticated: (): boolean => {
+    return !!localStorage.getItem(CUSTOMER_TOKEN_KEY);
   },
   
   isAuthenticated: (): boolean => {
-    return !!localStorage.getItem(TOKEN_KEY);
+    return !!(localStorage.getItem(ADMIN_TOKEN_KEY) || localStorage.getItem(CUSTOMER_TOKEN_KEY));
   }
 };
 
 export default apiClient;
-export { API_BASE_URL, TOKEN_KEY };
+export { ADMIN_TOKEN_KEY, API_BASE_URL, CUSTOMER_TOKEN_KEY };
 

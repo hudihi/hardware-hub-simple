@@ -15,7 +15,7 @@ const CheckoutPage: React.FC = () => {
   const { t } = useLanguage();
 
   // Order flow hook for mock implementation
-  const { createOrder, isOrderActive } = useOrderFlow();
+  const { createOrder, isOrderActive, requestOTP } = useOrderFlow();
 
   type CheckoutStatus = "form" | "processing" | "success" | "redirecting";
 
@@ -145,6 +145,9 @@ const CheckoutPage: React.FC = () => {
         customer_location: formData.location,
         order_notes: formData.notes,
       });
+
+      // Request OTP for the phone number
+      await requestOTP(normalizedPhone);
 
       // Redirect to OTP verification
       navigate('/otp-verification');
