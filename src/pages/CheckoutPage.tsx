@@ -4,6 +4,7 @@ import PhoneInput from '../components/PhoneInput';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useOrderFlow } from '../hooks/useOrderFlow';
 import { checkoutService, CheckoutSummaryResponse } from '../services/checkout.service';
 import { formatPrice } from '../utils/format';
 
@@ -12,6 +13,9 @@ const CheckoutPage: React.FC = () => {
   const { items, total, clearCart, cartId } = useCart();
   const { user, register, isAuthenticated } = useAuth();
   const { t } = useLanguage();
+
+  // Order flow hook for mock implementation
+  const { createOrder, isOrderActive } = useOrderFlow();
 
   type CheckoutStatus = "form" | "processing" | "success" | "redirecting";
 
@@ -124,12 +128,6 @@ const CheckoutPage: React.FC = () => {
     setError('');
 
     try {
-      if (!cartId) {
-        setError('Cart not found');
-        setCheckoutStatus("form");
-        return;
-      }
-
       // Validate phone number
       if (!isPhoneValid || !normalizedPhone) {
         setError('Please enter a valid phone number');
@@ -138,52 +136,22 @@ const CheckoutPage: React.FC = () => {
         return;
       }
 
-      // For guest checkout, no registration needed
-      // Just proceed with checkout directly
-
-      // Process checkout using API with normalized phone number
-      const checkoutData = {
-        cart_id: cartId,
+      // Create mock order using order flow
+      createOrder({
+        phone: normalizedPhone,
+        amount: total,
+        items: items,
         customer_name: formData.name,
-        customer_phone: normalizedPhone, // Use normalized phone number
         customer_location: formData.location,
         order_notes: formData.notes,
-        payment_method: 'PRIMESTACK_PAY' as const,
-      };
+      });
 
-      const order = await checkoutService.processCheckout(checkoutData);
+      // Redirect to OTP verification
+      navigate('/otp-verification');
       
-      console.log('Order processed successfully:', order);
-      console.log('Order response structure:', JSON.stringify(order, null, 2));
-      
-      // Handle different possible response structures
-      let orderFinalId: string;
-      if (order && order.order_id) {
-        orderFinalId = order.order_id;
-      } else {
-        console.error('No order ID found in response:', order);
-        setError('Order processed but no order ID received');
-        setCheckoutStatus("form");
-        setLoading(false);
-        return;
-      }
-      
-      // Set success state
-      console.log('Setting orderId to:', orderFinalId);
-      setOrderId(orderFinalId);
-      setCheckoutStatus("success");
-      
-      clearCart(false); // Clear cart but don't create new one immediately
-      
-      // Hide success message after 3 seconds and navigate to order page
-      setTimeout(() => {
-        console.log('Timeout triggered, navigating to order page');
-        setCheckoutStatus("redirecting");
-        navigate(`/orders/${orderFinalId}`, { state: { newOrder: true } });
-      }, 3500);
     } catch (err: any) {
       console.error('Checkout error:', err);
-      setError(err.response?.data?.message || t('checkout_error'));
+      setError(err.message || t('checkout_error'));
       setCheckoutStatus("form");
     } finally {
       setLoading(false);
@@ -192,64 +160,6 @@ const CheckoutPage: React.FC = () => {
 
   return (
     <>
-      {/* Success Message Overlay - Rendered outside normal flow */}
-      {checkoutStatus === "success" && (
-        <>
-          {console.log('Rendering success overlay - checkoutStatus is success, orderId:', orderId)}
-          <div 
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              width: '100vw',
-              height: '100vh',
-              backgroundColor: 'rgba(0, 0, 0, 0.95)',
-              zIndex: 999999,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            <div 
-              style={{
-                backgroundColor: '#ffffff',
-                borderRadius: '20px',
-                padding: '50px',
-                textAlign: 'center',
-                maxWidth: '500px',
-                width: '90%'
-              }}
-            >
-              <div style={{ marginBottom: '24px' }}>
-                <div 
-                  style={{
-                    width: '80px',
-                    height: '80px',
-                    borderRadius: '50%',
-                    backgroundColor: '#28a745',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    margin: '0 auto'
-                  }}
-                >
-                  <span style={{ color: 'white', fontSize: '2.5rem' }}>✓</span>
-                </div>
-              </div>
-              <h3 style={{ color: '#28a745', fontWeight: 'bold', marginBottom: '16px' }}>
-                Order Successful!
-              </h3>
-              <p style={{ color: '#6c757d', fontSize: '1.1rem', marginBottom: '16px' }}>
-                Thank you for your order. Your order <strong>#{orderId}</strong> has been received.
-              </p>
-              <div style={{ color: '#6c757d' }}>
-                <p style={{ fontSize: '0.875rem', margin: 0 }}>Redirecting to order tracking page...</p>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-
       {/* Main checkout form - only show when in form state */}
       {checkoutStatus === "form" && (
         <div className="page-container">
