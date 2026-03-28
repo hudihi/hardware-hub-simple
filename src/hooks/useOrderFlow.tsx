@@ -1,5 +1,6 @@
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 import authService from '../services/auth.service';
+import { paymentService, PrimeStackPaymentRequest, PrimeStackPaymentResponse } from '../services/payment.service';
 
 // Order Flow Types
 export type PaymentStatus = 'NOT_STARTED' | 'PENDING' | 'COMPLETED' | 'FAILED' | 'ABANDONED';
@@ -26,6 +27,7 @@ interface OrderFlowContextType {
   verifyOTP: (otpCode: string) => Promise<boolean>;
   retryPayment: (orderId: string) => Promise<void>;
   fetchCustomerOrders: () => Promise<void>;
+  initiatePayment: () => Promise<PrimeStackPaymentResponse>;
   updatePaymentStatus: (status: PaymentStatus) => void;
   resetOrderFlow: () => void;
   isOrderActive: boolean;
@@ -191,6 +193,47 @@ export const OrderFlowProvider: React.FC<{ children: ReactNode }> = ({ children 
     }
   };
 
+  // Initiate payment via PrimeStack
+  const initiatePayment = async (): Promise<PrimeStackPaymentResponse> => {
+    try {
+      // Validate order state
+      if (!orderState || !orderState.otp_verified) {
+        throw new Error('Order must be OTP verified before initiating payment');
+      }
+
+      // Check if payment status allows initiation
+      if (orderState.payment_status !== 'NOT_STARTED' && orderState.payment_status !== 'FAILED') {
+        throw new Error(`Cannot initiate payment with status: ${orderState.payment_status}`);
+      }
+
+      // Prepare payment request
+      const paymentData: PrimeStackPaymentRequest = {
+        phone: orderState.phone,
+        amount: orderState.amount,
+        order_id: orderState.order_id
+      };
+
+      // Call PrimeStack payment initiation API
+      const response = await paymentService.initiatePrimeStackPayment(paymentData);
+
+      // Update payment status based on response
+      if (response.success) {
+        updatePaymentStatus('PENDING');
+        console.log('Payment initiated successfully for order:', orderState.order_id);
+      } else {
+        updatePaymentStatus('FAILED');
+        console.error('Payment initiation failed:', response.error || response.message);
+      }
+
+      return response;
+
+    } catch (error) {
+      console.error('Payment initiation failed:', error);
+      updatePaymentStatus('FAILED');
+      throw error;
+    }
+  };
+
   // Update payment status
   const updatePaymentStatus = (status: PaymentStatus) => {
     setOrderState(prev => prev ? {
@@ -225,6 +268,7 @@ export const OrderFlowProvider: React.FC<{ children: ReactNode }> = ({ children 
     verifyOTP,
     retryPayment,
     fetchCustomerOrders,
+    initiatePayment,
     updatePaymentStatus,
     resetOrderFlow,
     isOrderActive,

@@ -8,6 +8,23 @@ export interface PaymentRequest {
   payment_method: 'PRIMESTACK_PAY';
 }
 
+export interface PrimeStackPaymentRequest {
+  phone: string;
+  amount: number;
+  order_id: string;
+}
+
+export interface PrimeStackPaymentResponse {
+  success: boolean;
+  order_id: string;
+  transaction_id: string;
+  payment_status: string;
+  amount: number;
+  message: string;
+  error?: string;
+  details?: string;
+}
+
 export interface PaymentResponse {
   transaction_id: string;
   status: 'PENDING' | 'SUCCESS' | 'FAILED' | 'TIMEOUT';
@@ -40,6 +57,34 @@ export interface OTPVerificationResponse {
 
 // Payment Service - Single Responsibility for Payment API calls
 export const paymentService = {
+  /**
+   * Initiate payment via PrimeStack
+   */
+  initiatePrimeStackPayment: async (paymentData: PrimeStackPaymentRequest): Promise<PrimeStackPaymentResponse> => {
+    try {
+      console.log('Initiating PrimeStack payment:', paymentData);
+      const response = await apiClient.post('/api/v1/payment/initiate', paymentData);
+      console.log('PrimeStack payment initiated:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('Failed to initiate PrimeStack payment:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      
+      if (error.response?.status === 400) {
+        const errorData = error.response?.data;
+        const errorMessage = errorData?.detail || errorData?.message || 'Invalid payment data';
+        throw new Error(`PrimeStack payment initiation failed: ${errorMessage}`);
+      } else if (error.response?.status === 401) {
+        throw new Error('Authentication required. Please verify OTP first.');
+      } else if (error.response?.status === 500) {
+        throw new Error('Server error. Please try again later.');
+      }
+      
+      throw error;
+    }
+  },
+
   /**
    * Initiate payment with USSD PUSH
    */

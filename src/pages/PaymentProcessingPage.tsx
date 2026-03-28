@@ -5,31 +5,59 @@ import { useOrderFlow, usePaymentSimulation } from '../hooks/useOrderFlow';
 
 const PaymentProcessingPage: React.FC = () => {
   const navigate = useNavigate();
-  const { orderState, updatePaymentStatus } = useOrderFlow();
+  const { orderState, updatePaymentStatus, initiatePayment } = useOrderFlow();
   const { simulatePaymentProcessing } = usePaymentSimulation();
   const [progress, setProgress] = useState(0);
+  const [isInitiating, setIsInitiating] = useState(false);
+  const [error, setError] = useState('');
+  const [paymentResponse, setPaymentResponse] = useState<any>(null);
 
-  // Redirect if no active order
+  // Initiate payment on component mount
   useEffect(() => {
-    if (!orderState) {
-      navigate('/checkout');
-      return;
-    }
+    const initiatePaymentProcess = async () => {
+      if (!orderState) {
+        navigate('/checkout');
+        return;
+      }
 
-    // Check if OTP was verified
-    if (!orderState.otp_verified) {
-      navigate('/otp-verification');
-      return;
-    }
+      // Check if OTP was verified
+      if (!orderState.otp_verified) {
+        navigate('/otp-verification');
+        return;
+      }
 
-    // Simulate payment processing
-    const timer = setTimeout(() => {
-      updatePaymentStatus('PENDING');
-      navigate('/payment-status');
-    }, 3000); // 3 seconds delay
+      try {
+        setIsInitiating(true);
+        setError('');
+        
+        // Call PrimeStack payment initiation API
+        const response = await initiatePayment();
+        setPaymentResponse(response);
+        
+        if (response.success) {
+          // Payment initiated successfully
+          updatePaymentStatus('PENDING');
+          
+          // Navigate to payment status after a short delay
+          setTimeout(() => {
+            navigate('/payment-status');
+          }, 2000);
+        } else {
+          // Payment initiation failed
+          setError(response.error || response.message || 'Payment initiation failed');
+          updatePaymentStatus('FAILED');
+        }
+      } catch (err: any) {
+        console.error('Payment initiation error:', err);
+        setError(err.message || 'Failed to initiate payment');
+        updatePaymentStatus('FAILED');
+      } finally {
+        setIsInitiating(false);
+      }
+    };
 
-    return () => clearTimeout(timer);
-  }, [orderState, navigate, updatePaymentStatus]);
+    initiatePaymentProcess();
+  }, [orderState, navigate, updatePaymentStatus, initiatePayment]);
 
   // Progress animation
   useEffect(() => {
@@ -67,9 +95,14 @@ const PaymentProcessingPage: React.FC = () => {
                 </div>
               </div>
             </div>
-            <CardTitle className="text-xl">Processing Payment</CardTitle>
+            <CardTitle className="text-xl">
+              {isInitiating ? 'Initiating Payment...' : 'Processing Payment'}
+            </CardTitle>
             <p className="text-sm text-muted-foreground">
-              Please wait while we process your payment
+              {isInitiating 
+                ? 'Please wait while we initiate your payment via PrimeStack'
+                : 'Please wait while we process your payment'
+              }
             </p>
           </CardHeader>
           
@@ -91,10 +124,20 @@ const PaymentProcessingPage: React.FC = () => {
               </div>
               
               <div className="flex items-center space-x-3">
-                <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                  isInitiating ? 'bg-blue-100' : 'bg-green-100'
+                }`}>
+                  {isInitiating ? (
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
+                  ) : (
+                    <span className="text-green-600 text-xs">✓</span>
+                  )}
                 </div>
-                <span className="text-sm font-medium text-blue-600">Initiating Payment...</span>
+                <span className={`text-sm font-medium ${
+                  isInitiating ? 'text-blue-600' : 'text-green-600'
+                }`}>
+                  {isInitiating ? 'Initiating Payment...' : 'Payment Initiated'}
+                </span>
               </div>
             </div>
 
@@ -112,6 +155,13 @@ const PaymentProcessingPage: React.FC = () => {
               </div>
             </div>
 
+            {/* Error Message */}
+            {error && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-600 text-center">{error}</p>
+              </div>
+            )}
+
             {/* Order Details */}
             <div className="bg-gray-50 p-4 rounded-lg space-y-2">
               <div className="flex justify-between">
@@ -121,13 +171,19 @@ const PaymentProcessingPage: React.FC = () => {
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Amount:</span>
                 <span className="text-lg font-bold text-green-600">
-                  ${orderState.amount.toFixed(2)}
+                  TZS {orderState.amount.toFixed(2)}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Phone:</span>
                 <span className="text-sm">{orderState.phone}</span>
               </div>
+              {paymentResponse?.transaction_id && (
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Transaction ID:</span>
+                  <span className="text-sm font-mono font-semibold">{paymentResponse.transaction_id}</span>
+                </div>
+              )}
             </div>
 
             {/* Loading Animation */}
@@ -140,11 +196,22 @@ const PaymentProcessingPage: React.FC = () => {
             {/* Help Text */}
             <div className="text-center space-y-1">
               <p className="text-xs text-gray-500">
-                Please don't close this window
+                {isInitiating 
+                  ? 'Initiating payment via PrimeStack...' 
+                  : 'Please don\'t close this window'
+                }
               </p>
               <p className="text-xs text-gray-500">
-                You will be redirected to payment status shortly
+                {isInitiating 
+                  ? 'You will be redirected once payment is initiated'
+                  : 'You will be redirected to payment status shortly'
+                }
               </p>
+              {paymentResponse?.success && (
+                <p className="text-xs text-green-600">
+                  ✓ Payment initiated successfully
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
