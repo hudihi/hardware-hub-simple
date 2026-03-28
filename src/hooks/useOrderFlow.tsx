@@ -1,5 +1,7 @@
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import { useCart } from '../context/CartContext';
 import authService from '../services/auth.service';
+import { CheckoutRequest, checkoutService } from '../services/checkout.service';
 import { paymentService, PrimeStackPaymentRequest, PrimeStackPaymentResponse } from '../services/payment.service';
 
 // Order Flow Types
@@ -22,7 +24,7 @@ export interface OrderFlowState {
 interface OrderFlowContextType {
   orderState: OrderFlowState | null;
   customerOrders: OrderFlowState[];
-  createOrder: (orderData: Partial<OrderFlowState>) => void;
+  createOrder: (orderData: Partial<OrderFlowState> & { items?: any[] }) => Promise<void>;
   requestOTP: (phone: string) => Promise<string>;
   verifyOTP: (otpCode: string) => Promise<boolean>;
   retryPayment: (orderId: string) => Promise<void>;
@@ -40,31 +42,73 @@ export const OrderFlowContext = createContext<OrderFlowContextType | undefined>(
 export const OrderFlowProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [orderState, setOrderState] = useState<OrderFlowState | null>(null);
   const [customerOrders, setCustomerOrders] = useState<OrderFlowState[]>([]);
+  const { cartId } = useCart(); // Get cartId from cart context
 
   // Generate mock order ID
   const generateOrderId = (): string => {
     return 'ORD-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9).toUpperCase();
   };
 
-  // Create new order
-  const createOrder = (orderData: Partial<OrderFlowState>) => {
-    const now = new Date().toISOString();
-    const newOrder: OrderFlowState = {
-      order_id: orderData.order_id || generateOrderId(),
-      phone: orderData.phone || '',
-      amount: orderData.amount || 0,
-      items: orderData.items || [],
-      customer_name: orderData.customer_name || '',
-      customer_location: orderData.customer_location || '',
-      order_notes: orderData.order_notes || '',
-      otp_verified: false,
-      payment_status: 'NOT_STARTED',
-      created_at: now,
-      updated_at: now,
-    };
-    
-    setOrderState(newOrder);
-    console.log('Order created:', newOrder);
+  // Create new order (persisted to backend)
+  const createOrder = async (orderData: Partial<OrderFlowState> & { items?: any[] }): Promise<void> => {
+    try {
+      // Validate required fields
+      if (!orderData.phone || !orderData.amount || !orderData.items || orderData.items.length === 0) {
+        throw new Error('Phone, amount, and items are required to create an order');
+      }
+
+      // Prepare checkout request for backend
+      if (!cartId) {
+        throw new Error('No cart found. Please add items to cart first.');
+      }
+
+      const checkoutData: CheckoutRequest = {
+        cart_id: cartId, // Use cartId from cart context
+        customer_name: orderData.customer_name || '',
+        customer_phone: orderData.phone,
+        customer_location: orderData.customer_location || '',
+        order_notes: orderData.order_notes || '',
+        payment_method: 'PRIMESTACK_PAY',
+        items: orderData.items,
+        amount: orderData.amount
+      };
+
+      console.log('Creating order on backend:', checkoutData);
+      
+      // Create order on backend
+      const checkoutResponse = await checkoutService.processCheckout(checkoutData);
+      
+      console.log('Backend checkout response:', checkoutResponse);
+      
+      if (!checkoutResponse.order_id) {
+        throw new Error('Failed to create order on backend - no order_id returned');
+      }
+
+      console.log('Order created on backend with ID:', checkoutResponse.order_id);
+
+      // Create local order state with backend order_id
+      const now = new Date().toISOString();
+      const newOrder: OrderFlowState = {
+        order_id: checkoutResponse.order_id, // Use backend order_id
+        phone: orderData.phone,
+        amount: orderData.amount,
+        items: orderData.items,
+        customer_name: orderData.customer_name || '',
+        customer_location: orderData.customer_location || '',
+        order_notes: orderData.order_notes || '',
+        otp_verified: false,
+        payment_status: 'NOT_STARTED',
+        created_at: now,
+        updated_at: now,
+      };
+      
+      setOrderState(newOrder);
+      console.log('Order created successfully:', newOrder);
+      
+    } catch (error) {
+      console.error('Order creation failed:', error);
+      throw error;
+    }
   };
 
   // Request OTP
@@ -212,6 +256,17 @@ export const OrderFlowProvider: React.FC<{ children: ReactNode }> = ({ children 
         amount: orderState.amount,
         order_id: orderState.order_id
       };
+
+      console.log('Payment initiation payload:', {
+        paymentData,
+        orderState: {
+          order_id: orderState.order_id,
+          phone: orderState.phone,
+          amount: orderState.amount,
+          otp_verified: orderState.otp_verified,
+          payment_status: orderState.payment_status
+        }
+      });
 
       // Call PrimeStack payment initiation API
       const response = await paymentService.initiatePrimeStackPayment(paymentData);

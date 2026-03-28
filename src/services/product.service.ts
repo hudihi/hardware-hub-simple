@@ -179,17 +179,40 @@ class ProductService {
         params: { page, size }
       });
       
+      console.log('Raw API Response:', response.data);
+      
       // Handle paginated response structure
-      if (response.data?.items) {
-        return response.data;
-      } else if (Array.isArray(response.data)) {
-        // If backend returns array, convert to paginated format
+      if (response.data?.items && Array.isArray(response.data.items)) {
+        // Backend supports pagination
         return {
-          items: response.data,
-          total: response.data.length,
+          items: response.data.items,
+          total: response.data.total || response.data.items.length,
+          page: response.data.page || page,
+          size: response.data.size || size,
+          pages: response.data.pages || Math.ceil((response.data.total || response.data.items.length) / size)
+        };
+      } else if (Array.isArray(response.data)) {
+        // Backend returns array - implement client-side pagination
+        const allProducts = response.data;
+        const startIndex = (page - 1) * size;
+        const endIndex = startIndex + size;
+        const paginatedItems = allProducts.slice(startIndex, endIndex);
+        
+        console.log('Client-side pagination:', {
+          totalProducts: allProducts.length,
+          page,
+          size,
+          startIndex,
+          endIndex,
+          itemsOnPage: paginatedItems.length
+        });
+        
+        return {
+          items: paginatedItems,
+          total: allProducts.length,
           page: page,
           size: size,
-          pages: 1
+          pages: Math.ceil(allProducts.length / size)
         };
       }
       

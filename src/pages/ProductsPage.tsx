@@ -1,9 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import SearchBar from '../components/SearchBar';
 import { useLanguage } from '../context/LanguageContext';
-import { productService } from '../services/product.service';
+import { PaginatedProductsResponse, productService } from '../services/product.service';
 import { Category, Product } from '../types';
 import { getCategoryIcon } from '../utils/categoryIcons';
 import { getProductImageUrl } from '../utils/imageUrlUtils';
@@ -17,49 +17,178 @@ const ProductsPage: React.FC = () => {
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
+  const [allProductsCache, setAllProductsCache] = useState<Product[]>([]);
+  const [cacheInitialized, setCacheInitialized] = useState(false);
   const { t } = useLanguage();
+  
+  // Ref for infinite scroll detection
+  const observer = useRef<IntersectionObserver>();
+  const lastProductRef = useRef<HTMLDivElement>(null);
 
-  // Fetch products on component mount
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const fetchedProducts = await productService.getProducts(1, 100);
-        // Extract items from paginated response
-        const productsData = fetchedProducts.items || [];
-        // Map API response to match Product interface expected by components
-        const mappedProducts = productsData.map(apiProduct => {
-          const imageUrl = getProductImageUrl(apiProduct);
-          console.log(`Product: ${apiProduct.name}, Image URL: ${imageUrl}`);
-          console.log('API Product data:', apiProduct);
-          return {
-            id: apiProduct.id,
-            name: apiProduct.name,
-            description: apiProduct.description,
-            price: apiProduct.price,
-            unit: apiProduct.unit_of_measure, // Map unit_of_measure to unit
-            image: imageUrl, // Use centralized utility to handle uploaded images
-            category: apiProduct.category_id, // Map category_id to category
-            stock: apiProduct.stock_quantity, // Map stock_quantity to stock
-          };
+  // Products per page for infinite scroll
+  const PAGE_SIZE = 20;
+
+  // Initialize cache with all products
+  const initializeCache = useCallback(async () => {
+    if (cacheInitialized) return;
+    
+    let allProducts: any[] = [];
+    
+    try {
+      setProductsLoading(true);
+      console.log('Starting cache initialization...');
+      
+      // Fetch products in batches of 100 (API maximum)
+      let currentPage = 1;
+      let hasMorePages = true;
+      
+      while (hasMorePages && currentPage <= 10) { // Limit to 10 pages (1000 products max)
+        try {
+          const response: PaginatedProductsResponse = await productService.getProducts(currentPage, 100);
+          const pageProducts = response.items || [];
+          console.log(`Page ${currentPage} fetched:`, pageProducts.length, 'products');
+          
+          if (pageProducts.length === 0) {
+            hasMorePages = false;
+            break;
+          }
+          
+          allProducts = [...allProducts, ...pageProducts];
+          
+          // Check if there are more pages
+          if (response.pages && currentPage >= response.pages) {
+            hasMorePages = false;
+          } else if (pageProducts.length < 100) {
+            // If we got less than 100, we're probably at the end
+            hasMorePages = false;
+          }
+          
+          currentPage++;
+        } catch (pageError) {
+          console.error(`Failed to fetch page ${currentPage}:`, pageError);
+          hasMorePages = false;
+        }
+      }
+      
+      console.log('Total products fetched:', allProducts.length);
+      
+      if (allProducts.length === 0) {
+        console.warn('No products returned from API');
+        setProducts([]);
+        setTotalCount(0);
+        setHasMore(false);
+        setCacheInitialized(true);
+        return;
+      }
+      
+      // Map and cache all products
+      const mappedProducts = allProducts.map(apiProduct => {
+        const imageUrl = getProductImageUrl(apiProduct);
+        return {
+          id: apiProduct.id,
+          name: apiProduct.name,
+          description: apiProduct.description,
+          price: apiProduct.price,
+          unit: apiProduct.unit_of_measure,
+          image: imageUrl,
+          category: apiProduct.category_id,
+          stock: apiProduct.stock_quantity,
+        };
+      });
+      
+      setAllProductsCache(mappedProducts);
+      setTotalCount(mappedProducts.length);
+      setCacheInitialized(true);
+      
+      // Load first page
+      const firstPage = mappedProducts.slice(0, PAGE_SIZE);
+      setProducts(firstPage);
+      setHasMore(mappedProducts.length > PAGE_SIZE);
+      setCurrentPage(1);
+      
+      console.log('Cache initialized with', mappedProducts.length, 'products');
+    } catch (error) {
+      console.error('Failed to initialize cache:', error);
+      setCacheInitialized(true); // Prevent infinite loading
+    } finally {
+      setProductsLoading(false);
+    }
+  }, [cacheInitialized]);
+
+  // Load more products from cache
+  const loadMoreProducts = useCallback(() => {
+    if (!isLoadingMore && hasMore && !searchQuery && !selectedCategory && cacheInitialized) {
+      setIsLoadingMore(true);
+      
+      const nextPage = currentPage + 1;
+      const startIndex = (nextPage - 1) * PAGE_SIZE;
+      const endIndex = startIndex + PAGE_SIZE;
+      const nextProducts = allProductsCache.slice(startIndex, endIndex);
+      
+      setTimeout(() => {
+        setProducts(prev => [...prev, ...nextProducts]);
+        setCurrentPage(nextPage);
+        setHasMore(endIndex < allProductsCache.length);
+        setIsLoadingMore(false);
+        
+        console.log('Loaded more products:', {
+          page: nextPage,
+          startIndex,
+          endIndex,
+          newItems: nextProducts.length,
+          totalLoaded: products.length + nextProducts.length
         });
-        setProducts(mappedProducts);
-      } catch (error) {
-        console.error('Failed to fetch products:', error);
-      } finally {
-        setProductsLoading(false);
+      }, 300); // Small delay for better UX
+    }
+  }, [currentPage, hasMore, isLoadingMore, searchQuery, selectedCategory, cacheInitialized, allProductsCache, products.length]);
+
+  // Setup infinite scroll observer
+  useEffect(() => {
+    const currentObserver = observer.current;
+    const currentLastProduct = lastProductRef.current;
+
+    if (currentObserver) {
+      currentObserver.disconnect();
+    }
+
+    observer.current = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !isLoadingMore) {
+          loadMoreProducts();
+        }
+      },
+      {
+        threshold: 0.1,
+        rootMargin: '100px'
+      }
+    );
+
+    if (currentLastProduct) {
+      observer.current.observe(currentLastProduct);
+    }
+
+    return () => {
+      if (currentObserver) {
+        currentObserver.disconnect();
       }
     };
+  }, [loadMoreProducts, hasMore, isLoadingMore]);
 
+  // Initial fetch
+  useEffect(() => {
     const fetchCategories = async () => {
       try {
         const fetchedCategories = await productService.getCategories();
-        // Map API categories to match Category interface expected by components
         const mappedCategories = fetchedCategories.map(apiCategory => {
           return {
             id: apiCategory.id,
             name: apiCategory.name,
-            slug: apiCategory.name.toLowerCase().replace(/\s+/g, '-'), // Generate slug from name
-            icon: getCategoryIcon(apiCategory.name), // Generate icon based on name
+            slug: apiCategory.name.toLowerCase().replace(/\s+/g, '-'),
+            icon: getCategoryIcon(apiCategory.name),
             description: apiCategory.description
           };
         });
@@ -71,9 +200,44 @@ const ProductsPage: React.FC = () => {
       }
     };
 
-    fetchProducts();
+    initializeCache();
     fetchCategories();
-  }, []);
+  }, [initializeCache]);
+
+  // Reset products when filters change
+  useEffect(() => {
+    if (searchQuery || selectedCategory) {
+      // For filtered results, filter from cache
+      if (cacheInitialized) {
+        let filtered = allProductsCache;
+
+        if (selectedCategory) {
+          filtered = filtered.filter(product => product.category === selectedCategory);
+        }
+
+        if (searchQuery.trim()) {
+          filtered = filtered.filter(
+            (product) =>
+              product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              product.description.toLowerCase().includes(searchQuery.toLowerCase())
+          );
+        }
+
+        setProducts(filtered);
+        setTotalCount(filtered.length);
+        setHasMore(false);
+      }
+    } else {
+      // Reset to infinite scroll when no filters
+      if (cacheInitialized) {
+        const firstPage = allProductsCache.slice(0, PAGE_SIZE);
+        setProducts(firstPage);
+        setHasMore(allProductsCache.length > PAGE_SIZE);
+        setCurrentPage(1);
+        setTotalCount(allProductsCache.length);
+      }
+    }
+  }, [searchQuery, selectedCategory, cacheInitialized, allProductsCache]);
 
   // Suggestions based on fetched products and categories
   const suggestions = useMemo(() => {
@@ -180,11 +344,6 @@ const ProductsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Results Count */}
-        <p className="text-muted small mb-3">
-          {t('nav_products')} {!productsLoading ? filteredProducts.length : 0} {t('products_found')}
-        </p>
-
         {/* Products Grid */}
         {productsLoading ? (
           <div className="text-center py-5">
@@ -193,13 +352,29 @@ const ProductsPage: React.FC = () => {
             </div>
           </div>
         ) : filteredProducts.length > 0 ? (
-          <div className="row g-3">
-            {filteredProducts.map((product) => (
-              <div key={product.id} className="col-6 col-md-4 col-lg-3">
-                <ProductCard product={product} />
+          <>
+            <div className="row g-3">
+              {filteredProducts.map((product, index) => (
+                <div 
+                  key={product.id} 
+                  className="col-6 col-md-4 col-lg-3"
+                  ref={index === filteredProducts.length - 1 ? lastProductRef : null}
+                >
+                  <ProductCard product={product} />
+                </div>
+              ))}
+            </div>
+            
+            {/* Loading More Indicator */}
+            {isLoadingMore && (
+              <div className="text-center py-4">
+                <div className="spinner-border spinner-border-sm text-muted me-2" role="status">
+                  <span className="visually-hidden">Loading more...</span>
+                </div>
+                <span className="text-muted small">Loading more products...</span>
               </div>
-            ))}
-          </div>
+            )}
+          </>
         ) : (
           <div className="text-center py-5">
             <i className="bi bi-search fs-1 text-muted mb-3 d-block"></i>

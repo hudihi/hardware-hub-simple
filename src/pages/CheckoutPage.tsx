@@ -136,8 +136,8 @@ const CheckoutPage: React.FC = () => {
         return;
       }
 
-      // Create mock order using order flow
-      createOrder({
+      // Create order using order flow (now async)
+      await createOrder({
         phone: normalizedPhone,
         amount: total,
         items: items,

@@ -1,81 +1,67 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { useOrderFlow, usePaymentSimulation } from '../hooks/useOrderFlow';
+import { useOrderFlow } from '../hooks/useOrderFlow';
 
 const PaymentProcessingPage: React.FC = () => {
   const navigate = useNavigate();
   const { orderState, updatePaymentStatus, initiatePayment } = useOrderFlow();
-  const { simulatePaymentProcessing } = usePaymentSimulation();
-  const [progress, setProgress] = useState(0);
-  const [isInitiating, setIsInitiating] = useState(false);
+  const [isPaying, setIsPaying] = useState(false);
   const [error, setError] = useState('');
   const [paymentResponse, setPaymentResponse] = useState<any>(null);
 
-  // Initiate payment on component mount
+  // Validate order state
   useEffect(() => {
-    const initiatePaymentProcess = async () => {
-      if (!orderState) {
-        navigate('/checkout');
-        return;
-      }
+    if (!orderState) {
+      navigate('/checkout');
+      return;
+    }
 
-      // Check if OTP was verified
-      if (!orderState.otp_verified) {
-        navigate('/otp-verification');
-        return;
-      }
+    // Check if OTP was verified
+    if (!orderState.otp_verified) {
+      navigate('/otp-verification');
+      return;
+    }
+  }, [orderState, navigate]);
 
-      try {
-        setIsInitiating(true);
-        setError('');
+  const handlePayNow = async () => {
+    if (!orderState) return;
+
+    try {
+      setIsPaying(true);
+      setError('');
+      
+      // Call PrimeStack payment initiation API
+      const response = await initiatePayment();
+      setPaymentResponse(response);
+      
+      if (response.success) {
+        // Payment initiated successfully
+        updatePaymentStatus('PENDING');
         
-        // Call PrimeStack payment initiation API
-        const response = await initiatePayment();
-        setPaymentResponse(response);
-        
-        if (response.success) {
-          // Payment initiated successfully
-          updatePaymentStatus('PENDING');
-          
-          // Navigate to payment status after a short delay
-          setTimeout(() => {
-            navigate('/payment-status');
-          }, 2000);
-        } else {
-          // Payment initiation failed
-          setError(response.error || response.message || 'Payment initiation failed');
-          updatePaymentStatus('FAILED');
-        }
-      } catch (err: any) {
-        console.error('Payment initiation error:', err);
-        setError(err.message || 'Failed to initiate payment');
+        // Navigate to payment status after showing success message
+        setTimeout(() => {
+          navigate('/payment-status');
+        }, 3000);
+      } else {
+        // Payment initiation failed
+        setError(response.error || response.message || 'Payment initiation failed');
         updatePaymentStatus('FAILED');
-      } finally {
-        setIsInitiating(false);
       }
-    };
-
-    initiatePaymentProcess();
-  }, [orderState, navigate, updatePaymentStatus, initiatePayment]);
-
-  // Progress animation
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 90) return prev;
-        return prev + 10;
-      });
-    }, 300);
-
-    return () => clearInterval(interval);
-  }, []);
+    } catch (err: any) {
+      console.error('Payment initiation error:', err);
+      setError(err.message || 'Failed to initiate payment');
+      updatePaymentStatus('FAILED');
+    } finally {
+      setIsPaying(false);
+    }
+  };
 
   if (!orderState) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brown mx-auto mb-4"></div>
           <p>Loading...</p>
         </div>
       </div>
@@ -88,72 +74,56 @@ const PaymentProcessingPage: React.FC = () => {
         <Card>
           <CardHeader className="text-center">
             <div className="mx-auto mb-4">
-              <div className="relative">
-                <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-green-600"></div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="h-8 w-8 border-t-2 border-green-300 rounded-full animate-pulse"></div>
-                </div>
+              <div className="w-16 h-16 bg-cream rounded-full flex items-center justify-center">
+                <i className="bi bi-phone text-brown text-2xl"></i>
               </div>
             </div>
-            <CardTitle className="text-xl">
-              {isInitiating ? 'Initiating Payment...' : 'Processing Payment'}
+            <CardTitle className="text-xl text-brown-dark">
+              Complete Your Payment
             </CardTitle>
-            <p className="text-sm text-muted-foreground">
-              {isInitiating 
-                ? 'Please wait while we initiate your payment via PrimeStack'
-                : 'Please wait while we process your payment'
-              }
+            <p className="text-sm text-gray-600 mt-2">
+              Please complete the payment on your phone to process your order
             </p>
           </CardHeader>
           
           <CardContent className="space-y-6">
-            {/* Success Indicators */}
-            <div className="space-y-3">
-              <div className="flex items-center space-x-3">
-                <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
-                  <span className="text-green-600 text-xs">✓</span>
-                </div>
-                <span className="text-sm font-medium">Phone Verified</span>
+            {/* Order Summary */}
+            <div className="bg-cream p-4 rounded-lg space-y-2">
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-600">Order ID:</span>
+                <span className="text-sm font-mono font-semibold">{orderState.order_id}</span>
               </div>
-              
-              <div className="flex items-center space-x-3">
-                <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
-                  <span className="text-green-600 text-xs">✓</span>
-                </div>
-                <span className="text-sm font-medium">Order Placed Successfully</span>
-              </div>
-              
-              <div className="flex items-center space-x-3">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                  isInitiating ? 'bg-blue-100' : 'bg-green-100'
-                }`}>
-                  {isInitiating ? (
-                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
-                  ) : (
-                    <span className="text-green-600 text-xs">✓</span>
-                  )}
-                </div>
-                <span className={`text-sm font-medium ${
-                  isInitiating ? 'text-blue-600' : 'text-green-600'
-                }`}>
-                  {isInitiating ? 'Initiating Payment...' : 'Payment Initiated'}
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-600">Amount:</span>
+                <span className="text-lg font-bold text-brown">
+                  TZS {orderState.amount.toFixed(2)}
                 </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-600">Phone:</span>
+                <span className="text-sm">{orderState.phone}</span>
               </div>
             </div>
 
-            {/* Progress Bar */}
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs text-gray-600">
-                <span>Processing Payment</span>
-                <span>{progress}%</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full transition-all duration-300 ease-out"
-                  style={{ width: `${progress}%` }}
-                ></div>
-              </div>
+            {/* Instructions */}
+            <div className="bg-beige p-4 rounded-lg border border-brown-light">
+              <h4 className="font-semibold text-brown-dark mb-2">Payment Instructions:</h4>
+              <ul className="text-sm text-brown space-y-1">
+                <li>• Click the "Pay Now" button below</li>
+                <li>• You will receive a payment prompt on your phone</li>
+                <li>• Follow the instructions to complete payment</li>
+                <li>• Your order will be processed after payment</li>
+              </ul>
             </div>
+
+            {/* Success Message */}
+            {paymentResponse?.success && (
+              <div className="p-3 bg-cream border border-green-200 rounded-lg">
+                <p className="text-sm text-green-700 text-center">
+                  ✓ Payment initiated successfully! Check your phone for payment prompt.
+                </p>
+              </div>
+            )}
 
             {/* Error Message */}
             {error && (
@@ -162,56 +132,50 @@ const PaymentProcessingPage: React.FC = () => {
               </div>
             )}
 
-            {/* Order Details */}
-            <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Order ID:</span>
-                <span className="text-sm font-mono font-semibold">{orderState.order_id}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Amount:</span>
-                <span className="text-lg font-bold text-green-600">
-                  TZS {orderState.amount.toFixed(2)}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Phone:</span>
-                <span className="text-sm">{orderState.phone}</span>
-              </div>
-              {paymentResponse?.transaction_id && (
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Transaction ID:</span>
-                  <span className="text-sm font-mono font-semibold">{paymentResponse.transaction_id}</span>
-                </div>
+            {/* Pay Now Button */}
+            <button
+              onClick={handlePayNow}
+              disabled={isPaying || paymentResponse?.success}
+              className="w-full text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 border-2 border-brown"
+              style={{
+                backgroundColor: isPaying || paymentResponse?.success ? '#9CA3AF' : '#7C5A3C',
+                cursor: isPaying || paymentResponse?.success ? 'not-allowed' : 'pointer',
+                minHeight: '48px'
+              }}
+            >
+              {isPaying ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Processing...
+                </>
+              ) : paymentResponse?.success ? (
+                <>
+                  <i className="bi bi-check-circle"></i>
+                  Payment Initiated
+                </>
+              ) : (
+                <>
+                  <i className="bi bi-credit-card"></i>
+                  Pay Now
+                </>
               )}
-            </div>
+            </button>
 
-            {/* Loading Animation */}
-            <div className="flex justify-center space-x-1">
-              <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-              <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-              <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-            </div>
+            {/* Debug Info - Remove in production */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="text-xs text-gray-500 mt-2">
+                Debug: isPaying={String(isPaying)}, paymentSuccess={String(paymentResponse?.success)}
+              </div>
+            )}
 
             {/* Help Text */}
             <div className="text-center space-y-1">
               <p className="text-xs text-gray-500">
-                {isInitiating 
-                  ? 'Initiating payment via PrimeStack...' 
-                  : 'Please don\'t close this window'
-                }
+                Don't close this window after clicking "Pay Now"
               </p>
               <p className="text-xs text-gray-500">
-                {isInitiating 
-                  ? 'You will be redirected once payment is initiated'
-                  : 'You will be redirected to payment status shortly'
-                }
+                You will be redirected automatically once payment is complete
               </p>
-              {paymentResponse?.success && (
-                <p className="text-xs text-green-600">
-                  ✓ Payment initiated successfully
-                </p>
-              )}
             </div>
           </CardContent>
         </Card>

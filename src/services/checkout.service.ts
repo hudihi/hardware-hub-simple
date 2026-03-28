@@ -9,6 +9,8 @@ export interface CheckoutRequest {
   customer_location: string;
   order_notes: string;
   payment_method: 'PRIMESTACK_PAY';
+  items?: any[];
+  amount?: number;
 }
 
 export interface CheckoutSummaryItem {
@@ -96,7 +98,21 @@ export const checkoutService = {
       console.error('Error headers:', error.response?.headers);
       
       // Enhanced error details for debugging
-      if (error.response?.status === 400) {
+      if (error.response?.status === 422) {
+        const errorData = error.response?.data;
+        console.error('422 Validation Error Details:', {
+          detail: errorData?.detail,
+          message: errorData?.message,
+          errors: errorData?.errors,
+          validation_errors: errorData?.validation_errors,
+          full_response: errorData,
+          request_data: checkoutData
+        });
+        
+        // Provide more specific error message
+        const errorMessage = errorData?.detail || errorData?.message || 'Validation failed';
+        throw new Error(`Checkout validation failed: ${errorMessage}`);
+      } else if (error.response?.status === 400) {
         const errorData = error.response?.data;
         console.error('400 Bad Request Details:', {
           detail: errorData?.detail,
