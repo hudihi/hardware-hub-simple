@@ -18,7 +18,7 @@ const OrderConfirmationPage: React.FC = () => {
     }
 
     // Check if payment was completed
-    if (orderState.payment_status !== 'COMPLETED') {
+    if (orderState.payment_status !== 'CONFIRMED') {
       navigate('/payment-status');
       return;
     }

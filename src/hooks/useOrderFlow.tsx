@@ -2,10 +2,14 @@ import React, { createContext, ReactNode, useContext, useEffect, useState } from
 import { useCart } from '../context/CartContext';
 import authService from '../services/auth.service';
 import { CheckoutRequest, checkoutService } from '../services/checkout.service';
-import { paymentService, PrimeStackPaymentRequest, PrimeStackPaymentResponse } from '../services/payment.service';
 
 // Order Flow Types
-export type PaymentStatus = 'NOT_STARTED' | 'PENDING' | 'COMPLETED' | 'FAILED' | 'ABANDONED';
+export type PaymentStatus = 
+  | 'NOT_STARTED' 
+  | 'AWAITING_PAYMENT'
+  | 'AWAITING_VERIFICATION' 
+  | 'CONFIRMED'
+  | 'REJECTED';
 
 export interface OrderFlowState {
   order_id: string;
@@ -29,10 +33,11 @@ interface OrderFlowContextType {
   verifyOTP: (otpCode: string) => Promise<boolean>;
   retryPayment: (orderId: string) => Promise<void>;
   fetchCustomerOrders: () => Promise<void>;
-  initiatePayment: () => Promise<PrimeStackPaymentResponse>;
   updatePaymentStatus: (status: PaymentStatus) => void;
   resetOrderFlow: () => void;
   isOrderActive: boolean;
+  setAwaitingPayment: () => void;
+  setAwaitingVerification: () => void;
 }
 
 // Context for order flow state
@@ -137,7 +142,7 @@ export const OrderFlowProvider: React.FC<{ children: ReactNode }> = ({ children 
         setOrderState(prev => prev ? {
           ...prev,
           otp_verified: true,
-          payment_status: 'PENDING',
+          payment_status: 'AWAITING_PAYMENT',
           updated_at: new Date().toISOString()
         } : null);
         console.log('OTP verified successfully, token received');
@@ -161,7 +166,7 @@ export const OrderFlowProvider: React.FC<{ children: ReactNode }> = ({ children 
       }
 
       // Check if payment status allows retry
-      const retryableStatuses: PaymentStatus[] = ['FAILED', 'ABANDONED', 'PENDING'];
+      const retryableStatuses: PaymentStatus[] = ['REJECTED', 'AWAITING_PAYMENT', 'AWAITING_VERIFICATION'];
       if (!retryableStatuses.includes(orderState.payment_status)) {
         throw new Error(`Cannot retry payment with status: ${orderState.payment_status}`);
       }
@@ -180,8 +185,8 @@ export const OrderFlowProvider: React.FC<{ children: ReactNode }> = ({ children 
         throw new Error(errorData.message || `Failed to retry payment: ${response.statusText}`);
       }
 
-      // Update payment status to PENDING after successful retry request
-      updatePaymentStatus('PENDING');
+      // Update payment status to AWAITING_PAYMENT after successful retry request
+      updatePaymentStatus('AWAITING_PAYMENT');
       console.log('Payment retry initiated successfully for order:', orderId);
 
     } catch (error) {
@@ -237,56 +242,14 @@ export const OrderFlowProvider: React.FC<{ children: ReactNode }> = ({ children 
     }
   };
 
-  // Initiate payment via PrimeStack
-  const initiatePayment = async (): Promise<PrimeStackPaymentResponse> => {
-    try {
-      // Validate order state
-      if (!orderState || !orderState.otp_verified) {
-        throw new Error('Order must be OTP verified before initiating payment');
-      }
+  // Set order to awaiting payment status
+  const setAwaitingPayment = () => {
+    updatePaymentStatus('AWAITING_PAYMENT');
+  };
 
-      // Check if payment status allows initiation
-      if (orderState.payment_status !== 'NOT_STARTED' && orderState.payment_status !== 'FAILED') {
-        throw new Error(`Cannot initiate payment with status: ${orderState.payment_status}`);
-      }
-
-      // Prepare payment request
-      const paymentData: PrimeStackPaymentRequest = {
-        phone: orderState.phone,
-        amount: orderState.amount,
-        order_id: orderState.order_id
-      };
-
-      console.log('Payment initiation payload:', {
-        paymentData,
-        orderState: {
-          order_id: orderState.order_id,
-          phone: orderState.phone,
-          amount: orderState.amount,
-          otp_verified: orderState.otp_verified,
-          payment_status: orderState.payment_status
-        }
-      });
-
-      // Call PrimeStack payment initiation API
-      const response = await paymentService.initiatePrimeStackPayment(paymentData);
-
-      // Update payment status based on response
-      if (response.success) {
-        updatePaymentStatus('PENDING');
-        console.log('Payment initiated successfully for order:', orderState.order_id);
-      } else {
-        updatePaymentStatus('FAILED');
-        console.error('Payment initiation failed:', response.error || response.message);
-      }
-
-      return response;
-
-    } catch (error) {
-      console.error('Payment initiation failed:', error);
-      updatePaymentStatus('FAILED');
-      throw error;
-    }
+  // Set order to awaiting verification status
+  const setAwaitingVerification = () => {
+    updatePaymentStatus('AWAITING_VERIFICATION');
   };
 
   // Update payment status
@@ -323,10 +286,11 @@ export const OrderFlowProvider: React.FC<{ children: ReactNode }> = ({ children 
     verifyOTP,
     retryPayment,
     fetchCustomerOrders,
-    initiatePayment,
     updatePaymentStatus,
     resetOrderFlow,
     isOrderActive,
+    setAwaitingPayment,
+    setAwaitingVerification,
   };
 
   return (
@@ -343,60 +307,6 @@ export const useOrderFlow = (): OrderFlowContextType => {
     throw new Error('useOrderFlow must be used within an OrderFlowProvider');
   }
   return context;
-};
-
-// Helper hook for payment simulation
-export const usePaymentSimulation = () => {
-  const { updatePaymentStatus, retryPayment } = useOrderFlow();
-
-  const simulatePaymentProcessing = (onComplete?: () => void) => {
-    console.log('Starting payment simulation...');
-    
-    // Simulate payment processing time
-    setTimeout(() => {
-      updatePaymentStatus('COMPLETED');
-      console.log('Payment completed successfully');
-      onComplete?.();
-    }, 12000); // 12 seconds
-  };
-
-  const simulatePaymentFailure = (onFailure?: () => void) => {
-    setTimeout(() => {
-      updatePaymentStatus('FAILED');
-      console.log('Payment failed');
-      onFailure?.();
-    }, 8000); // 8 seconds
-  };
-
-  const retryPaymentWithSimulation = async (orderId?: string, onComplete?: () => void, onFailure?: () => void) => {
-    try {
-      console.log('Initiating payment retry...');
-      
-      // Use provided orderId or get from current order state
-      const targetOrderId = orderId || '';
-      
-      // Call the real retry payment API
-      await retryPayment(targetOrderId);
-      
-      // Simulate payment processing after retry
-      setTimeout(() => {
-        updatePaymentStatus('COMPLETED');
-        console.log('Payment retry completed successfully');
-        onComplete?.();
-      }, 10000); // 10 seconds simulation
-      
-    } catch (error) {
-      console.error('Payment retry failed:', error);
-      onFailure?.();
-      throw error;
-    }
-  };
-
-  return {
-    simulatePaymentProcessing,
-    simulatePaymentFailure,
-    retryPaymentWithSimulation,
-  };
 };
 
 export default OrderFlowProvider;

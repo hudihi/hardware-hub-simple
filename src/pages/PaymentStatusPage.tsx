@@ -2,12 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { useOrderFlow, usePaymentSimulation } from '../hooks/useOrderFlow';
+import { useOrderFlow } from '../hooks/useOrderFlow';
 
 const PaymentStatusPage: React.FC = () => {
   const navigate = useNavigate();
   const { orderState, updatePaymentStatus, retryPayment } = useOrderFlow();
-  const { simulatePaymentProcessing, retryPaymentWithSimulation } = usePaymentSimulation();
   const [timeRemaining, setTimeRemaining] = useState(15); // 15 seconds
   const [paymentCompleted, setPaymentCompleted] = useState(false);
   const [isRetryingPayment, setIsRetryingPayment] = useState(false);
@@ -28,7 +27,7 @@ const PaymentStatusPage: React.FC = () => {
 
     // Simulate payment completion after 15 seconds
     const timer = setTimeout(() => {
-      updatePaymentStatus('COMPLETED');
+      updatePaymentStatus('CONFIRMED');
       setPaymentCompleted(true);
       setTimeout(() => {
         navigate('/order-confirmation');
@@ -69,21 +68,17 @@ const PaymentStatusPage: React.FC = () => {
     setRetryError('');
 
     try {
-      // Call the retry payment API with simulation
-      await retryPaymentWithSimulation(
-        orderState.order_id,
-        () => {
-          // On successful retry completion
-          setPaymentCompleted(true);
-          setTimeout(() => {
-            navigate('/order-confirmation');
-          }, 2000);
-        },
-        () => {
-          // On retry failure
-          setRetryError('Payment retry failed. Please try again.');
-        }
-      );
+      // Call the retry payment API
+      await retryPayment(orderState.order_id);
+      
+      // On successful retry, simulate payment completion after a delay
+      setTimeout(() => {
+        setPaymentCompleted(true);
+        setTimeout(() => {
+          navigate('/order-confirmation');
+        }, 2000);
+      }, 3000); // 3 seconds delay to simulate payment processing
+      
     } catch (error: any) {
       console.error('Retry payment error:', error);
       setRetryError(error.message || 'Failed to retry payment');
