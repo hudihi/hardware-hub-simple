@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { useCart } from '../context/CartContext';
 import { useOrderFlow } from '../hooks/useOrderFlow';
+import { formatOrderDisplayCode } from '../utils/format';
 
 const PaymentProcessingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -152,7 +153,9 @@ const PaymentProcessingPage: React.FC = () => {
             <div className="bg-cream p-4 rounded-lg space-y-2">
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Order ID:</span>
-                <span className="text-sm font-mono font-semibold">{orderState.order_id}</span>
+                <span className="text-sm font-mono font-semibold" title={orderState.order_id}>
+                  {formatOrderDisplayCode(orderState.order_id)}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Amount:</span>

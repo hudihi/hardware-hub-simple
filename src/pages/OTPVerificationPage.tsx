@@ -4,6 +4,7 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '../components/ui/input-otp';
 import { useOrderFlow } from '../hooks/useOrderFlow';
+import { formatOrderDisplayCode } from '../utils/format';
 
 const OTPVerificationPage: React.FC = () => {
   const navigate = useNavigate();
@@ -183,7 +184,9 @@ const OTPVerificationPage: React.FC = () => {
             <div className="bg-cream p-4 rounded-lg">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm text-gray-600">Order ID:</span>
-                <span className="text-sm font-mono font-semibold">{orderState.order_id}</span>
+                <span className="text-sm font-mono font-semibold" title={orderState.order_id}>
+                  {formatOrderDisplayCode(orderState.order_id)}
+                </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Amount:</span>

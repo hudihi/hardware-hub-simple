@@ -1,6 +1,6 @@
+import { ArrowLeft, ArrowRight, Check, Loader2 } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Check, Loader2 } from 'lucide-react';
 import PhoneInput from '../components/PhoneInput';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';

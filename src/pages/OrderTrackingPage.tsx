@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button';
 import { useLanguage } from '../context/LanguageContext';
 import { useOrderFlow } from '../hooks/useOrderFlow';
-import { formatPrice } from '../utils/format';
+import { formatOrderDisplayCode, formatPrice } from '../utils/format';
 import authService from '../services/auth.service';
 import UploadPaymentProof from './UploadPaymentProof';
 
@@ -219,7 +219,9 @@ const OrderTrackingPage: React.FC = () => {
           <CardHeader>
             <div className="flex justify-between items-start">
               <div>
-                <CardTitle className="text-xl">{order.order_id}</CardTitle>
+                <CardTitle className="text-xl font-mono" title={order.order_id}>
+                  {formatOrderDisplayCode(order.order_id)}
+                </CardTitle>
                 <p className="text-sm text-gray-600">
                   {new Date(order.created_at).toLocaleDateString()} at {new Date(order.created_at).toLocaleTimeString()}
                 </p>
@@ -295,7 +297,7 @@ const OrderTrackingPage: React.FC = () => {
                 <h5 className="font-semibold text-blue-800 mb-2">Mobile Money Payment</h5>
                 <div className="space-y-2 text-sm text-blue-700">
                   <p><strong>Amount:</strong> {formatPrice(order.amount)}</p>
-                  <p><strong>Reference:</strong> Use Order ID: {order.order_id}</p>
+                  <p><strong>Reference:</strong> Use order code: {formatOrderDisplayCode(order.order_id)}</p>
                   <p><strong>Available Methods:</strong></p>
                   <ul className="list-disc list-inside space-y-1 ml-4">
                     <li>M-Pesa: *150*00#</li>

@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { useLanguage } from '../context/LanguageContext';
 import { useOrderFlow } from '../hooks/useOrderFlow';
 import authService from '../services/auth.service';
-import { formatPrice } from '../utils/format';
+import { formatOrderDisplayCode, formatPrice } from '../utils/format';
 import UploadPaymentProof from './UploadPaymentProof';
 
 const OrderDetailPage: React.FC = () => {
@@ -317,7 +317,9 @@ const OrderDetailPage: React.FC = () => {
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div>
-                    <CardTitle className="text-xl">{order.order_id}</CardTitle>
+                    <CardTitle className="text-xl font-mono" title={order.order_id}>
+                      {formatOrderDisplayCode(order.order_id)}
+                    </CardTitle>
                     <p className="text-sm text-gray-600">
                       {new Date(order.created_at).toLocaleDateString()} at {new Date(order.created_at).toLocaleTimeString()}
                     </p>

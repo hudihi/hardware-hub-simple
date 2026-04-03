@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { CustomerOrder } from '../services/checkout.service';
 import { Order } from '../types';
-import { formatDate, formatPrice, getStatusClass, getStatusText } from '../utils/format';
+import { formatDate, formatOrderDisplayCode, formatPrice, getStatusClass, getStatusText } from '../utils/format';
 import { shareOrder } from '../utils/whatsapp';
 
 interface OrderCardProps {
@@ -19,6 +19,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
   };
 
   const orderId = order.id;
+  const orderDisplayCode = formatOrderDisplayCode(String(orderId));
   const orderTotal = isCustomerOrder(order) ? order.total_amount : order.total;
   const orderCreatedAt = isCustomerOrder(order) ? order.created_at : order.createdAt;
   const orderItems = order.items;
@@ -54,7 +55,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
       <div className="card-body">
         <div className="d-flex justify-content-between align-items-start mb-3">
           <div>
-            <h6 className="mb-1 fw-bold">{orderId}</h6>
+            <h6 className="mb-1 fw-bold font-monospace" title={orderId}>{orderDisplayCode}</h6>
             <small className="text-muted">{formatDate(orderCreatedAt, language)}</small>
           </div>
           <span className={`status-badge ${getStatusClass(orderStatus)}`}>
