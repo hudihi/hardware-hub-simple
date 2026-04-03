@@ -152,7 +152,7 @@ const OTPVerificationPage: React.FC = () => {
 
   if (!orderState) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="page-container flex items-center justify-center p-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#7C5A3C] mx-auto mb-4"></div>
           <p>Loading...</p>
@@ -162,7 +162,7 @@ const OTPVerificationPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <div className="page-container flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <Card>
           <CardHeader className="text-center">
@@ -180,7 +180,7 @@ const OTPVerificationPage: React.FC = () => {
           
           <CardContent className="space-y-6">
             {/* Order Summary */}
-            <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="bg-cream p-4 rounded-lg">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm text-gray-600">Order ID:</span>
                 <span className="text-sm font-mono font-semibold">{orderState.order_id}</span>

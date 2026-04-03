@@ -42,25 +42,30 @@
 /* Custom CSS Variables for Pahala Store Brand */
 :root {
   /* shadcn/ui CSS Variables */
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
+  /* Brand-consistent surface + text */
+  --background: 210 20% 98%; /* close to --pahala-gray-light */
+  --foreground: 24 19% 18%;  /* close to --pahala-brown-dark */
   --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
+  --card-foreground: 24 19% 18%;
   --popover: 0 0% 100%;
-  --popover-foreground: 222.2 84% 4.9%;
-  --primary: 222.2 47.4% 11.2%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 210 40% 96%;
-  --secondary-foreground: 222.2 47.4% 11.2%;
-  --muted: 210 40% 96%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  --accent: 210 40% 96%;
-  --accent-foreground: 222.2 47.4% 11.2%;
+  --popover-foreground: 24 19% 18%;
+
+  /* Primary matches Pahala brown (#7C5A3C) */
+  --primary: 27 35% 36%;
+  --primary-foreground: 0 0% 100%;
+
+  /* Secondary/accent surfaces match cream/beige */
+  --secondary: 30 44% 93%; /* close to --pahala-beige */
+  --secondary-foreground: 24 19% 18%;
+  --muted: 30 44% 93%;
+  --muted-foreground: 24 9% 45%;
+  --accent: 30 55% 96%; /* close to --pahala-cream */
+  --accent-foreground: 24 19% 18%;
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 210 40% 98%;
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 222.2 84% 4.9%;
+  --border: 30 25% 85%;
+  --input: 30 25% 85%;
+  --ring: 27 35% 36%;
   --radius: 0.5rem;
 
   /* Primary Brown Palette */

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PhoneInput from '../components/PhoneInput';
-import { useAuth } from '../context/AuthContext';
+import OTPVerification from '../components/payment/OTPVerification';
 import { useCart } from '../context/CartContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useOrderFlow } from '../hooks/useOrderFlow';
@@ -11,18 +11,16 @@ import { formatPrice } from '../utils/format';
 const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
   const { items, total, clearCart, cartId } = useCart();
-  const { user, register, isAuthenticated } = useAuth();
   const { t } = useLanguage();
+  const { createOrder, verifyOTP, requestOTP } = useOrderFlow();
 
-  // Order flow hook for mock implementation
-  const { createOrder, isOrderActive, requestOTP } = useOrderFlow();
-
-  type CheckoutStatus = "form" | "processing" | "success" | "redirecting";
+  type CheckoutStatus = "form" | "otp_verification" | "processing";
 
   const [formData, setFormData] = useState({
-    name: user?.name || '',
-    phone: user?.phone || '',
-    location: user?.address?.city || '', // Simplified location field
+    name: '',
+    phone: '',
+    email: '',
+    location: '',
     notes: '',
   });
 
@@ -31,9 +29,10 @@ const CheckoutPage: React.FC = () => {
   const [checkoutSummary, setCheckoutSummary] = useState<CheckoutSummaryResponse | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [checkoutStatus, setCheckoutStatus] = useState<CheckoutStatus>("form");
-  const [orderId, setOrderId] = useState('');
   const [normalizedPhone, setNormalizedPhone] = useState('');
   const [isPhoneValid, setIsPhoneValid] = useState(false);
+  const [showOTP, setShowOTP] = useState(false);
+  const [resendCountdown, setResendCountdown] = useState(0);
 
   // Navigate to cart if no items and not in checkout flow
   useEffect(() => {
@@ -44,8 +43,14 @@ const CheckoutPage: React.FC = () => {
 
   // Debug checkoutStatus changes
   useEffect(() => {
-    console.log('checkoutStatus changed to:', checkoutStatus, 'orderId:', orderId);
-  }, [checkoutStatus, orderId]);
+    console.log('checkoutStatus changed to:', checkoutStatus);
+  }, [checkoutStatus]);
+
+  useEffect(() => {
+    if (resendCountdown <= 0) return;
+    const timer = setTimeout(() => setResendCountdown((prev) => prev - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendCountdown]);
 
   // Load checkout summary when component mounts or cart changes
   useEffect(() => {
@@ -67,13 +72,18 @@ const CheckoutPage: React.FC = () => {
           
           // Handle specific error cases
           if (error.message?.includes('already checked out')) {
-            setError('This cart has already been used for checkout. Redirecting you to create a new cart...');
+            setError('🛒 This cart has already been used for a previous order. Creating a fresh cart for you...');
+            setSummaryLoading(true); // Show loading while creating new cart
             // Clear the checked out cart and create a new one immediately
-            clearCart(true); // This will create a new cart
-            // Redirect to cart page so user can add items
+            await clearCart(true); // This will create a new cart
+            // Show success message and redirect to cart page
             setTimeout(() => {
               if (isMounted) {
-                navigate('/cart');
+                setSummaryLoading(false);
+                setError('✅ New cart created! Please add items to continue shopping.');
+                setTimeout(() => {
+                  navigate('/cart');
+                }, 2000);
               }
             }, 1500);
           } else if (error.message?.includes('Cart not found') || error.message?.includes('empty')) {
@@ -84,6 +94,22 @@ const CheckoutPage: React.FC = () => {
                 navigate('/cart');
               }
             }, 3000);
+          } else if (error.message?.includes('API server not available')) {
+            // Handle API server unavailable gracefully
+            console.log('API server not available - using local cart data');
+            const fallbackSummary = {
+              cart_id: cartId || '',
+              items: items.map(item => ({
+                product_id: item.product.id,
+                product_name: item.product.name,
+                unit_price: item.product.price,
+                quantity: item.quantity,
+                total_price: item.product.price * item.quantity
+              })),
+              total_amount: total
+            };
+            setCheckoutSummary(fallbackSummary);
+            setError('Offline mode: Using local cart data');
           } else {
             // For other errors, create a fallback summary from local cart data
             console.log('Creating fallback summary from local cart data');
@@ -121,6 +147,7 @@ const CheckoutPage: React.FC = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Handle form submission - send OTP first
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setCheckoutStatus("processing");
@@ -128,7 +155,21 @@ const CheckoutPage: React.FC = () => {
     setError('');
 
     try {
-      // Validate phone number
+      // Validate form fields
+      if (!formData.name.trim()) {
+        setError('Please enter your name');
+        setCheckoutStatus("form");
+        setLoading(false);
+        return;
+      }
+
+      if (!formData.location.trim()) {
+        setError('Please enter your delivery location');
+        setCheckoutStatus("form");
+        setLoading(false);
+        return;
+      }
+
       if (!isPhoneValid || !normalizedPhone) {
         setError('Please enter a valid phone number');
         setCheckoutStatus("form");
@@ -136,26 +177,89 @@ const CheckoutPage: React.FC = () => {
         return;
       }
 
-      // Create order using order flow (now async)
-      await createOrder({
+      // Send OTP to the phone number
+      setError('Sending OTP to your phone...');
+      await requestOTP(normalizedPhone);
+      
+      // Show OTP verification step
+      setShowOTP(true);
+      setResendCountdown(60);
+      setCheckoutStatus("otp_verification");
+      setError(''); // Clear the sending message
+      
+    } catch (err: any) {
+      console.error('OTP sending error:', err);
+      setError(err.message || 'Failed to send OTP. Please try again.');
+      setCheckoutStatus("form");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle OTP verification and then create order
+  const handleOTPVerified = async (otpCode: string) => {
+    setCheckoutStatus("processing");
+    setLoading(true);
+    setError('');
+
+    try {
+      // Verify OTP and get session token
+      const success = await verifyOTP(otpCode);
+      
+      if (!success) {
+        setError('Invalid OTP code. Please try again.');
+        setCheckoutStatus("otp_verification");
+        return;
+      }
+
+      // Create order with verified OTP
+      const orderResult = await createOrder({
         phone: normalizedPhone,
         amount: total,
         items: items,
         customer_name: formData.name,
+        customer_email: formData.email,
         customer_location: formData.location,
         order_notes: formData.notes,
+        otp_verified: true,
       });
 
-      // Request OTP for the phone number
-      await requestOTP(normalizedPhone);
+      // Store order details for tracking page
+      localStorage.setItem('lastOrder', JSON.stringify({
+        order_id: orderResult.order_id,
+        access_token: orderResult.access_token,
+        customer_phone: normalizedPhone,
+        customer_name: formData.name,
+      }));
 
-      // Redirect to OTP verification
-      navigate('/otp-verification');
+      // Straight-through flow: go to confirmation immediately after order creation.
+      navigate('/order-confirmation');
       
     } catch (err: any) {
-      console.error('Checkout error:', err);
-      setError(err.message || t('checkout_error'));
-      setCheckoutStatus("form");
+      console.error('Order creation error:', err);
+      setError(err.message || 'Failed to create order');
+      setCheckoutStatus("otp_verification");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle OTP verification failure
+  const handleOTPFailed = (errorMessage: string) => {
+    setError(errorMessage);
+    setCheckoutStatus("form");
+    setShowOTP(false);
+  };
+
+  const handleResendOTP = async () => {
+    if (loading || resendCountdown > 0 || !normalizedPhone) return;
+    try {
+      setLoading(true);
+      setError('');
+      await requestOTP(normalizedPhone);
+      setResendCountdown(60);
+    } catch (err: any) {
+      setError(err.message || 'Failed to resend OTP. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -166,23 +270,25 @@ const CheckoutPage: React.FC = () => {
       {/* Main checkout form - only show when in form state */}
       {checkoutStatus === "form" && (
         <div className="page-container">
-          <button
-            className="btn btn-link text-brown p-0 mb-3"
-            onClick={() => navigate('/cart')}
-          >
-            <i className="bi bi-arrow-left me-1"></i>
-            {t('checkout_back_cart')}
-          </button>
+          <div className="container py-3">
+            <div className="mx-auto" style={{ maxWidth: 760 }}>
+              <button
+                className="btn btn-link text-brown p-0 mb-3"
+                onClick={() => navigate('/cart')}
+              >
+                <i className="bi bi-arrow-left me-1"></i>
+                {t('checkout_back_cart')}
+              </button>
 
-          <h1 className="section-header">{t('checkout_title')}</h1>
+              <h1 className="section-header">{t('checkout_title')}</h1>
 
-          {error && (
-            <div className="alert alert-danger" role="alert">
-              {error}
-            </div>
-          )}
+              {error && (
+                <div className={`alert ${error.includes('✅') ? 'alert-success' : error.includes('🛒') ? 'alert-warning' : 'alert-danger'}`} role="alert">
+                  {error}
+                </div>
+              )}
 
-          <form onSubmit={handleSubmit}>
+              <form onSubmit={handleSubmit}>
             {/* Contact Information */}
             <div className="card-pahala card mb-3">
               <div className="card-body">
@@ -226,24 +332,6 @@ const CheckoutPage: React.FC = () => {
                   {t('checkout_notes_title')}
                 </h6>
                 <textarea className="form-control" name="notes" value={formData.notes} onChange={handleChange} rows={3} placeholder={t('checkout_notes_ph')} />
-              </div>
-            </div>
-
-            {/* Payment Method */}
-            <div className="card-pahala card mb-3">
-              <div className="card-body">
-                <h6 className="fw-bold mb-3">
-                  <i className="bi bi-credit-card me-2"></i>
-                  {t('checkout_payment')}
-                </h6>
-                <div className="d-flex align-items-center gap-3 p-3 bg-cream rounded">
-                  <i className="bi bi-credit-card fs-4 text-brown"></i>
-                  <div>
-                    <div className="fw-semibold">Pay Now</div>
-                    <small className="text-muted">Complete payment securely online</small>
-                  </div>
-                  <i className="bi bi-check-circle-fill text-success ms-auto"></i>
-                </div>
               </div>
             </div>
 
@@ -301,20 +389,67 @@ const CheckoutPage: React.FC = () => {
               </div>
             </div>
 
-            <button type="submit" className="btn btn-primary btn-lg-mobile w-100" disabled={loading}>
-              {loading ? (
-                <>
-                  <span className="spinner-border spinner-border-sm me-2"></span>
-                  {t('checkout_loading')}
-                </>
-              ) : (
-                <>
-                  <i className="bi bi-check-circle me-2"></i>
-                  {t('checkout_submit')}
-                </>
-              )}
-            </button>
-          </form>
+                <button type="submit" className="btn btn-primary btn-lg-mobile w-100" disabled={loading}>
+                  {loading ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2"></span>
+                      {t('checkout_loading')}
+                    </>
+                  ) : (
+                    <>
+                      <i className="bi bi-check-circle me-2"></i>
+                      {t('checkout_submit')}
+                    </>
+                  )}
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* OTP Verification Step */}
+      {checkoutStatus === "otp_verification" && showOTP && (
+        <div className="page-container">
+          <div className="max-w-md mx-auto">
+            <div className="text-center mb-4">
+              <div className="mb-3">
+                <i className="bi bi-shield-check text-brown" style={{ fontSize: '3rem' }}></i>
+              </div>
+              <h2 className="h4 mb-2">Verify Your Phone</h2>
+              <p className="text-muted">We've sent a 6-digit code to {normalizedPhone}</p>
+            </div>
+
+            {error && (
+              <div className="alert alert-danger mb-3" role="alert">
+                {error}
+              </div>
+            )}
+
+            <OTPVerification
+              phoneNumber={normalizedPhone}
+              onVerify={handleOTPVerified}
+              onResend={handleResendOTP}
+              isLoading={loading}
+              error={error}
+              resendDisabled={loading || resendCountdown > 0}
+              resendCountdown={resendCountdown}
+            />
+
+            <div className="text-center mt-4">
+              <button 
+                className="btn btn-link text-muted p-0" 
+                onClick={() => {
+                  setShowOTP(false);
+                  setCheckoutStatus("form");
+                  setError('');
+                }}
+              >
+                <i className="bi bi-arrow-left me-1"></i>
+                Back to checkout form
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

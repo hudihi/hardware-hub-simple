@@ -80,12 +80,12 @@ const UploadPaymentProof: React.FC = () => {
         },
       });
 
-      if (response.data.success) {
+      if (response.data?.success || response.status === 200) {
         setSuccess('Payment proof uploaded successfully! Awaiting verification.');
         
         // Redirect to order status after 2 seconds
         setTimeout(() => {
-          navigate(`/order-status/${orderId}`);
+          navigate(`/track/${orderId}`);
         }, 2000);
       } else {
         setError(response.data.message || 'Failed to upload payment proof');
@@ -110,7 +110,7 @@ const UploadPaymentProof: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="page-container flex items-center justify-center p-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brown mx-auto mb-4"></div>
           <p>Loading...</p>
@@ -120,7 +120,7 @@ const UploadPaymentProof: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="page-container py-8">
       <div className="max-w-2xl mx-auto px-4">
         <Card>
           <CardHeader className="text-center">

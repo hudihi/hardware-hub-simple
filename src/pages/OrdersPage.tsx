@@ -2,18 +2,36 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import EmptyState from '../components/EmptyState';
 import OrderCard from '../components/OrderCard';
-import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useOrderFlow } from '../hooks/useOrderFlow';
 import { CustomerOrder } from '../services/checkout.service';
 
 const OrdersPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
   const { t } = useLanguage();
   const { customerOrders, fetchCustomerOrders } = useOrderFlow();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Orders are loaded after OTP verification on /track-order.
+  useEffect(() => {
+    if (customerOrders.length > 0) return;
+
+    const load = async () => {
+      try {
+        setLoading(true);
+        setError('');
+        await fetchCustomerOrders();
+      } catch (err: any) {
+        // Keep the page usable with Track Orders action if session is unavailable.
+        setError(err.message || 'Unable to load orders');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, [customerOrders.length, fetchCustomerOrders]);
 
   // Transform OrderFlowState to CustomerOrder format for OrderCard
   const transformToCustomerOrder = (order: any): CustomerOrder => ({
@@ -25,67 +43,50 @@ const OrdersPage: React.FC = () => {
     customer_city: order.customer_location, // Use location as city for compatibility
     order_notes: order.order_notes,
     payment_method: 'mobile_money', // Default payment method
-    status: order.payment_status === 'COMPLETED' ? 'completed' : 
-            order.payment_status === 'FAILED' ? 'failed' : 
-            order.payment_status === 'PENDING' ? 'pending' : 'pending',
-    total_amount: order.amount,
+    status: String(order.payment_status || '')
+      .toLowerCase() === 'completed'
+      ? 'completed'
+      : String(order.payment_status || '').toLowerCase() === 'failed'
+      ? 'failed'
+      : 'pending',
+    total_amount: Number(order.amount ?? order.total_amount ?? order.total ?? 0),
     items: order.items,
     created_at: order.created_at,
     updated_at: order.updated_at
   });
 
-  useEffect(() => {
-    const loadOrders = async () => {
-      try {
-        setLoading(true);
-        setError('');
-        
-        // Fetch customer orders using the new API
-        await fetchCustomerOrders();
-        console.log('Orders loaded successfully');
-        
-      } catch (error: any) {
-        console.error('Failed to fetch orders:', error);
-        
-        // Handle specific error cases
-        if (error.message?.includes('not authenticated')) {
-          setError('Please verify your phone number to view orders.');
-        } else {
-          setError(error.message || 'Failed to load orders');
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadOrders();
-  }, [fetchCustomerOrders]);
-
   return (
     <div className="page-container">
       <div className="container py-3">
         <h1 className="section-header">{t('orders_title')}</h1>
+        <div className="card-pahala card mb-4">
+          <div className="card-body text-center">
+            <h6 className="fw-bold mb-2">Track your orders</h6>
+            <p className="text-muted small mb-3">
+              Verify your phone with OTP to access your order history and status updates.
+            </p>
+            <button
+              type="button"
+              className="btn btn-primary btn-lg-mobile"
+              onClick={() => navigate('/track-order')}
+            >
+              <i className="bi bi-shield-check me-2"></i>
+              Track Orders
+            </button>
+          </div>
+        </div>
 
         {loading ? (
-          <div className="text-center py-5">
+          <div className="text-center py-4">
             <div className="spinner-border" role="status">
               <span className="visually-hidden">Loading...</span>
             </div>
-            <p className="mt-3 text-muted">Loading your orders...</p>
-          </div>
-        ) : error ? (
-          <div className="alert alert-danger" role="alert">
-            {error}
           </div>
         ) : customerOrders.length === 0 ? (
           <EmptyState
             icon="bi-box"
-            title={t('orders_empty')}
-            description={t('orders_empty_desc')}
-            action={{
-              label: t('product_view_products'),
-              onClick: () => navigate('/products'),
-            }}
+            title="No orders loaded yet"
+            description={error || "Use Track Orders above and complete phone verification to view your orders."}
           />
         ) : (
           <div>

@@ -16,8 +16,11 @@ import OrderDetailPage from './pages/OrderDetailPage';
 import OrdersPage from './pages/OrdersPage';
 import PaymentProcessingPage from './pages/PaymentProcessingPage';
 import PaymentStatusPage from './pages/PaymentStatusPage';
+import PaymentInstructions from './pages/PaymentInstructions';
 import ProductDetailPage from './pages/ProductDetailPage';
 import ProductsPage from './pages/ProductsPage';
+import TrackOrderPage from './pages/TrackOrderPage';
+import UploadPaymentProof from './pages/UploadPaymentProof';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminLogin from './pages/admin/AdminLogin';
@@ -42,12 +45,16 @@ const App: React.FC = () => {
                 <Route path="/products/:slugWithId" element={<ProductDetailPage />} />
                 <Route path="/cart" element={<CartPage />} />
                 <Route path="/checkout" element={<CheckoutPage />} />
+                <Route path="/track-order" element={<TrackOrderPage />} />
                 <Route path="/otp-verification" element={<OTPVerificationPage />} />
                 <Route path="/payment-processing" element={<PaymentProcessingPage />} />
                 <Route path="/payment-status" element={<PaymentStatusPage />} />
                 <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
+                <Route path="/payment-instructions/:orderId" element={<PaymentInstructions />} />
+                <Route path="/upload-proof/:orderId" element={<UploadPaymentProof />} />
                 <Route path="/orders" element={<OrdersPage />} />
                 <Route path="/orders/:id" element={<OrderDetailPage />} />
+                <Route path="/track/:id" element={<OrderDetailPage />} />
                 
                 {/* Admin Routes */}
                 <Route path="/admin/login" element={<AdminLogin />} />

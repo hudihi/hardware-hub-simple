@@ -9,18 +9,28 @@ export interface OrderFlowState {
   amount: number;
   items: any[];
   customer_name: string;
+  customer_email?: string;
   customer_location: string;
   order_notes: string;
   otp_verified: boolean;
+  otp_session_token?: string;
   payment_status: string;
+  access_token?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface OrderCreationResult {
+  order_id: string;
+  access_token: string;
+  status: string;
+  payment_status: string;
 }
 
 interface OrderFlowContextType {
   orderState: OrderFlowState | null;
   customerOrders: OrderFlowState[];
-  createOrder: (orderData: Partial<OrderFlowState> & { items?: any[] }) => Promise<void>;
+  createOrder: (orderData: Partial<OrderFlowState> & { items?: any[] }) => Promise<OrderCreationResult>;
   requestOTP: (phone: string) => Promise<string>;
   verifyOTP: (otpCode: string) => Promise<boolean>;
   fetchCustomerOrders: () => Promise<void>;
@@ -36,7 +46,56 @@ export const OrderFlowContext = createContext<OrderFlowContextType | undefined>(
 export const OrderFlowProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [orderState, setOrderState] = useState<OrderFlowState | null>(null);
   const [customerOrders, setCustomerOrders] = useState<OrderFlowState[]>([]);
+  const [otpPhone, setOtpPhone] = useState<string>('');
   const { cartId } = useCart(); // Get cartId from cart context
+
+  const ORDERS_CACHE_KEY = 'pahala_customer_orders_cache';
+  const VERIFIED_PHONE_KEY = 'pahala_customer_verified_phone';
+  const ORDERS_CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
+
+  const getVerifiedPhone = (): string => {
+    return (orderState?.phone || otpPhone || localStorage.getItem(VERIFIED_PHONE_KEY) || '').trim();
+  };
+
+  const readOrdersCache = (): OrderFlowState[] | null => {
+    try {
+      const raw = localStorage.getItem(ORDERS_CACHE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as {
+        phone: string;
+        cached_at: number;
+        orders: OrderFlowState[];
+      };
+      if (!parsed?.phone || !Array.isArray(parsed?.orders) || !parsed?.cached_at) return null;
+
+      const cacheAge = Date.now() - parsed.cached_at;
+      if (cacheAge > ORDERS_CACHE_TTL_MS) return null;
+
+      const currentPhone = getVerifiedPhone();
+      if (currentPhone && parsed.phone !== currentPhone) return null;
+
+      return parsed.orders;
+    } catch (err) {
+      console.warn('Failed to parse orders cache:', err);
+      return null;
+    }
+  };
+
+  const writeOrdersCache = (orders: OrderFlowState[]) => {
+    try {
+      const phone = getVerifiedPhone();
+      localStorage.setItem(
+        ORDERS_CACHE_KEY,
+        JSON.stringify({
+          phone,
+          cached_at: Date.now(),
+          orders,
+        })
+      );
+    } catch (err) {
+      console.warn('Failed to cache orders:', err);
+    }
+  };
 
   // Generate mock order ID
   const generateOrderId = (): string => {
@@ -44,7 +103,7 @@ export const OrderFlowProvider: React.FC<{ children: ReactNode }> = ({ children 
   };
 
   // Create new order (persisted to backend)
-  const createOrder = async (orderData: Partial<OrderFlowState> & { items?: any[] }): Promise<void> => {
+  const createOrder = async (orderData: Partial<OrderFlowState> & { items?: any[] }): Promise<OrderCreationResult> => {
     try {
       // Validate required fields
       if (!orderData.phone || !orderData.amount || !orderData.items || orderData.items.length === 0) {
@@ -79,6 +138,9 @@ export const OrderFlowProvider: React.FC<{ children: ReactNode }> = ({ children 
 
       console.log('Order created on backend with ID:', checkoutResponse.order_id);
 
+      // Generate access token for secure tracking
+      const accessToken = 'TK-' + Date.now() + '-' + Math.random().toString(36).substr(2, 16).toUpperCase();
+
       // Create local order state with backend order_id
       const now = new Date().toISOString();
       const newOrder: OrderFlowState = {
@@ -87,16 +149,27 @@ export const OrderFlowProvider: React.FC<{ children: ReactNode }> = ({ children 
         amount: orderData.amount,
         items: orderData.items,
         customer_name: orderData.customer_name || '',
+        customer_email: orderData.customer_email,
         customer_location: orderData.customer_location || '',
         order_notes: orderData.order_notes || '',
-        otp_verified: false,
-        payment_status: 'PENDING',
+        otp_verified: orderData.otp_verified || false,
+        otp_session_token: orderData.otp_session_token,
+        payment_status: 'awaiting_payment',
+        access_token: accessToken,
         created_at: now,
         updated_at: now,
       };
       
       setOrderState(newOrder);
       console.log('Order created successfully:', newOrder);
+
+      // Return order creation result
+      return {
+        order_id: checkoutResponse.order_id,
+        access_token: accessToken,
+        status: 'placed',
+        payment_status: 'awaiting_payment'
+      };
       
     } catch (error) {
       console.error('Order creation failed:', error);
@@ -108,6 +181,8 @@ export const OrderFlowProvider: React.FC<{ children: ReactNode }> = ({ children 
   const requestOTP = async (phone: string): Promise<string> => {
     try {
       const response = await authService.requestOTP(phone);
+      // Keep the OTP phone in flow state so verification works before order creation.
+      setOtpPhone(phone);
       console.log('OTP requested successfully:', response.message);
       return response.message;
     } catch (error) {
@@ -118,15 +193,17 @@ export const OrderFlowProvider: React.FC<{ children: ReactNode }> = ({ children 
 
   // Verify OTP
   const verifyOTP = async (otpCode: string): Promise<boolean> => {
-    if (!orderState?.phone) {
+    const phoneForVerification = orderState?.phone || otpPhone;
+    if (!phoneForVerification) {
       throw new Error('No phone number available for OTP verification');
     }
 
     try {
-      const response = await authService.verifyOTP(orderState.phone, otpCode);
+      const response = await authService.verifyOTP(phoneForVerification, otpCode);
       
       // Check if we received an access token (successful verification)
       if (response.access_token) {
+        localStorage.setItem(VERIFIED_PHONE_KEY, phoneForVerification);
         setOrderState(prev => prev ? {
           ...prev,
           otp_verified: true,
@@ -147,6 +224,13 @@ export const OrderFlowProvider: React.FC<{ children: ReactNode }> = ({ children 
   // Fetch customer orders
   const fetchCustomerOrders = async (): Promise<void> => {
     try {
+      const cachedOrders = readOrdersCache();
+      if (cachedOrders && cachedOrders.length > 0) {
+        setCustomerOrders(cachedOrders);
+        console.log('Loaded customer orders from cache:', cachedOrders.length, 'orders');
+        return;
+      }
+
       const customerToken = authService.getCustomerToken();
       if (!customerToken) {
         throw new Error('Customer not authenticated. Please verify OTP first.');
@@ -166,12 +250,29 @@ export const OrderFlowProvider: React.FC<{ children: ReactNode }> = ({ children 
       }
 
       const ordersData = await response.json();
-      
+      let rawOrders: any[] = [];
+
+      // Support multiple server response shapes:
+      // 1) Array<Order>
+      // 2) { orders: Array<Order>, total: number }
+      // 3) Single order object
+      if (Array.isArray(ordersData)) {
+        rawOrders = ordersData;
+      } else if (ordersData && typeof ordersData === 'object' && Array.isArray((ordersData as any).orders)) {
+        rawOrders = (ordersData as any).orders;
+      } else if (ordersData && typeof ordersData === 'object' && ((ordersData as any).order_id || (ordersData as any).id)) {
+        rawOrders = [ordersData];
+      } else {
+        console.warn('No orders found or invalid response format:', ordersData);
+        setCustomerOrders([]);
+        return;
+      }
+
       // Transform API response to match our OrderFlowState format
-      const transformedOrders: OrderFlowState[] = ordersData.map((order: any) => ({
+      const transformedOrders: OrderFlowState[] = rawOrders.map((order: any) => ({
         order_id: order.order_id || order.id,
-        phone: order.phone || '',
-        amount: order.amount || 0,
+        phone: order.phone || order.customer_phone || '',
+        amount: Number(order.amount ?? order.total_amount ?? order.total ?? 0),
         items: order.items || [],
         customer_name: order.customer_name || '',
         customer_location: order.customer_location || '',
@@ -183,10 +284,19 @@ export const OrderFlowProvider: React.FC<{ children: ReactNode }> = ({ children 
       }));
 
       setCustomerOrders(transformedOrders);
+      writeOrdersCache(transformedOrders);
       console.log('Customer orders fetched successfully:', transformedOrders.length, 'orders');
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch customer orders:', error);
+      
+      // Handle network errors gracefully during development
+      if (error.code === 'ERR_NETWORK' || error.message?.includes('Network Error') || error.message?.includes('fetch')) {
+        console.warn('API server not reachable - no orders available in offline mode');
+        setCustomerOrders([]);
+        throw new Error('API server not available - no orders to display');
+      }
+      
       throw error;
     }
   };
@@ -212,6 +322,11 @@ export const OrderFlowProvider: React.FC<{ children: ReactNode }> = ({ children 
 
   // Cleanup on unmount
   useEffect(() => {
+    // Hydrate from local cache once on provider mount.
+    const cachedOrders = readOrdersCache();
+    if (cachedOrders && cachedOrders.length > 0) {
+      setCustomerOrders(cachedOrders);
+    }
     return () => {
       console.log('OrderFlow cleanup');
     };

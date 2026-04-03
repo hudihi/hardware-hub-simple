@@ -10,6 +10,28 @@ export const formatPrice = (price: number): string => {
   }).format(price);
 };
 
+/**
+ * Short customer-facing order code: PHL-XXXXXX.
+ * Digits are taken from the real order id (last 6 digits if enough exist; otherwise padded).
+ * If the id has no digits, derives a stable 6-digit code from the string.
+ */
+export const formatOrderDisplayCode = (orderId: string): string => {
+  const digits = orderId.replace(/\D/g, '');
+  let six: string;
+  if (digits.length >= 6) {
+    six = digits.slice(-6);
+  } else if (digits.length > 0) {
+    six = digits.padStart(6, '0');
+  } else {
+    let h = 5381;
+    for (let i = 0; i < orderId.length; i++) {
+      h = ((h << 5) + h) + orderId.charCodeAt(i);
+    }
+    six = String(Math.abs(h) % 1000000).padStart(6, '0');
+  }
+  return `PHL-${six}`;
+};
+
 // Format date based on language
 export const formatDate = (dateString: string, language: Language = 'en'): string => {
   const locale = language === 'sw' ? 'sw-TZ' : 'en-TZ';

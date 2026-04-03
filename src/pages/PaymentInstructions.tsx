@@ -57,7 +57,7 @@ const PaymentInstructions: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="page-container flex items-center justify-center p-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brown mx-auto mb-4"></div>
           <p>Loading payment instructions...</p>
@@ -68,7 +68,7 @@ const PaymentInstructions: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="page-container flex items-center justify-center p-4">
         <div className="text-center">
           <div className="text-red-600 mb-4">
             <i className="bi bi-exclamation-triangle text-4xl"></i>
@@ -87,7 +87,7 @@ const PaymentInstructions: React.FC = () => {
 
   if (!instructions) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="page-container flex items-center justify-center p-4">
         <div className="text-center">
           <p>No payment instructions available</p>
         </div>
@@ -96,7 +96,7 @@ const PaymentInstructions: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="page-container py-8">
       <div className="max-w-4xl mx-auto px-4">
         <Card>
           <CardHeader className="text-center">
