@@ -5,7 +5,7 @@ export interface PaymentRequest {
   order_id: string;
   amount: number;
   phone_number: string;
-  payment_method: 'PRIMESTACK_PAY';
+  payment_method: 'mobile_money';
 }
 
 export interface PrimeStackPaymentRequest {

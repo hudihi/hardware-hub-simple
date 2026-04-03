@@ -6,11 +6,9 @@ import { useOrderFlow } from '../hooks/useOrderFlow';
 
 const PaymentStatusPage: React.FC = () => {
   const navigate = useNavigate();
-  const { orderState, updatePaymentStatus, retryPayment } = useOrderFlow();
+  const { orderState } = useOrderFlow();
   const [timeRemaining, setTimeRemaining] = useState(15); // 15 seconds
   const [paymentCompleted, setPaymentCompleted] = useState(false);
-  const [isRetryingPayment, setIsRetryingPayment] = useState(false);
-  const [retryError, setRetryError] = useState('');
 
   // Redirect if no active order
   useEffect(() => {
@@ -27,7 +25,6 @@ const PaymentStatusPage: React.FC = () => {
 
     // Simulate payment completion after 15 seconds
     const timer = setTimeout(() => {
-      updatePaymentStatus('CONFIRMED');
       setPaymentCompleted(true);
       setTimeout(() => {
         navigate('/order-confirmation');
@@ -35,7 +32,7 @@ const PaymentStatusPage: React.FC = () => {
     }, 15000);
 
     return () => clearTimeout(timer);
-  }, [orderState, navigate, updatePaymentStatus]);
+  }, [orderState, navigate]);
 
   // Countdown timer
   useEffect(() => {
@@ -57,35 +54,6 @@ const PaymentStatusPage: React.FC = () => {
       </div>
     );
   }
-
-  const handleRetryPayment = async () => {
-    if (!orderState) {
-      setRetryError('No order found');
-      return;
-    }
-
-    setIsRetryingPayment(true);
-    setRetryError('');
-
-    try {
-      // Call the retry payment API
-      await retryPayment(orderState.order_id);
-      
-      // On successful retry, simulate payment completion after a delay
-      setTimeout(() => {
-        setPaymentCompleted(true);
-        setTimeout(() => {
-          navigate('/order-confirmation');
-        }, 2000);
-      }, 3000); // 3 seconds delay to simulate payment processing
-      
-    } catch (error: any) {
-      console.error('Retry payment error:', error);
-      setRetryError(error.message || 'Failed to retry payment');
-    } finally {
-      setIsRetryingPayment(false);
-    }
-  };
 
   const handleCancelPayment = () => {
     // Cancel and go back to checkout
@@ -131,7 +99,7 @@ const PaymentStatusPage: React.FC = () => {
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Status:</span>
                 <span className="text-sm font-semibold text-yellow-600">
-                  {orderState.payment_status.replace('_', ' ')}
+                  Awaiting Payment
                 </span>
               </div>
             </div>
@@ -167,35 +135,12 @@ const PaymentStatusPage: React.FC = () => {
               <div className="w-2 h-2 bg-yellow-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
             </div>
 
-            {/* Error Message */}
-            {retryError && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-sm text-red-600 text-center">{retryError}</p>
-              </div>
-            )}
-
             {/* Action Buttons */}
             <div className="space-y-3">
-              <Button 
-                variant="outline" 
-                className="w-full"
-                onClick={handleRetryPayment}
-                disabled={isRetryingPayment}
-              >
-                {isRetryingPayment ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-                    Retrying Payment...
-                  </>
-                ) : (
-                  'Retry Payment'
-                )}
-              </Button>
               <Button 
                 variant="ghost" 
                 className="w-full"
                 onClick={handleCancelPayment}
-                disabled={isRetryingPayment}
               >
                 Cancel Payment
               </Button>

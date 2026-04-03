@@ -8,7 +8,6 @@ export interface CheckoutRequest {
   customer_phone: string;
   customer_location: string;
   order_notes: string;
-  payment_method: 'PRIMESTACK_PAY';
   items?: any[];
   amount?: number;
 }
@@ -118,7 +117,6 @@ export const checkoutService = {
           detail: errorData?.detail,
           message: errorData?.message,
           errors: errorData?.errors,
-          payment_method: checkoutData.payment_method,
           full_response: errorData
         });
         

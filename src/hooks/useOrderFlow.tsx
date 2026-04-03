@@ -3,14 +3,6 @@ import { useCart } from '../context/CartContext';
 import authService from '../services/auth.service';
 import { CheckoutRequest, checkoutService } from '../services/checkout.service';
 
-// Order Flow Types
-export type PaymentStatus = 
-  | 'NOT_STARTED' 
-  | 'AWAITING_PAYMENT'
-  | 'AWAITING_VERIFICATION' 
-  | 'CONFIRMED'
-  | 'REJECTED';
-
 export interface OrderFlowState {
   order_id: string;
   phone: string;
@@ -20,7 +12,7 @@ export interface OrderFlowState {
   customer_location: string;
   order_notes: string;
   otp_verified: boolean;
-  payment_status: PaymentStatus;
+  payment_status: string;
   created_at: string;
   updated_at: string;
 }
@@ -31,13 +23,10 @@ interface OrderFlowContextType {
   createOrder: (orderData: Partial<OrderFlowState> & { items?: any[] }) => Promise<void>;
   requestOTP: (phone: string) => Promise<string>;
   verifyOTP: (otpCode: string) => Promise<boolean>;
-  retryPayment: (orderId: string) => Promise<void>;
   fetchCustomerOrders: () => Promise<void>;
-  updatePaymentStatus: (status: PaymentStatus) => void;
   resetOrderFlow: () => void;
+  updatePaymentStatus: (status: string) => void;
   isOrderActive: boolean;
-  setAwaitingPayment: () => void;
-  setAwaitingVerification: () => void;
 }
 
 // Context for order flow state
@@ -73,7 +62,6 @@ export const OrderFlowProvider: React.FC<{ children: ReactNode }> = ({ children 
         customer_phone: orderData.phone,
         customer_location: orderData.customer_location || '',
         order_notes: orderData.order_notes || '',
-        payment_method: 'PRIMESTACK_PAY',
         items: orderData.items,
         amount: orderData.amount
       };
@@ -102,7 +90,7 @@ export const OrderFlowProvider: React.FC<{ children: ReactNode }> = ({ children 
         customer_location: orderData.customer_location || '',
         order_notes: orderData.order_notes || '',
         otp_verified: false,
-        payment_status: 'NOT_STARTED',
+        payment_status: 'PENDING',
         created_at: now,
         updated_at: now,
       };
@@ -142,7 +130,6 @@ export const OrderFlowProvider: React.FC<{ children: ReactNode }> = ({ children 
         setOrderState(prev => prev ? {
           ...prev,
           otp_verified: true,
-          payment_status: 'AWAITING_PAYMENT',
           updated_at: new Date().toISOString()
         } : null);
         console.log('OTP verified successfully, token received');
@@ -153,44 +140,6 @@ export const OrderFlowProvider: React.FC<{ children: ReactNode }> = ({ children 
       }
     } catch (error) {
       console.error('OTP verification error:', error);
-      throw error;
-    }
-  };
-
-  // Retry payment
-  const retryPayment = async (orderId: string): Promise<void> => {
-    try {
-      // Validate order state
-      if (!orderState || !orderState.otp_verified) {
-        throw new Error('Order must be OTP verified before retrying payment');
-      }
-
-      // Check if payment status allows retry
-      const retryableStatuses: PaymentStatus[] = ['REJECTED', 'AWAITING_PAYMENT', 'AWAITING_VERIFICATION'];
-      if (!retryableStatuses.includes(orderState.payment_status)) {
-        throw new Error(`Cannot retry payment with status: ${orderState.payment_status}`);
-      }
-
-      // Call retry payment API
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://api.pahala.store'}/api/v1/customer/retry-payment/${orderId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authService.getCustomerToken()}`
-        }
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Failed to retry payment: ${response.statusText}`);
-      }
-
-      // Update payment status to AWAITING_PAYMENT after successful retry request
-      updatePaymentStatus('AWAITING_PAYMENT');
-      console.log('Payment retry initiated successfully for order:', orderId);
-
-    } catch (error) {
-      console.error('Payment retry failed:', error);
       throw error;
     }
   };
@@ -228,7 +177,7 @@ export const OrderFlowProvider: React.FC<{ children: ReactNode }> = ({ children 
         customer_location: order.customer_location || '',
         order_notes: order.order_notes || '',
         otp_verified: order.otp_verified || false,
-        payment_status: order.payment_status || 'NOT_STARTED',
+        payment_status: order.payment_status || 'PENDING',
         created_at: order.created_at || new Date().toISOString(),
         updated_at: order.updated_at || new Date().toISOString()
       }));
@@ -242,24 +191,14 @@ export const OrderFlowProvider: React.FC<{ children: ReactNode }> = ({ children 
     }
   };
 
-  // Set order to awaiting payment status
-  const setAwaitingPayment = () => {
-    updatePaymentStatus('AWAITING_PAYMENT');
-  };
-
-  // Set order to awaiting verification status
-  const setAwaitingVerification = () => {
-    updatePaymentStatus('AWAITING_VERIFICATION');
-  };
-
   // Update payment status
-  const updatePaymentStatus = (status: PaymentStatus) => {
+  const updatePaymentStatus = (status: string) => {
     setOrderState(prev => prev ? {
       ...prev,
       payment_status: status,
       updated_at: new Date().toISOString()
     } : null);
-    console.log('Payment status updated:', status);
+    console.log('Payment status updated to:', status);
   };
 
   // Reset order flow
@@ -284,13 +223,10 @@ export const OrderFlowProvider: React.FC<{ children: ReactNode }> = ({ children 
     createOrder,
     requestOTP,
     verifyOTP,
-    retryPayment,
     fetchCustomerOrders,
-    updatePaymentStatus,
     resetOrderFlow,
+    updatePaymentStatus,
     isOrderActive,
-    setAwaitingPayment,
-    setAwaitingVerification,
   };
 
   return (
