@@ -84,7 +84,18 @@ const AdminOrders: React.FC = () => {
 
   const filteredOrders = orders; // Filtered by API now, not client-side
 
-  const statusOptions = ['PENDING', 'CONFIRMED', 'DELIVERED', 'CANCELLED'];
+  const statusOptions = [
+  { value: '', label: 'All Statuses' },
+  { value: 'PENDING', label: 'Pending' },
+  { value: 'AWAITING_PAYMENT', label: 'Awaiting Payment' },
+  { value: 'PENDING_PAYMENT', label: 'Pending Payment' },
+  { value: 'AWAITING_VERIFICATION', label: 'Awaiting Verification' },
+  { value: 'PENDING_OTP', label: 'Pending OTP' },
+  { value: 'REJECTED', label: 'Rejected' },
+  { value: 'CONFIRMED', label: 'Confirmed' },
+  { value: 'DELIVERED', label: 'Delivered' },
+  { value: 'CANCELLED', label: 'Cancelled' }
+];
 
   const handleStatusUpdate = async (orderId: string, newStatus: string, currentStatus: string) => {
     try {
@@ -163,10 +174,9 @@ const AdminOrders: React.FC = () => {
                   setCurrentPage(1); // Reset to first page when filter changes
                 }}
               >
-                <option value="">All Statuses</option>
-                {statusOptions.map((status) => (
-                  <option key={status} value={status}>
-                    {getStatusText(status, language)}
+                {statusOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
                   </option>
                 ))}
               </select>
@@ -214,14 +224,14 @@ const AdminOrders: React.FC = () => {
             </button>
             {statusOptions.map((status) => (
               <button
-                key={status}
-                className={`btn btn-sm ${selectedStatus === status ? 'btn-primary' : 'btn-outline-secondary'}`}
+                key={status.value}
+                className={`btn btn-sm ${selectedStatus === status.value ? 'btn-primary' : 'btn-outline-secondary'}`}
                 onClick={() => {
-                  setSelectedStatus(status);
+                  setSelectedStatus(status.value);
                   setCurrentPage(1);
                 }}
               >
-                {getStatusText(status, language)}
+                {getStatusText(status.value, language)}
               </button>
             ))}
           </div>
@@ -249,7 +259,8 @@ const AdminOrders: React.FC = () => {
                     <th>{t('admin_products')}</th>
                     <th>{t('cart_total')}</th>
                     <th>{t('admin_date')}</th>
-                    <th>{t('admin_status')}</th>
+                    <th>Order Status</th>
+                    <th>Payment Status</th>
                     <th>{t('admin_actions')}</th>
                   </tr>
                 </thead>
@@ -267,6 +278,11 @@ const AdminOrders: React.FC = () => {
                       <td>
                         <span className={`badge ${getStatusClass(order.status)}`}>
                           {getStatusText(order.status, language)}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={`badge ${adminService.getPaymentStatusClass(order.payment_status || '')}`}>
+                          {adminService.getPaymentStatusText(order.payment_status || 'PENDING', language)}
                         </span>
                       </td>
                       <td>

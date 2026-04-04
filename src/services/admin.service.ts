@@ -74,6 +74,7 @@ export interface AdminOrder {
   order_notes: string;
   payment_method: string;
   status: string;
+  payment_status: string; // Payment status: PENDING, PAID, AWAITING_CONFIRMATION, etc.
   part_of_status: boolean; // Admin can update status if true - controlled by backend/admin system
   total_amount: number;
   items: any[];
@@ -304,6 +305,11 @@ export const adminService = {
     // API expects uppercase status values in both request and response
     const transitions: { [key: string]: string[] } = {
       'PENDING': ['CONFIRMED', 'CANCELLED'],     // From PENDING status
+      'AWAITING_PAYMENT': ['CONFIRMED', 'CANCELLED'],  // From AWAITING_PAYMENT status
+      'PENDING_PAYMENT': ['AWAITING_PAYMENT', 'CANCELLED'],  // From PENDING_PAYMENT status
+      'AWAITING_VERIFICATION': ['CONFIRMED', 'REJECTED'],  // From AWAITING_VERIFICATION status
+      'PENDING_OTP': ['AWAITING_PAYMENT', 'CANCELLED'],  // From PENDING_OTP status
+      'REJECTED': ['AWAITING_PAYMENT', 'CANCELLED'],  // From REJECTED status
       'CONFIRMED': ['DELIVERED', 'CANCELLED'],  // From CONFIRMED status
       'DELIVERED': [],                            // Terminal status - no changes
       'CANCELLED': []                             // Terminal status - no changes
@@ -311,6 +317,35 @@ export const adminService = {
     
     const validTransitions = transitions[currentStatus] || [];
     return validTransitions;
+  },
+
+  /**
+   * Get payment status color class
+   */
+  getPaymentStatusClass: (paymentStatus: string): string => {
+    const status = paymentStatus.toLowerCase();
+    if (status.includes('paid')) return 'bg-success text-white';
+    if (status.includes('awaiting')) return 'bg-warning text-white';
+    if (status.includes('pending')) return 'bg-secondary text-white';
+    if (status.includes('rejected')) return 'bg-danger text-white';
+    return 'bg-secondary text-white';
+  },
+
+  /**
+   * Get payment status text
+   */
+  getPaymentStatusText: (paymentStatus: string, language: string = 'en'): string => {
+    const statusTexts: { [key: string]: { [lang: string]: string } } = {
+      'PENDING': { en: 'Pending', sw: 'Inasubiri' },
+      'PAID': { en: 'Paid', sw: 'Imelipwa' },
+      'AWAITING_CONFIRMATION': { en: 'Awaiting Confirmation', sw: 'Inasubiri Kuthibitisho' },
+      'AWAITING_VERIFICATION': { en: 'Awaiting Verification', sw: 'Inasubiri Kuthibitisho' },
+      'PROOF_REJECTED': { en: 'Proof Rejected', sw: 'Ushahili Umekataliwa' },
+      'FAILED': { en: 'Failed', sw: 'Imeshindikwa' },
+      'ABANDONED': { en: 'Abandoned', sw: 'Ameachwa' },
+    };
+    
+    return statusTexts[paymentStatus]?.[language] || paymentStatus;
   },
 
   /**
@@ -579,9 +614,15 @@ export const adminService = {
   },
 
   getPendingPaymentProofs: async (): Promise<PaymentProofPending[]> => {
-    const response = await apiClient.get('/api/v1/payments/proofs/pending');
-    const data = response.data?.data;
-    return Array.isArray(data) ? data : [];
+    try {
+      const response = await apiClient.get('/api/v1/payments/proofs/pending');
+      console.log('Payment proofs API response:', response.data);
+      const data = response.data?.data || response.data; // Handle both response formats
+      return Array.isArray(data) ? data : [];
+    } catch (error: any) {
+      console.error('Error fetching payment proofs:', error);
+      throw error;
+    }
   },
 
   approvePaymentProof: async (proofId: string, verificationNotes?: string): Promise<void> => {
