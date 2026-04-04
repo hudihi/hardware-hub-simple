@@ -1,6 +1,6 @@
 import { ArrowLeft, ArrowRight, Check, Loader2 } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import PhoneInput from '../components/PhoneInput';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -10,8 +10,14 @@ import { useOrderFlow } from '../hooks/useOrderFlow';
 
 type TrackOrderStep = 'phone' | 'otp';
 
+function safeNextPath(next: string | null): string | null {
+  if (!next || !next.startsWith('/') || next.startsWith('//')) return null;
+  return next;
+}
+
 const TrackOrderPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { requestOTP, verifyOTP, fetchCustomerOrders } = useOrderFlow();
 
   const [currentStep, setCurrentStep] = useState<TrackOrderStep>('phone');
@@ -76,11 +82,11 @@ const TrackOrderPage: React.FC = () => {
       try {
         await fetchCustomerOrders();
       } catch (ordersError) {
-        // Even if orders can’t be fetched, still route the user to orders page.
         console.warn('Orders fetch failed after OTP verification:', ordersError);
       }
 
-      navigate('/orders');
+      const next = safeNextPath(searchParams.get('next'));
+      navigate(next || '/orders');
     } catch (err: any) {
       console.error('OTP verification error:', err);
       setError(err.message || 'OTP verification failed. Please try again.');

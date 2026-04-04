@@ -130,13 +130,26 @@ const OrderConfirmationPage: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* 4) Track My Order button */}
-        <Button
-          className="w-full !bg-[var(--pahala-brown)] !text-white hover:!bg-[var(--pahala-brown-dark)]"
-          onClick={() => navigate('/track-order')}
-        >
-          Track My Order
-        </Button>
+        {/* 4) Next steps: verify phone then upload proof (or open orders only) */}
+        <div className="space-y-3">
+          <Button
+            className="w-full !bg-[var(--pahala-brown)] !text-white hover:!bg-[var(--pahala-brown-dark)]"
+            onClick={() =>
+              navigate(
+                `/track-order?next=${encodeURIComponent(`/upload-proof/${orderState.order_id}`)}`
+              )
+            }
+          >
+            Verify phone &amp; upload payment proof
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => navigate('/track-order')}
+          >
+            Track my orders only
+          </Button>
+        </div>
       </div>
     </div>
   );

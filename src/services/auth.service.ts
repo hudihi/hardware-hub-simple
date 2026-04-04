@@ -194,9 +194,14 @@ export const authService = {
       const response = await apiClient.post('/api/v1/customer/auth/request-otp', { phone });
       return response.data;
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 
-                        error.message || 
-                        'Failed to send OTP. Please try again.';
+      const detail = error.response?.data?.detail;
+      const fromDetail =
+        typeof detail === 'string' ? detail : Array.isArray(detail) ? JSON.stringify(detail) : '';
+      const errorMessage =
+        fromDetail ||
+        error.response?.data?.message ||
+        error.message ||
+        'Failed to send OTP. Please try again.';
       throw new Error(errorMessage);
     }
   },
@@ -223,9 +228,14 @@ export const authService = {
 
       return response.data;
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 
-                        error.message || 
-                        'OTP verification failed. Please try again.';
+      const detail = error.response?.data?.detail;
+      const fromDetail =
+        typeof detail === 'string' ? detail : Array.isArray(detail) ? JSON.stringify(detail) : '';
+      const errorMessage =
+        fromDetail ||
+        error.response?.data?.message ||
+        error.message ||
+        'OTP verification failed. Please try again.';
       throw new Error(errorMessage);
     }
   },

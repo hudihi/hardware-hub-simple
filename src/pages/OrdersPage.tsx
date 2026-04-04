@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import EmptyState from '../components/EmptyState';
 import OrderCard from '../components/OrderCard';
@@ -9,29 +9,7 @@ import { CustomerOrder } from '../services/checkout.service';
 const OrdersPage: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const { customerOrders, fetchCustomerOrders } = useOrderFlow();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  // Orders are loaded after OTP verification on /track-order.
-  useEffect(() => {
-    if (customerOrders.length > 0) return;
-
-    const load = async () => {
-      try {
-        setLoading(true);
-        setError('');
-        await fetchCustomerOrders();
-      } catch (err: any) {
-        // Keep the page usable with Track Orders action if session is unavailable.
-        setError(err.message || 'Unable to load orders');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    load();
-  }, [customerOrders.length, fetchCustomerOrders]);
+  const { customerOrders } = useOrderFlow();
 
   // Transform OrderFlowState to CustomerOrder format for OrderCard
   const transformToCustomerOrder = (order: any): CustomerOrder => ({
@@ -76,17 +54,11 @@ const OrdersPage: React.FC = () => {
           </div>
         </div>
 
-        {loading ? (
-          <div className="text-center py-4">
-            <div className="spinner-border" role="status">
-              <span className="visually-hidden">Loading...</span>
-            </div>
-          </div>
-        ) : customerOrders.length === 0 ? (
+        {customerOrders.length === 0 ? (
           <EmptyState
             icon="bi-box"
             title="No orders loaded yet"
-            description={error || "Use Track Orders above and complete phone verification to view your orders."}
+            description="Use Track Orders above and complete phone verification to view your orders."
           />
         ) : (
           <div>

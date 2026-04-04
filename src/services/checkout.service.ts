@@ -29,6 +29,7 @@ export interface CheckoutSummaryResponse {
 export interface CheckoutResponse {
   order_id: string;
   status: string;
+  payment_status?: string;
   total_amount?: number;
   message?: string;
 }
@@ -104,7 +105,8 @@ export const checkoutService = {
         const mockOrderId = 'ORD-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9).toUpperCase();
         return {
           order_id: mockOrderId,
-          status: 'pending',
+          status: 'AWAITING_PAYMENT',
+          payment_status: 'PENDING',
           total_amount: checkoutData.amount,
           message: 'Order created (offline mode)'
         };

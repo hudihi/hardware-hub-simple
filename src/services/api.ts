@@ -28,8 +28,14 @@ apiClient.interceptors.request.use(
     } else if (config.url?.includes('/customer/')) {
       token = localStorage.getItem(CUSTOMER_TOKEN_KEY);
       tokenType = 'customer';
+    } else if (config.url?.includes('/payments/upload-proof')) {
+      // Customer upload must not use admin token when both are stored
+      token = localStorage.getItem(CUSTOMER_TOKEN_KEY);
+      tokenType = 'customer';
+    } else if (config.url?.includes('/payments/proofs/')) {
+      token = localStorage.getItem(ADMIN_TOKEN_KEY);
+      tokenType = 'admin';
     } else {
-      // Try admin token first, then customer token for other endpoints
       token = localStorage.getItem(ADMIN_TOKEN_KEY) || localStorage.getItem(CUSTOMER_TOKEN_KEY);
       tokenType = token === localStorage.getItem(ADMIN_TOKEN_KEY) ? 'admin' : 'customer';
     }
@@ -74,15 +80,15 @@ apiClient.interceptors.response.use(
     });
     
     if (error.response?.status === 401) {
+      const url = error.config?.url || '';
       // Token expired or invalid - clear appropriate token and redirect
-      if (error.config?.url?.includes('/admin/')) {
+      if (url.includes('/admin/')) {
         localStorage.removeItem(ADMIN_TOKEN_KEY);
         window.location.href = '/admin/login';
-      } else if (error.config?.url?.includes('/customer/')) {
+      } else if (url.includes('/customer/') || (url.includes('/payments/') && !url.includes('/admin/'))) {
         localStorage.removeItem(CUSTOMER_TOKEN_KEY);
-        window.location.href = '/checkout';
+        window.location.href = '/track-order';
       } else {
-        // Clear both tokens and redirect to home
         localStorage.removeItem(ADMIN_TOKEN_KEY);
         localStorage.removeItem(CUSTOMER_TOKEN_KEY);
         window.location.href = '/';

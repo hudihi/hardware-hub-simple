@@ -1,4 +1,4 @@
-import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import React, { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
 import { useCart } from '../context/CartContext';
 import authService from '../services/auth.service';
 import { CheckoutRequest, checkoutService } from '../services/checkout.service';
@@ -14,6 +14,9 @@ export interface OrderFlowState {
   order_notes: string;
   otp_verified: boolean;
   otp_session_token?: string;
+  /** Backend orders.status (e.g. AWAITING_PAYMENT, AWAITING_VERIFICATION, CONFIRMED) */
+  order_status: string;
+  /** Backend orders.payment_status (e.g. PENDING, AWAITING_CONFIRMATION, PAID) */
   payment_status: string;
   access_token?: string;
   created_at: string;
@@ -25,6 +28,7 @@ export interface OrderCreationResult {
   access_token: string;
   status: string;
   payment_status: string;
+  order_status: string;
 }
 
 interface OrderFlowContextType {
@@ -146,7 +150,7 @@ export const OrderFlowProvider: React.FC<{ children: ReactNode }> = ({ children 
       const newOrder: OrderFlowState = {
         order_id: checkoutResponse.order_id, // Use backend order_id
         phone: orderData.phone,
-        amount: orderData.amount,
+        amount: checkoutResponse.total_amount ?? orderData.amount,
         items: orderData.items,
         customer_name: orderData.customer_name || '',
         customer_email: orderData.customer_email,
@@ -154,7 +158,8 @@ export const OrderFlowProvider: React.FC<{ children: ReactNode }> = ({ children 
         order_notes: orderData.order_notes || '',
         otp_verified: orderData.otp_verified || false,
         otp_session_token: orderData.otp_session_token,
-        payment_status: 'awaiting_payment',
+        order_status: checkoutResponse.status || 'AWAITING_PAYMENT',
+        payment_status: checkoutResponse.payment_status || 'PENDING',
         access_token: accessToken,
         created_at: now,
         updated_at: now,
@@ -167,8 +172,9 @@ export const OrderFlowProvider: React.FC<{ children: ReactNode }> = ({ children 
       return {
         order_id: checkoutResponse.order_id,
         access_token: accessToken,
-        status: 'placed',
-        payment_status: 'awaiting_payment'
+        status: checkoutResponse.status || 'AWAITING_PAYMENT',
+        payment_status: checkoutResponse.payment_status || 'PENDING',
+        order_status: checkoutResponse.status || 'AWAITING_PAYMENT',
       };
       
     } catch (error) {
@@ -221,8 +227,8 @@ export const OrderFlowProvider: React.FC<{ children: ReactNode }> = ({ children 
     }
   };
 
-  // Fetch customer orders
-  const fetchCustomerOrders = async (): Promise<void> => {
+  // Fetch customer orders (stable ref — used in useEffect deps on detail/tracking pages)
+  const fetchCustomerOrders = useCallback(async (): Promise<void> => {
     try {
       const cachedOrders = readOrdersCache();
       if (cachedOrders && cachedOrders.length > 0) {
@@ -278,6 +284,7 @@ export const OrderFlowProvider: React.FC<{ children: ReactNode }> = ({ children 
         customer_location: order.customer_location || '',
         order_notes: order.order_notes || '',
         otp_verified: order.otp_verified || false,
+        order_status: order.status || '',
         payment_status: order.payment_status || 'PENDING',
         created_at: order.created_at || new Date().toISOString(),
         updated_at: order.updated_at || new Date().toISOString()
@@ -299,7 +306,7 @@ export const OrderFlowProvider: React.FC<{ children: ReactNode }> = ({ children 
       
       throw error;
     }
-  };
+  }, [orderState?.phone, otpPhone]);
 
   // Update payment status
   const updatePaymentStatus = (status: string) => {

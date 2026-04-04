@@ -11,6 +11,7 @@ const AdminLayout: React.FC = () => {
     { path: '/admin', label: t('admin_dashboard'), icon: 'bi-speedometer2' },
     { path: '/admin/products', label: t('admin_products'), icon: 'bi-box-seam' },
     { path: '/admin/orders', label: t('admin_orders'), icon: 'bi-receipt' },
+    { path: '/admin/payment-proofs', label: t('admin_payment_proofs'), icon: 'bi-receipt-cutoff' },
   ];
 
   return (

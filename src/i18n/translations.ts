@@ -149,6 +149,7 @@ export const translations = {
   admin_dashboard: { en: 'Dashboard', sw: 'Dashibodi' },
   admin_products: { en: 'Products', sw: 'Bidhaa' },
   admin_orders: { en: 'Orders', sw: 'Maagizo' },
+  admin_payment_proofs: { en: 'Payment proofs', sw: 'Uthibitisho wa malipo' },
   admin_total_products: { en: 'Total Products', sw: 'Jumla ya Bidhaa' },
   admin_total_orders: { en: 'Total Orders', sw: 'Jumla ya Maagizo' },
   admin_pending_orders: { en: 'Pending Orders', sw: 'Maagizo Yanasubiri' },

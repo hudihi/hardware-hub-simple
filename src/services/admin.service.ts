@@ -93,6 +93,18 @@ export interface OrderStatusUpdate {
   status: string;
 }
 
+export interface PaymentProofPending {
+  id: string;
+  order_id: string;
+  file_name: string;
+  file_path: string;
+  file_type: string;
+  payment_reference: string | null;
+  payment_method: string;
+  status: string;
+  created_at: string | null;
+}
+
 // Admin service
 export const adminService = {
   /**
@@ -564,6 +576,31 @@ export const adminService = {
       
       throw error;
     }
+  },
+
+  getPendingPaymentProofs: async (): Promise<PaymentProofPending[]> => {
+    const response = await apiClient.get('/api/v1/payments/proofs/pending');
+    const data = response.data?.data;
+    return Array.isArray(data) ? data : [];
+  },
+
+  approvePaymentProof: async (proofId: string, verificationNotes?: string): Promise<void> => {
+    await apiClient.post(`/api/v1/payments/proofs/${proofId}/approve`, null, {
+      params: verificationNotes ? { verification_notes: verificationNotes } : undefined,
+    });
+  },
+
+  rejectPaymentProof: async (proofId: string, verificationNotes?: string): Promise<void> => {
+    await apiClient.post(`/api/v1/payments/proofs/${proofId}/reject`, null, {
+      params: verificationNotes ? { verification_notes: verificationNotes } : undefined,
+    });
+  },
+
+  fetchPaymentProofBlobUrl: async (proofId: string): Promise<string> => {
+    const response = await apiClient.get(`/api/v1/payments/proofs/${proofId}/file`, {
+      responseType: 'blob',
+    });
+    return URL.createObjectURL(response.data);
   },
 };
 

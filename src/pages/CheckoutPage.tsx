@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PhoneInput from '../components/PhoneInput';
-import OTPVerification from '../components/payment/OTPVerification';
 import { useCart } from '../context/CartContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useOrderFlow } from '../hooks/useOrderFlow';
@@ -12,9 +11,9 @@ const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
   const { items, total, clearCart, cartId } = useCart();
   const { t } = useLanguage();
-  const { createOrder, verifyOTP, requestOTP } = useOrderFlow();
+  const { createOrder } = useOrderFlow();
 
-  type CheckoutStatus = "form" | "otp_verification" | "processing";
+  type CheckoutStatus = 'form' | 'processing';
 
   const [formData, setFormData] = useState({
     name: '',
@@ -28,11 +27,9 @@ const CheckoutPage: React.FC = () => {
   const [error, setError] = useState('');
   const [checkoutSummary, setCheckoutSummary] = useState<CheckoutSummaryResponse | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
-  const [checkoutStatus, setCheckoutStatus] = useState<CheckoutStatus>("form");
+  const [checkoutStatus, setCheckoutStatus] = useState<CheckoutStatus>('form');
   const [normalizedPhone, setNormalizedPhone] = useState('');
   const [isPhoneValid, setIsPhoneValid] = useState(false);
-  const [showOTP, setShowOTP] = useState(false);
-  const [resendCountdown, setResendCountdown] = useState(0);
 
   // Navigate to cart if no items and not in checkout flow
   useEffect(() => {
@@ -40,17 +37,6 @@ const CheckoutPage: React.FC = () => {
       navigate('/cart');
     }
   }, [items.length, checkoutStatus, navigate]);
-
-  // Debug checkoutStatus changes
-  useEffect(() => {
-    console.log('checkoutStatus changed to:', checkoutStatus);
-  }, [checkoutStatus]);
-
-  useEffect(() => {
-    if (resendCountdown <= 0) return;
-    const timer = setTimeout(() => setResendCountdown((prev) => prev - 1), 1000);
-    return () => clearTimeout(timer);
-  }, [resendCountdown]);
 
   // Load checkout summary when component mounts or cart changes
   useEffect(() => {
@@ -147,72 +133,32 @@ const CheckoutPage: React.FC = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handle form submission - send OTP first
+  // Place order: create order immediately (OTP only on /track-order)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setCheckoutStatus("processing");
+    setCheckoutStatus('processing');
     setLoading(true);
     setError('');
 
     try {
-      // Validate form fields
       if (!formData.name.trim()) {
         setError('Please enter your name');
-        setCheckoutStatus("form");
-        setLoading(false);
+        setCheckoutStatus('form');
         return;
       }
 
       if (!formData.location.trim()) {
         setError('Please enter your delivery location');
-        setCheckoutStatus("form");
-        setLoading(false);
+        setCheckoutStatus('form');
         return;
       }
 
       if (!isPhoneValid || !normalizedPhone) {
         setError('Please enter a valid phone number');
-        setCheckoutStatus("form");
-        setLoading(false);
+        setCheckoutStatus('form');
         return;
       }
 
-      // Send OTP to the phone number
-      setError('Sending OTP to your phone...');
-      await requestOTP(normalizedPhone);
-      
-      // Show OTP verification step
-      setShowOTP(true);
-      setResendCountdown(60);
-      setCheckoutStatus("otp_verification");
-      setError(''); // Clear the sending message
-      
-    } catch (err: any) {
-      console.error('OTP sending error:', err);
-      setError(err.message || 'Failed to send OTP. Please try again.');
-      setCheckoutStatus("form");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Handle OTP verification and then create order
-  const handleOTPVerified = async (otpCode: string) => {
-    setCheckoutStatus("processing");
-    setLoading(true);
-    setError('');
-
-    try {
-      // Verify OTP and get session token
-      const success = await verifyOTP(otpCode);
-      
-      if (!success) {
-        setError('Invalid OTP code. Please try again.');
-        setCheckoutStatus("otp_verification");
-        return;
-      }
-
-      // Create order with verified OTP
       const orderResult = await createOrder({
         phone: normalizedPhone,
         amount: total,
@@ -221,10 +167,9 @@ const CheckoutPage: React.FC = () => {
         customer_email: formData.email,
         customer_location: formData.location,
         order_notes: formData.notes,
-        otp_verified: true,
+        otp_verified: false,
       });
 
-      // Store order details for tracking page
       localStorage.setItem('lastOrder', JSON.stringify({
         order_id: orderResult.order_id,
         access_token: orderResult.access_token,
@@ -232,34 +177,17 @@ const CheckoutPage: React.FC = () => {
         customer_name: formData.name,
       }));
 
-      // Straight-through flow: go to confirmation immediately after order creation.
+      try {
+        await clearCart();
+      } catch (clearErr) {
+        console.warn('Cart clear after order:', clearErr);
+      }
+
       navigate('/order-confirmation');
-      
     } catch (err: any) {
       console.error('Order creation error:', err);
       setError(err.message || 'Failed to create order');
-      setCheckoutStatus("otp_verification");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Handle OTP verification failure
-  const handleOTPFailed = (errorMessage: string) => {
-    setError(errorMessage);
-    setCheckoutStatus("form");
-    setShowOTP(false);
-  };
-
-  const handleResendOTP = async () => {
-    if (loading || resendCountdown > 0 || !normalizedPhone) return;
-    try {
-      setLoading(true);
-      setError('');
-      await requestOTP(normalizedPhone);
-      setResendCountdown(60);
-    } catch (err: any) {
-      setError(err.message || 'Failed to resend OTP. Please try again.');
+      setCheckoutStatus('form');
     } finally {
       setLoading(false);
     }
@@ -403,51 +331,6 @@ const CheckoutPage: React.FC = () => {
                   )}
                 </button>
               </form>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* OTP Verification Step */}
-      {checkoutStatus === "otp_verification" && showOTP && (
-        <div className="page-container">
-          <div className="max-w-md mx-auto">
-            <div className="text-center mb-4">
-              <div className="mb-3">
-                <i className="bi bi-shield-check text-brown" style={{ fontSize: '3rem' }}></i>
-              </div>
-              <h2 className="h4 mb-2">Verify Your Phone</h2>
-              <p className="text-muted">We've sent a 6-digit code to {normalizedPhone}</p>
-            </div>
-
-            {error && (
-              <div className="alert alert-danger mb-3" role="alert">
-                {error}
-              </div>
-            )}
-
-            <OTPVerification
-              phoneNumber={normalizedPhone}
-              onVerify={handleOTPVerified}
-              onResend={handleResendOTP}
-              isLoading={loading}
-              error={error}
-              resendDisabled={loading || resendCountdown > 0}
-              resendCountdown={resendCountdown}
-            />
-
-            <div className="text-center mt-4">
-              <button 
-                className="btn btn-link text-muted p-0" 
-                onClick={() => {
-                  setShowOTP(false);
-                  setCheckoutStatus("form");
-                  setError('');
-                }}
-              >
-                <i className="bi bi-arrow-left me-1"></i>
-                Back to checkout form
-              </button>
             </div>
           </div>
         </div>

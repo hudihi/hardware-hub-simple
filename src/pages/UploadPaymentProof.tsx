@@ -1,63 +1,201 @@
-import React, { useState, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useCallback, useRef, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Button } from '../components/ui/button';
-import apiClient from '../services/api';
+import authService from '../services/auth.service';
 
-const UploadPaymentProof: React.FC = () => {
-  const { orderId } = useParams<{ orderId: string }>();
+type UploadPaymentProofProps = {
+  /** When embedded under a route that uses `:id` instead of `:orderId` */
+  orderIdProp?: string;
+};
+
+function errMessage(err: any): string {
+  const d = err.response?.data?.detail;
+  if (typeof d === 'string') return d;
+  if (Array.isArray(d)) return d.map((x) => JSON.stringify(x)).join('; ');
+  return err.response?.data?.message || err.message || 'Something went wrong';
+}
+
+interface UploadedFile {
+  file: File;
+  preview: string | null;
+  id: string;
+  uploadProgress: number;
+  uploadStatus: 'pending' | 'uploading' | 'success' | 'error';
+  error?: string;
+}
+
+const UploadPaymentProof: React.FC<UploadPaymentProofProps> = ({ orderIdProp }) => {
+  const { orderId: routeOrderId, id: routeId } = useParams<{ orderId?: string; id?: string }>();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
-  const [loading, setLoading] = useState(false);
+  const dragAreaRef = useRef<HTMLDivElement>(null);
+
+  const resolvedOrderId = (orderIdProp || routeOrderId || routeId || '').trim();
+
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [reference, setReference] = useState('');
-  const [preview, setPreview] = useState<string | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const [overallProgress, setOverallProgress] = useState(0);
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      // Validate file type
-      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
-      if (!allowedTypes.includes(file.type)) {
-        setError('Please upload an image (JPG, PNG) or PDF file');
-        return;
-      }
+  const validateFile = (file: File): string | null => {
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+    if (!allowedTypes.includes(file.type)) {
+      return 'Please upload an image (JPG, PNG) or PDF file';
+    }
 
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        setError('File size must be less than 5MB');
-        return;
-      }
+    if (file.size > 5 * 1024 * 1024) {
+      return 'File size must be less than 5MB';
+    }
 
-      setSelectedFile(file);
-      setError('');
+    return null;
+  };
 
-      // Create preview for images
+  const createFilePreview = (file: File): Promise<string | null> => {
+    return new Promise((resolve) => {
       if (file.type.startsWith('image/')) {
         const reader = new FileReader();
         reader.onload = (e) => {
-          setPreview(e.target?.result as string);
+          resolve(e.target?.result as string);
         };
         reader.readAsDataURL(file);
       } else {
-        setPreview(null); // No preview for PDF
+        resolve(null);
       }
+    });
+  };
+
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) return;
+
+    await processFiles(Array.from(files));
+  };
+
+  const processFiles = async (files: File[]) => {
+    const newFiles: UploadedFile[] = [];
+    let hasError = false;
+
+    for (const file of files) {
+      const validationError = validateFile(file);
+      if (validationError) {
+        setError(validationError);
+        hasError = true;
+        continue;
+      }
+
+      const preview = await createFilePreview(file);
+      const uploadedFile: UploadedFile = {
+        file,
+        preview,
+        id: Math.random().toString(36).substr(2, 9),
+        uploadProgress: 0,
+        uploadStatus: 'pending'
+      };
+
+      newFiles.push(uploadedFile);
     }
+
+    if (newFiles.length > 0) {
+      setUploadedFiles(prev => [...prev, ...newFiles]);
+      setError('');
+    }
+
+    // Clear file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    await processFiles(files);
+  }, []);
+
+  const removeFile = (fileId: string) => {
+    setUploadedFiles(prev => prev.filter(f => f.id !== fileId));
+  };
+
+  const uploadSingleFile = async (fileData: UploadedFile, formData: FormData): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+          const progress = Math.round((e.loaded / e.total) * 100);
+          setUploadedFiles(prev => prev.map(f => 
+            f.id === fileData.id ? { ...f, uploadProgress: progress } : f
+          ));
+        }
+      });
+
+      xhr.addEventListener('load', () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          setUploadedFiles(prev => prev.map(f => 
+            f.id === fileData.id ? { ...f, uploadStatus: 'success', uploadProgress: 100 } : f
+          ));
+          resolve();
+        } else {
+          const errorMsg = 'Upload failed';
+          setUploadedFiles(prev => prev.map(f => 
+            f.id === fileData.id ? { ...f, uploadStatus: 'error', error: errorMsg } : f
+          ));
+          reject(new Error(errorMsg));
+        }
+      });
+
+      xhr.addEventListener('error', () => {
+        const errorMsg = 'Network error during upload';
+        setUploadedFiles(prev => prev.map(f => 
+          f.id === fileData.id ? { ...f, uploadStatus: 'error', error: errorMsg } : f
+        ));
+        reject(new Error(errorMsg));
+      });
+
+      xhr.open('POST', '/api/v1/payments/upload-proof');
+      
+      // Add auth token if available
+      const token = authService.getCustomerToken();
+      if (token) {
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+      }
+
+      xhr.send(formData);
+    });
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    
-    if (!selectedFile) {
-      setError('Please select a file to upload');
+
+    if (!authService.getCustomerToken()) {
+      navigate(`/track-order?next=${encodeURIComponent(`/upload-proof/${resolvedOrderId}`)}`);
       return;
     }
 
-    if (!orderId) {
+    if (uploadedFiles.length === 0) {
+      setError('Please select at least one file to upload');
+      return;
+    }
+
+    if (!resolvedOrderId) {
       setError('Order ID is missing');
       return;
     }
@@ -67,178 +205,318 @@ const UploadPaymentProof: React.FC = () => {
     setSuccess('');
 
     try {
-      const formData = new FormData();
-      formData.append('order_id', orderId);
-      formData.append('file', selectedFile);
-      if (reference.trim()) {
-        formData.append('reference', reference.trim());
+      // Reset file statuses
+      setUploadedFiles(prev => prev.map(f => ({ ...f, uploadStatus: 'pending' as const, uploadProgress: 0, error: undefined })));
+
+      // Upload files sequentially
+      for (const fileData of uploadedFiles) {
+        const formData = new FormData();
+        formData.append('order_id', resolvedOrderId);
+        formData.append('file', fileData.file);
+        if (reference.trim()) {
+          formData.append('payment_reference', reference.trim());
+        }
+
+        setUploadedFiles(prev => prev.map(f => 
+          f.id === fileData.id ? { ...f, uploadStatus: 'uploading' as const } : f
+        ));
+
+        await uploadSingleFile(fileData, formData);
+
+        // Update overall progress
+        const completedFiles = uploadedFiles.filter(f => f.uploadStatus === 'success').length + 1;
+        const progress = Math.round((completedFiles / uploadedFiles.length) * 100);
+        setOverallProgress(progress);
       }
 
-      const response = await apiClient.post('/api/v1/payments/upload-proof', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-
-      if (response.data?.success || response.status === 200) {
-        setSuccess('Payment proof uploaded successfully! Awaiting verification.');
-        
-        // Redirect to order status after 2 seconds
-        setTimeout(() => {
-          navigate(`/track/${orderId}`);
-        }, 2000);
-      } else {
-        setError(response.data.message || 'Failed to upload payment proof');
-      }
+      setSuccess('Payment proof uploaded successfully! We will verify it shortly.');
+      setTimeout(() => {
+        navigate(`/orders/${resolvedOrderId}`);
+      }, 2000);
     } catch (err: any) {
       console.error('Upload error:', err);
-      setError(err.response?.data?.message || 'Failed to upload payment proof. Please try again.');
+      setError(err.message || 'Failed to upload payment proof');
     } finally {
       setUploading(false);
     }
   };
 
-  const clearFile = () => {
-    setSelectedFile(null);
-    setPreview(null);
-    setReference('');
+  const clearAllFiles = () => {
+    setUploadedFiles([]);
+    setOverallProgress(0);
     setError('');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
-  if (loading) {
-    return (
-      <div className="page-container flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brown mx-auto mb-4"></div>
-          <p>Loading...</p>
-        </div>
-      </div>
-    );
-  }
+  const getFileIcon = (file: UploadedFile) => {
+    if (file.file.type === 'application/pdf') {
+      return 'bi-file-pdf text-danger';
+    } else if (file.file.type.includes('image')) {
+      return 'bi-file-image text-success';
+    }
+    return 'bi-file-earmark text-secondary';
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
 
   return (
-    <div className="page-container py-8">
-      <div className="max-w-2xl mx-auto px-4">
+    <div className="page-container py-4 py-md-8">
+      <div className="max-w-2xl mx-auto px-3 px-md-4">
         <Card>
           <CardHeader className="text-center">
-            <CardTitle className="text-xl text-brown-dark">
-              Upload Payment Proof
-            </CardTitle>
-            <p className="text-sm text-gray-600 mt-2">
-              Please upload a screenshot or receipt of your payment
-            </p>
+            <CardTitle className="text-xl text-brown-dark">Upload payment proof</CardTitle>
+            <p className="text-sm text-gray-600 mt-2">Screenshot or PDF of your mobile money / bank payment</p>
           </CardHeader>
-          
+
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* File Upload Section */}
+              {/* Upload Area */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Payment Proof *
+                  Payment proof * {uploadedFiles.length > 0 && `(${uploadedFiles.length} file${uploadedFiles.length > 1 ? 's' : ''} selected)`}
                 </label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                  {preview ? (
-                    <div className="space-y-4">
-                      {preview.startsWith('data:image') ? (
-                        <img 
-                          src={preview} 
-                          alt="Payment proof preview" 
-                          className="mx-auto max-h-64 rounded-lg shadow-md"
-                        />
-                      ) : (
-                        <div className="flex items-center justify-center">
-                          <i className="bi bi-file-pdf text-4xl text-red-600"></i>
-                          <p className="ml-2 text-sm text-gray-600">PDF Document</p>
-                        </div>
-                      )}
-                      
-                      <button
-                        type="button"
-                        onClick={clearFile}
-                        className="text-red-600 hover:text-red-700 text-sm"
-                      >
-                        Remove & Choose Different File
-                      </button>
-                    </div>
-                  ) : (
+                <div
+                  ref={dragAreaRef}
+                  className={`border-2 border-dashed rounded-lg p-4 p-md-6 text-center transition-all ${
+                    isDragging 
+                      ? 'border-blue-400 bg-blue-50' 
+                      : 'border-gray-300 hover:border-gray-400'
+                  }`}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                >
+                  {uploadedFiles.length === 0 ? (
                     <div className="space-y-4">
                       <i className="bi bi-cloud-upload text-4xl text-gray-400"></i>
                       <div>
-                        <label className="cursor-pointer bg-brown text-white px-4 py-2 rounded-lg hover:bg-brown-dark">
-                          Choose File
+                        <p className="text-gray-600 mb-2">Drag and drop your payment proof here</p>
+                        <div className="flex flex-col sm:flex-row gap-2 justify-center items-center">
+                          <label className="cursor-pointer bg-brown text-white px-4 py-2 rounded-lg hover:bg-brown-dark transition-colors">
+                            Choose file
+                            <input
+                              ref={fileInputRef}
+                              type="file"
+                              accept="image/jpeg,image/jpg,image/png,application/pdf"
+                              onChange={handleFileSelect}
+                              className="hidden"
+                              multiple
+                            />
+                          </label>
+                          <span className="text-gray-500 text-sm">or</span>
+                          <span className="text-gray-500 text-sm">drag files here</span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-500">JPG, PNG, or PDF (max 5MB each, multiple files allowed)</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {/* File List */}
+                      <div className="space-y-3">
+                        {uploadedFiles.map((fileData) => (
+                          <div key={fileData.id} className="border rounded-lg p-3 bg-gray-50">
+                            <div className="flex items-start gap-3">
+                              {fileData.preview ? (
+                                <img
+                                  src={fileData.preview}
+                                  alt="Preview"
+                                  className="w-16 h-16 object-cover rounded border"
+                                />
+                              ) : (
+                                <div className="w-16 h-16 border rounded flex items-center justify-center bg-gray-100">
+                                  <i className={`bi ${getFileIcon(fileData)} text-2xl`}></i>
+                                </div>
+                              )}
+                              
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-gray-900 truncate">
+                                  {fileData.file.name}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  {formatFileSize(fileData.file.size)} • {fileData.file.type}
+                                </p>
+                                
+                                {/* Upload Progress */}
+                                {fileData.uploadStatus === 'uploading' && (
+                                  <div className="mt-2">
+                                    <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
+                                      <span>Uploading...</span>
+                                      <span>{fileData.uploadProgress}%</span>
+                                    </div>
+                                    <div className="w-full bg-gray-200 rounded-full h-1.5">
+                                      <div 
+                                        className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
+                                        style={{ width: `${fileData.uploadProgress}%` }}
+                                      ></div>
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {/* Status Indicators */}
+                                {fileData.uploadStatus === 'success' && (
+                                  <div className="flex items-center text-green-600 text-xs mt-1">
+                                    <i className="bi bi-check-circle-fill mr-1"></i>
+                                    Uploaded successfully
+                                  </div>
+                                )}
+                                
+                                {fileData.uploadStatus === 'error' && (
+                                  <div className="flex items-center text-red-600 text-xs mt-1">
+                                    <i className="bi bi-exclamation-triangle-fill mr-1"></i>
+                                    {fileData.error || 'Upload failed'}
+                                  </div>
+                                )}
+                              </div>
+                              
+                              <button
+                                type="button"
+                                onClick={() => removeFile(fileData.id)}
+                                className="text-red-600 hover:text-red-700 p-1"
+                                disabled={uploading}
+                              >
+                                <i className="bi bi-trash"></i>
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      {/* Add More Files Button */}
+                      <div className="flex justify-center">
+                        <label className="cursor-pointer bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors text-sm">
+                          <i className="bi bi-plus-circle me-2"></i>
+                          Add more files
                           <input
                             ref={fileInputRef}
                             type="file"
                             accept="image/jpeg,image/jpg,image/png,application/pdf"
                             onChange={handleFileSelect}
                             className="hidden"
+                            multiple
                           />
                         </label>
                       </div>
-                      <p className="text-xs text-gray-500">
-                        Supported formats: JPG, PNG, PDF (max 5MB)
-                      </p>
                     </div>
                   )}
                 </div>
-                
-                {selectedFile && (
-                  <p className="text-sm text-gray-600 mt-2">
-                    Selected: {selectedFile.name}
-                  </p>
-                )}
               </div>
 
-              {/* Payment Reference */}
+              {/* Overall Progress Bar */}
+              {uploading && uploadedFiles.length > 1 && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <div className="flex items-center justify-between text-sm text-blue-700 mb-2">
+                    <span>Overall Progress</span>
+                    <span>{overallProgress}%</span>
+                  </div>
+                  <div className="w-full bg-blue-200 rounded-full h-2">
+                    <div 
+                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${overallProgress}%` }}
+                    ></div>
+                  </div>
+                </div>
+              )}
+
+              {/* Transaction Reference */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Payment Reference (Optional)
+                  Transaction reference (optional)
                 </label>
                 <input
                   type="text"
                   value={reference}
                   onChange={(e) => setReference(e.target.value)}
-                  placeholder="Enter transaction ID or reference number"
+                  placeholder="e.g. M-Pesa confirmation code"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brown focus:border-brown"
+                  disabled={uploading}
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  Transaction ID from your mobile money or bank confirmation
-                </p>
               </div>
 
-              {/* Error Message */}
+              {/* Error and Success Messages */}
               {error && (
                 <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
                   <p className="text-sm text-red-600">{error}</p>
                 </div>
               )}
 
-              {/* Success Message */}
               {success && (
                 <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
                   <p className="text-sm text-green-600">{success}</p>
                 </div>
               )}
 
-              {/* Submit Button */}
-              <div className="text-center">
-                <Button
+              {/* Action Buttons */}
+              <div className="space-y-3">
+                {/* Primary Upload Button - Always visible when files are selected */}
+                {uploadedFiles.length > 0 && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <p className="text-sm text-blue-700 mb-2 text-center">
+                      <i className="bi bi-info-circle me-1"></i>
+                      Ready to upload {uploadedFiles.length} file{uploadedFiles.length > 1 ? 's' : ''} - click below to submit
+                    </p>
+                  </div>
+                )}
+                
+                {/* Upload button with brand color */}
+                <button
                   type="submit"
-                  disabled={uploading || !selectedFile}
-                  className="w-full bg-brown hover:bg-brown-dark text-white font-semibold py-3 px-6 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={uploading || uploadedFiles.length === 0}
+                  className="w-full bg-[var(--pahala-brown)] hover:bg-[var(--pahala-brown-dark)] text-white font-bold py-4 px-6 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02] text-lg shadow-lg"
+                  style={{ display: 'block', visibility: 'visible' }}
                 >
                   {uploading ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2 inline-block"></div>
-                      Uploading...
+                      <span className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3 inline-block align-middle"></span>
+                      {uploadedFiles.length > 1 ? `Uploading ${uploadedFiles.length} files...` : 'Uploading payment proof...'}
                     </>
                   ) : (
-                    'Upload Payment Proof'
+                    <>
+                      <i className="bi bi-cloud-upload me-2"></i>
+                      <span className="font-semibold">
+                        Upload Payment Proof{uploadedFiles.length > 1 ? 's' : ''}
+                      </span>
+                    </>
                   )}
-                </Button>
+                </button>
+                
+                {/* Secondary Actions */}
+                <div className="flex gap-2">
+                  {uploadedFiles.length > 0 && (
+                    <button 
+                      type="button" 
+                      className="btn btn-outline-secondary flex-1 py-2 px-4 border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors" 
+                      onClick={clearAllFiles}
+                      disabled={uploading}
+                    >
+                      <i className="bi bi-trash me-1"></i>
+                      Clear All
+                    </button>
+                  )}
+                  <button 
+                    type="button" 
+                    className="btn btn-link flex-1 text-gray-600 hover:text-gray-800 transition-colors" 
+                    onClick={() => navigate(-1)}
+                    disabled={uploading}
+                  >
+                    <i className="bi bi-arrow-left me-1"></i>
+                    Back
+                  </button>
+                </div>
+                
+                {/* Help Text */}
+                {uploadedFiles.length === 0 && (
+                  <div className="text-center text-sm text-gray-500 mt-4">
+                    <p>Select payment proof files above to enable upload</p>
+                  </div>
+                )}
               </div>
             </form>
           </CardContent>
