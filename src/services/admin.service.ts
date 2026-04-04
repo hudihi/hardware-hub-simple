@@ -614,15 +614,35 @@ export const adminService = {
   },
 
   getPendingPaymentProofs: async (): Promise<PaymentProofPending[]> => {
-    try {
-      const response = await apiClient.get('/api/v1/payments/proofs/pending');
-      console.log('Payment proofs API response:', response.data);
-      const data = response.data?.data || response.data; // Handle both response formats
-      return Array.isArray(data) ? data : [];
-    } catch (error: any) {
-      console.error('Error fetching payment proofs:', error);
-      throw error;
+    const maxRetries = 3;
+    let lastError: any;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await apiClient.get('/api/v1/payments/proofs/pending');
+        console.log('Payment proofs API response:', response.data);
+        const data = response.data?.data || response.data; // Handle both response formats
+        return Array.isArray(data) ? data : [];
+      } catch (error: any) {
+        lastError = error;
+        console.error(`Attempt ${attempt} failed:`, error.message);
+        
+        // Don't retry on non-timeout errors
+        if (!error.message.includes('timeout') && error.code !== 'ECONNABORTED') {
+          throw error;
+        }
+        
+        // If this is the last attempt, throw the error
+        if (attempt === maxRetries) {
+          throw error;
+        }
+        
+        // Wait before retrying (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+      }
     }
+    
+    throw lastError;
   },
 
   approvePaymentProof: async (proofId: string, verificationNotes?: string): Promise<void> => {

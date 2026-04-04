@@ -56,7 +56,6 @@ const AdminOrders: React.FC = () => {
       setOrders(response.items);
       setTotalOrders(response.total);
       setTotalPages(response.pages);
-      console.log(`Loaded ${response.items.length} orders (page ${currentPage} of ${response.pages})`);
     } catch (error: any) {
       console.error('Failed to fetch admin orders:', error);
       
@@ -64,7 +63,6 @@ const AdminOrders: React.FC = () => {
       if (error.message.includes('Validation error')) {
         // Try with default parameters if validation fails
         try {
-          console.log('Retrying with default parameters...');
           const fallbackResponse = await adminService.getAllOrders(1, 10);
           setOrders(fallbackResponse.items);
           setTotalOrders(fallbackResponse.total);
@@ -123,11 +121,9 @@ const AdminOrders: React.FC = () => {
         return;
       }
       
-      console.log(`Attempting status update: ${currentStatus} → ${newStatus} for order ${orderId}`);
       await adminService.updateOrderStatus(orderId, newStatus);
       // Refresh orders to show updated status
       await fetchOrders();
-      console.log(`Order ${orderId} status updated from ${currentStatus} to ${newStatus}`);
     } catch (error: any) {
       console.error('Failed to update order status:', error);
       setError(error.message || 'Failed to update order status');
@@ -287,21 +283,11 @@ const AdminOrders: React.FC = () => {
                       </td>
                       <td>
                         <div className="d-flex gap-2 align-items-center">
-                          {/* Debug: Show order status */}
-                          <small className="text-muted me-2">DEBUG: {order.status}</small>
-                          
-                          {/* Status Update Buttons */}
                           {(() => {
                             const validTransitions = adminService.getValidStatusTransitions(order.status);
-                            console.log(`=== DEBUG ORDER ${order.id} ===`);
-                            console.log('=== DEBUG ORDER OBJECT ===', order);
-                            console.log(`=== DEBUG STATUS: ${order.status} ===`);
-                            console.log('=== DEBUG VALID TRANSITIONS ===', validTransitions);
-                            console.log('=== DEBUG TRANSITIONS LENGTH ===', validTransitions.length);
                             
-                            // Debug: Check if transitions exist
+                            // Check if transitions exist
                             if (validTransitions.length === 0) {
-                              console.log(`=== NO BUTTONS FOR ORDER ${order.id} ===`);
                               return (
                                 <div className="text-muted">
                                   <small>No actions available</small>
@@ -327,12 +313,12 @@ const AdminOrders: React.FC = () => {
                           
                           {/* View Button */}
                           <button 
-                        className="btn btn-outline-primary btn-sm"
-                        onClick={() => navigate(`/admin/orders/${order.id}`)}
-                        title="View order details"
-                      >
-                        <i className="bi bi-eye"></i>
-                      </button>
+                            className="btn btn-outline-primary btn-sm"
+                            onClick={() => navigate(`/admin/orders/${order.id}`)}
+                            title="View order details"
+                          >
+                            <i className="bi bi-eye"></i>
+                          </button>
                         </div>
                       </td>
                     </tr>
