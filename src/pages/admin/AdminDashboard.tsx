@@ -56,11 +56,14 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  const completedOrders = (summary?.confirmed_orders || 0) + (summary?.delivered_orders || 0);
+  
   const stats = [
     { label: t('admin_total_products'), value: actualProductCount, icon: 'bi-box-seam', color: 'primary' },
     { label: t('admin_total_orders'), value: summary?.total_orders || 0, icon: 'bi-receipt', color: 'success' },
     { label: t('admin_pending_orders'), value: summary?.pending_orders || 0, icon: 'bi-clock', color: 'warning' },
-    { label: t('admin_total_revenue'), value: formatPrice(summary?.total_revenue || 0), icon: 'bi-currency-dollar', color: 'info' },
+    { label: t('admin_completed_orders'), value: completedOrders, icon: 'bi-check-circle', color: 'info' },
+    { label: t('admin_total_revenue'), value: formatPrice(summary?.total_revenue || 0), icon: 'bi-currency-dollar', color: 'secondary' },
   ];
 
   if (loading) {
@@ -98,7 +101,7 @@ const AdminDashboard: React.FC = () => {
 
       <div className="row g-3 mb-4">
         {stats.map((stat, index) => (
-          <div key={index} className="col-6 col-lg-3">
+          <div key={index} className="col-12 col-sm-6 col-md-4 col-lg-2">
             <div className="card-pahala card h-100">
               <div className="card-body">
                 <div className="d-flex align-items-center gap-3">

@@ -153,6 +153,7 @@ export const translations = {
   admin_total_products: { en: 'Total Products', sw: 'Jumla ya Bidhaa' },
   admin_total_orders: { en: 'Total Orders', sw: 'Jumla ya Maagizo' },
   admin_pending_orders: { en: 'Pending Orders', sw: 'Maagizo Yanasubiri' },
+  admin_completed_orders: { en: 'Completed Orders', sw: 'Maagizo Yaliyokamilika' },
   admin_total_revenue: { en: 'Total Revenue', sw: 'Jumla ya Mapato' },
   admin_recent_orders: { en: 'Recent Orders', sw: 'Maagizo ya Hivi Karibuni' },
   admin_no_orders: { en: 'No orders yet', sw: 'Hakuna maagizo bado' },
