@@ -183,53 +183,6 @@ const OrderDetailPage: React.FC = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Order status</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="relative">
-                  <div className="absolute left-4 top-8 bottom-0 w-0.5 bg-gray-300"></div>
-                  <div className="space-y-8">
-                    {timeline.steps.map((step) => (
-                      <div key={step.id} className="flex items-center space-x-4">
-                        <div
-                          className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center ${
-                            step.completed
-                              ? 'bg-green-500 text-white'
-                              : step.active
-                                ? 'bg-brown text-white animate-pulse'
-                                : 'bg-gray-300 text-gray-600'
-                          }`}
-                        >
-                          {step.completed ? (
-                            <i className="bi bi-check-fill text-sm"></i>
-                          ) : (
-                            <span className="text-xs font-semibold">{step.id + 1}</span>
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <h4
-                            className={`font-semibold ${
-                              step.active ? 'text-brown' : step.completed ? 'text-green-600' : 'text-gray-500'
-                            }`}
-                          >
-                            {step.label}
-                          </h4>
-                          {step.active && (
-                            <p className="text-sm text-gray-600 mt-1">
-                              {step.id === 1 && 'Complete payment using the instructions from your confirmation page'}
-                              {step.id === 2 && 'We are checking your payment proof'}
-                              {step.id === 3 && 'Your order is confirmed and will be processed'}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
 
             <Card>
               <CardHeader>
