@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import authService from '../services/auth.service';
@@ -39,6 +39,30 @@ const UploadPaymentProof: React.FC<UploadPaymentProofProps> = ({ orderIdProp }) 
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [overallProgress, setOverallProgress] = useState(0);
+  const [sessionWarning, setSessionWarning] = useState('');
+
+  // Check session status periodically
+  useEffect(() => {
+    const checkSession = () => {
+      if (authService.isCustomerTokenExpired()) {
+        setSessionWarning('Your session has expired. Please log in again.');
+        return;
+      }
+
+      const timeToExpiry = authService.getCustomerTokenTimeToExpiry();
+      if (timeToExpiry > 0 && timeToExpiry < 120) {
+        setSessionWarning(`Your session will expire in ${Math.floor(timeToExpiry / 60)} minute(s). Please complete upload quickly or log in again.`);
+      } else {
+        setSessionWarning('');
+      }
+    };
+
+    // Check immediately and then every 30 seconds
+    checkSession();
+    const interval = setInterval(checkSession, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const validateFile = (file: File): string | null => {
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
@@ -154,7 +178,19 @@ const UploadPaymentProof: React.FC<UploadPaymentProofProps> = ({ orderIdProp }) 
           ));
           resolve();
         } else {
-          const errorMsg = 'Upload failed';
+          let errorMsg = 'Upload failed';
+          
+          // Provide specific error messages based on status code
+          if (xhr.status === 401) {
+            errorMsg = 'Authentication expired - please log in again';
+          } else if (xhr.status === 413) {
+            errorMsg = 'File too large - please use a smaller file';
+          } else if (xhr.status === 415) {
+            errorMsg = 'Unsupported file type - please use JPG, PNG, or PDF';
+          } else if (xhr.status >= 500) {
+            errorMsg = 'Server error - please try again later';
+          }
+          
           setUploadedFiles(prev => prev.map(f => 
             f.id === fileData.id ? { ...f, uploadStatus: 'error', error: errorMsg } : f
           ));
@@ -185,9 +221,24 @@ const UploadPaymentProof: React.FC<UploadPaymentProofProps> = ({ orderIdProp }) 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
+    // Check authentication and token validity
     if (!authService.getCustomerToken()) {
       navigate(`/track-order?next=${encodeURIComponent(`/upload-proof/${resolvedOrderId}`)}`);
       return;
+    }
+
+    // Check if token is expired
+    if (authService.isCustomerTokenExpired()) {
+      setError('Your session has expired. Please log in again.');
+      authService.removeCustomerToken();
+      navigate(`/track-order?next=${encodeURIComponent(`/upload-proof/${resolvedOrderId}`)}`);
+      return;
+    }
+
+    // Warn if token expires soon (less than 2 minutes)
+    const timeToExpiry = authService.getCustomerTokenTimeToExpiry();
+    if (timeToExpiry > 0 && timeToExpiry < 120) {
+      setError(`Your session will expire in ${Math.floor(timeToExpiry / 60)} minute(s). Please complete upload quickly or log in again.`);
     }
 
     if (uploadedFiles.length === 0) {
@@ -235,7 +286,17 @@ const UploadPaymentProof: React.FC<UploadPaymentProofProps> = ({ orderIdProp }) 
       }, 2000);
     } catch (err: any) {
       console.error('Upload error:', err);
-      setError(err.message || 'Failed to upload payment proof');
+      
+      // Handle authentication errors specifically
+      if (err.message?.includes('401') || err.message?.includes('Unauthorized')) {
+        setError('Your session expired during upload. Please log in and try again.');
+        authService.removeCustomerToken();
+        setTimeout(() => {
+          navigate(`/track-order?next=${encodeURIComponent(`/upload-proof/${resolvedOrderId}`)}`);
+        }, 2000);
+      } else {
+        setError(err.message || 'Failed to upload payment proof');
+      }
     } finally {
       setUploading(false);
     }
@@ -439,6 +500,16 @@ const UploadPaymentProof: React.FC<UploadPaymentProofProps> = ({ orderIdProp }) 
                   disabled={uploading}
                 />
               </div>
+
+              {/* Session Warning */}
+              {sessionWarning && (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <p className="text-sm text-amber-700">
+                    <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                    {sessionWarning}
+                  </p>
+                </div>
+              )}
 
               {/* Error and Success Messages */}
               {error && (

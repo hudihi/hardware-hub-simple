@@ -14,6 +14,7 @@ export interface LoginResponse {
 export interface JWTPayload {
   sub: string;
   role: string;
+  type?: string;
   exp: number;
   iat?: number;
 }
@@ -266,7 +267,39 @@ export const authService = {
    */
   isCustomerAuthenticated: (): boolean => {
     const token = authService.getCustomerToken();
-    return !!token;
+    if (!token) return false;
+
+    const payload = jwtUtils.decodeToken(token);
+    if (!payload) return false;
+
+    return !jwtUtils.isTokenExpired(payload) && payload.type === 'customer';
+  },
+
+  /**
+   * Check if customer token is expired
+   */
+  isCustomerTokenExpired: (): boolean => {
+    const token = authService.getCustomerToken();
+    if (!token) return true;
+
+    const payload = jwtUtils.decodeToken(token);
+    if (!payload) return true;
+
+    return jwtUtils.isTokenExpired(payload);
+  },
+
+  /**
+   * Get time until token expires (in seconds)
+   */
+  getCustomerTokenTimeToExpiry: (): number => {
+    const token = authService.getCustomerToken();
+    if (!token) return 0;
+
+    const payload = jwtUtils.decodeToken(token);
+    if (!payload || !payload.exp) return 0;
+
+    const now = Math.floor(Date.now() / 1000);
+    return Math.max(0, payload.exp - now);
   }
 };
 
