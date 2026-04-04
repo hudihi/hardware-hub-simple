@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../context/LanguageContext';
 import { AdminOrder, adminService } from '../../services/admin.service';
-import { formatDate, formatPrice, getStatusClass, getStatusText } from '../../utils/format';
+import { formatDate, formatOrderDisplayCode, formatPrice, getStatusClass, getStatusText } from '../../utils/format';
 
 const AdminOrders: React.FC = () => {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
@@ -263,7 +263,7 @@ const AdminOrders: React.FC = () => {
                 <tbody>
                   {filteredOrders.map((order) => (
                     <tr key={order.id}>
-                      <td className="fw-semibold">{order.id}</td>
+                      <td className="fw-semibold" title={order.id}>{formatOrderDisplayCode(order.id)}</td>
                       <td>
                         <div>{order.customer_name}</div>
                         <small className="text-muted">{order.customer_phone}</small>

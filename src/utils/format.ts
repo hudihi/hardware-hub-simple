@@ -52,6 +52,13 @@ const statusMap: Record<string, { en: string; sw: string }> = {
   ready: { en: 'Ready for Pickup', sw: 'Tayari Kuchukuliwa' },
   completed: { en: 'Completed', sw: 'Imekamilika' },
   cancelled: { en: 'Cancelled', sw: 'Imeghairiwa' },
+  // Additional mappings for backend statuses
+  awaiting_payment: { en: 'Awaiting Payment', sw: 'Inasubiri Malipo' },
+  pending_payment: { en: 'Pending Payment', sw: 'Malipo Yanayosubiri' },
+  awaiting_verification: { en: 'Awaiting Verification', sw: 'Inasubiri Kuthibitisho' },
+  pending_otp: { en: 'Pending OTP', sw: 'Inasubiri OTP' },
+  rejected: { en: 'Rejected', sw: 'Imekataliwa' },
+  delivered: { en: 'Delivered', sw: 'Imetolewa' },
 };
 
 export const getStatusText = (status: string, language: Language = 'en'): string => {
@@ -67,6 +74,13 @@ export const getStatusClass = (status: string): string => {
     ready: 'bg-success text-white',             // Green bg, white text
     completed: 'bg-success text-white',           // Green bg, white text
     cancelled: 'bg-danger text-white',            // Red bg, white text
+    // Additional mappings for backend statuses
+    awaiting_payment: 'bg-warning text-dark',     // Yellow bg, dark text
+    pending_payment: 'bg-warning text-dark',     // Yellow bg, dark text
+    awaiting_verification: 'bg-info text-white',  // Blue bg, white text
+    pending_otp: 'bg-warning text-dark',         // Yellow bg, dark text
+    rejected: 'bg-danger text-white',            // Red bg, white text
+    delivered: 'bg-success text-white',          // Green bg, white text
   };
   return classMap[status] || 'bg-secondary text-white'; // Default: gray bg, white text
 };

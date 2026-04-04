@@ -12,26 +12,46 @@ const OrdersPage: React.FC = () => {
   const { customerOrders } = useOrderFlow();
 
   // Transform OrderFlowState to CustomerOrder format for OrderCard
-  const transformToCustomerOrder = (order: any): CustomerOrder => ({
-    id: order.order_id,
-    cart_id: order.order_id, // Use order_id as cart_id for compatibility
-    customer_phone: order.phone,
-    customer_address: order.customer_location,
-    customer_name: order.customer_name,
-    customer_city: order.customer_location, // Use location as city for compatibility
-    order_notes: order.order_notes,
-    payment_method: 'mobile_money', // Default payment method
-    status: String(order.payment_status || '')
-      .toLowerCase() === 'completed'
-      ? 'completed'
-      : String(order.payment_status || '').toLowerCase() === 'failed'
-      ? 'failed'
-      : 'pending',
-    total_amount: Number(order.amount ?? order.total_amount ?? order.total ?? 0),
-    items: order.items,
-    created_at: order.created_at,
-    updated_at: order.updated_at
-  });
+  const transformToCustomerOrder = (order: any): CustomerOrder => {
+    // Map uppercase backend status to lowercase frontend status
+    const getStatusMapping = (status: string): string => {
+      const statusLower = (status || '').toLowerCase();
+      switch (statusLower) {
+        case 'confirmed':
+        case 'paid':
+          return 'confirmed';
+        case 'delivered':
+        case 'completed':
+          return 'completed';
+        case 'cancelled':
+          return 'cancelled';
+        case 'awaiting_payment':
+        case 'pending_payment':
+        case 'awaiting_verification':
+        case 'pending_otp':
+        case 'rejected':
+          return 'pending';
+        default:
+          return 'pending';
+      }
+    };
+
+    return {
+      id: order.order_id,
+      cart_id: order.order_id, // Use order_id as cart_id for compatibility
+      customer_phone: order.phone,
+      customer_address: order.customer_location,
+      customer_name: order.customer_name,
+      customer_city: order.customer_location, // Use location as city for compatibility
+      order_notes: order.order_notes,
+      payment_method: 'mobile_money', // Default payment method
+      status: getStatusMapping(order.order_status), // Properly map the order status
+      total_amount: Number(order.amount ?? order.total_amount ?? order.total ?? 0),
+      items: order.items,
+      created_at: order.created_at,
+      updated_at: order.updated_at
+    };
+  };
 
   return (
     <div className="page-container">

@@ -3,7 +3,7 @@ import LiveMap from '../../components/admin/LiveMap';
 import { useLanguage } from '../../context/LanguageContext';
 import { useLiveLocations } from '../../hooks/useLiveLocations';
 import { adminService, DashboardSummary, PopularProduct, RecentOrder, RevenueOverview } from '../../services/admin.service';
-import { formatPrice, getStatusClass, getStatusText } from '../../utils/format';
+import { formatOrderDisplayCode, formatPrice, getStatusClass, getStatusText } from '../../utils/format';
 
 const AdminDashboard: React.FC = () => {
   const { t } = useLanguage();
@@ -166,7 +166,7 @@ const AdminDashboard: React.FC = () => {
                 <tbody>
                   {recentOrders.map((order) => (
                     <tr key={order.id}>
-                      <td className="fw-semibold">{order.id}</td>
+                      <td className="fw-semibold" title={order.id}>{formatOrderDisplayCode(order.id)}</td>
                       <td>
                         <div>{order.customer_name}</div>
                         <small className="text-muted">{order.customer_phone}</small>
