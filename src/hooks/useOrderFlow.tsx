@@ -228,13 +228,16 @@ export const OrderFlowProvider: React.FC<{ children: ReactNode }> = ({ children 
   };
 
   // Fetch customer orders (stable ref — used in useEffect deps on detail/tracking pages)
-  const fetchCustomerOrders = useCallback(async (): Promise<void> => {
+  // Pass forceRefresh=true to bypass the 15-minute cache (used by status polling)
+  const fetchCustomerOrders = useCallback(async (forceRefresh = false): Promise<void> => {
     try {
-      const cachedOrders = readOrdersCache();
-      if (cachedOrders && cachedOrders.length > 0) {
-        setCustomerOrders(cachedOrders);
-        console.log('Loaded customer orders from cache:', cachedOrders.length, 'orders');
-        return;
+      if (!forceRefresh) {
+        const cachedOrders = readOrdersCache();
+        if (cachedOrders && cachedOrders.length > 0) {
+          setCustomerOrders(cachedOrders);
+          console.log('Loaded customer orders from cache:', cachedOrders.length, 'orders');
+          return;
+        }
       }
 
       const customerToken = authService.getCustomerToken();

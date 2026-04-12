@@ -70,17 +70,26 @@ async function buildShareCard(
   lang: string
 ): Promise<Blob | null> {
   try {
-    // Fetch image as blob to avoid canvas CORS taint
-    const imgResp   = await fetch(imageUrl);
-    const imgBlob   = await imgResp.blob();
-    const imgObjUrl = URL.createObjectURL(imgBlob);
-
+    // Load product image with crossOrigin so canvas stays untainted on mobile.
+    // First try fetch (works when CDN sends CORS headers); if that fails fall
+    // back to a direct img load — canvas will be tainted but toBlob still works
+    // in most mobile browsers for same-session images.
     const productImg = new Image();
-    productImg.src   = imgObjUrl;
-    await new Promise<void>((res, rej) => {
-      productImg.onload  = () => res();
-      productImg.onerror = () => rej(new Error('img load failed'));
+    productImg.crossOrigin = 'anonymous';
+
+    const loaded = await new Promise<boolean>((resolve) => {
+      productImg.onload  = () => resolve(true);
+      productImg.onerror = () => {
+        // Retry without crossOrigin (allows canvas taint, but toBlob still works)
+        const fallback = new Image();
+        fallback.onload  = () => { Object.assign(productImg, fallback); resolve(true); };
+        fallback.onerror = () => resolve(false);
+        fallback.src = imageUrl;
+      };
+      productImg.src = imageUrl;
     });
+
+    if (!loaded || productImg.naturalWidth === 0) return null;
 
     // Load store logo (fail silently — card still works without it)
     const logoImg = new Image();
@@ -140,7 +149,6 @@ async function buildShareCard(
     else             { sh = nw; sy = (nh - sh) / 2;  }
     ctx.drawImage(productImg, sx, sy, sw, sh, PAD, IMG_Y, IMG_SIZE, IMG_SIZE);
     ctx.restore();
-    URL.revokeObjectURL(imgObjUrl);
 
     // Brand-color border around photo
     ctx.save();

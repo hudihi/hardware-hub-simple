@@ -33,17 +33,22 @@ function displayStatusLabel(order: OrderFlowState): string {
   return os || ps || 'In progress';
 }
 
+const POLL_INTERVAL_MS = 8000; // check every 8 seconds
+
 const OrderDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { customerOrders, fetchCustomerOrders } = useOrderFlow();
   const { t } = useLanguage();
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [loading, setLoading]           = useState(true);
+  const [error, setError]               = useState('');
+  const [isPolling, setIsPolling]       = useState(false);
+  const [justConfirmed, setJustConfirmed] = useState(false);
 
   const order = customerOrders.find((o) => o.order_id === id);
 
+  // Initial load
   useEffect(() => {
     const loadOrder = async () => {
       try {
@@ -67,6 +72,47 @@ const OrderDetailPage: React.FC = () => {
 
     loadOrder();
   }, [id, navigate, fetchCustomerOrders]);
+
+  // Poll for status changes while the order is awaiting admin verification
+  useEffect(() => {
+    if (!order) return;
+
+    const ps = (order.payment_status || '').toUpperCase();
+    const os = (order.order_status  || '').toUpperCase();
+
+    const waitingForVerification =
+      ps === 'AWAITING_CONFIRMATION' || os === 'AWAITING_VERIFICATION';
+
+    if (!waitingForVerification) {
+      setIsPolling(false);
+      return;
+    }
+
+    setIsPolling(true);
+
+    const intervalId = setInterval(async () => {
+      try {
+        await fetchCustomerOrders(true); // bypass cache — always fresh
+      } catch {
+        // silent — don't surface polling errors to the user
+      }
+    }, POLL_INTERVAL_MS);
+
+    return () => {
+      clearInterval(intervalId);
+      setIsPolling(false);
+    };
+  }, [order?.payment_status, order?.order_status, fetchCustomerOrders]);
+
+  // Detect the moment status flips to confirmed/paid and show a banner
+  useEffect(() => {
+    if (!order) return;
+    const ps = (order.payment_status || '').toUpperCase();
+    const os = (order.order_status  || '').toUpperCase();
+    if (ps === 'PAID' || os === 'CONFIRMED') {
+      setJustConfirmed(true);
+    }
+  }, [order?.payment_status, order?.order_status]);
 
   const getStatusColor = (label: string) => {
     const s = label.toLowerCase();
@@ -178,6 +224,25 @@ const OrderDetailPage: React.FC = () => {
         {error && (
           <div className="alert alert-warning mb-4" role="alert">
             {error}
+          </div>
+        )}
+
+        {/* Live polling indicator — shown while waiting for admin to verify */}
+        {isPolling && (
+          <div className="flex items-center gap-2 text-sm text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2 mb-4">
+            <span className="inline-block w-2 h-2 rounded-full bg-blue-500 animate-pulse flex-shrink-0" />
+            Checking for payment confirmation… we'll update this page automatically.
+          </div>
+        )}
+
+        {/* Banner shown the moment admin confirms */}
+        {justConfirmed && (
+          <div className="flex items-center gap-3 bg-green-50 border border-green-300 rounded-xl px-4 py-3 mb-4">
+            <span className="text-2xl">🎉</span>
+            <div>
+              <p className="font-semibold text-green-800">Payment confirmed!</p>
+              <p className="text-sm text-green-700">Your order is now being processed.</p>
+            </div>
           </div>
         )}
 
