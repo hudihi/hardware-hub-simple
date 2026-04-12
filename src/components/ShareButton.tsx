@@ -1,5 +1,5 @@
-import { Copy, Share2, X } from 'lucide-react';
-import React, { useEffect, useRef, useState } from 'react';
+import { Share2 } from 'lucide-react';
+import React, { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 
 interface ShareButtonProps {
@@ -13,196 +13,246 @@ interface ShareButtonProps {
   style?: React.CSSProperties;
 }
 
+// ─── Canvas helpers ────────────────────────────────────────────────────────────
+
+function roundedRect(
+  ctx: CanvasRenderingContext2D,
+  x: number, y: number, w: number, h: number, r: number
+) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+/** Draws wrapped text and returns the Y position after the last line */
+function drawWrappedText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number, y: number,
+  maxWidth: number,
+  lineHeight: number
+): number {
+  const words = text.split(' ');
+  let line = '';
+  let curY  = y;
+  for (const word of words) {
+    const test = line + word + ' ';
+    if (ctx.measureText(test).width > maxWidth && line !== '') {
+      ctx.fillText(line.trim(), x, curY);
+      line = word + ' ';
+      curY += lineHeight;
+    } else {
+      line = test;
+    }
+  }
+  if (line.trim()) { ctx.fillText(line.trim(), x, curY); curY += lineHeight; }
+  return curY;
+}
+
+/**
+ * Builds a share card image:
+ * product photo (top) · title · price · store message
+ * The URL is NOT embedded — it is passed separately to navigator.share
+ * so messaging apps render it as a real clickable link.
+ */
+async function buildShareCard(
+  imageUrl: string,
+  title: string,
+  price: string | undefined,
+  lang: string
+): Promise<Blob | null> {
+  try {
+    // Fetch image as blob to avoid canvas CORS taint
+    const imgResp   = await fetch(imageUrl);
+    const imgBlob   = await imgResp.blob();
+    const imgObjUrl = URL.createObjectURL(imgBlob);
+
+    const productImg = new Image();
+    productImg.src   = imgObjUrl;
+    await new Promise<void>((res, rej) => {
+      productImg.onload  = () => res();
+      productImg.onerror = () => rej(new Error('img load failed'));
+    });
+
+    // ── Measure title to compute exact canvas height ────────────────────
+    const W   = 1080;
+    const PAD = 52;
+    const measureCanvas = document.createElement('canvas');
+    const mCtx = measureCanvas.getContext('2d')!;
+    mCtx.font = 'bold 56px Arial, sans-serif';
+    const maxTextW = W - PAD * 2;
+    let titleLines = 1, line = '';
+    for (const word of title.split(' ')) {
+      const test = line + word + ' ';
+      if (mCtx.measureText(test).width > maxTextW && line !== '') {
+        titleLines++;
+        line = word + ' ';
+      } else { line = test; }
+    }
+    titleLines = Math.min(titleLines, 3);
+
+    // ── Layout ──────────────────────────────────────────────────────────
+    const IMG_SIZE = W - PAD * 2;                 // square photo
+    const IMG_Y    = PAD;
+    const INFO_Y   = IMG_Y + IMG_SIZE + 44;       // gap below photo
+
+    const TITLE_BLOCK  = titleLines * 68;
+    const PRICE_BLOCK  = price ? 68 : 0;
+    const DIVIDER_H    = 36;
+    const STORE_BLOCK  = 56;
+    const VISIT_BLOCK  = 50;
+    const BOTTOM_PAD   = 56;
+
+    const H = INFO_Y + TITLE_BLOCK + PRICE_BLOCK + DIVIDER_H + STORE_BLOCK + VISIT_BLOCK + BOTTOM_PAD;
+
+    const canvas = document.createElement('canvas');
+    canvas.width  = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d')!;
+
+    // ── Background ──────────────────────────────────────────────────────
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, W, H);
+
+    // ── Product photo (cover-fit square, rounded) ────────────────────────
+    ctx.save();
+    roundedRect(ctx, PAD, IMG_Y, IMG_SIZE, IMG_SIZE, 28);
+    ctx.clip();
+    const nw = productImg.naturalWidth, nh = productImg.naturalHeight;
+    let sx = 0, sy = 0, sw = nw, sh = nh;
+    if (nw / nh > 1) { sw = nh; sx = (nw - sw) / 2; }
+    else             { sh = nw; sy = (nh - sh) / 2;  }
+    ctx.drawImage(productImg, sx, sy, sw, sh, PAD, IMG_Y, IMG_SIZE, IMG_SIZE);
+    ctx.restore();
+    URL.revokeObjectURL(imgObjUrl);
+
+    // Subtle border around photo
+    ctx.save();
+    roundedRect(ctx, PAD, IMG_Y, IMG_SIZE, IMG_SIZE, 28);
+    ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.restore();
+
+    // ── Product title ────────────────────────────────────────────────────
+    ctx.fillStyle    = '#111827';
+    ctx.font         = 'bold 56px Arial, sans-serif';
+    ctx.textAlign    = 'left';
+    ctx.textBaseline = 'top';
+    let nextY = drawWrappedText(ctx, title, PAD, INFO_Y, maxTextW, 68);
+
+    // ── Price ─────────────────────────────────────────────────────────────
+    if (price) {
+      ctx.fillStyle = '#ea580c';
+      ctx.font      = 'bold 50px Arial, sans-serif';
+      ctx.fillText(price, PAD, nextY + 6);
+      nextY += 68;
+    }
+
+    // ── Divider ───────────────────────────────────────────────────────────
+    nextY += 18;
+    ctx.fillStyle = '#e5e7eb';
+    ctx.fillRect(PAD, nextY, W - PAD * 2, 2);
+    nextY += 18;
+
+    // ── Store message ──────────────────────────────────────────────────────
+    const storeMsg = lang === 'sw'
+      ? '🏪  Inapatikana: Pahala Hardware Store'
+      : '🏪  Available at: Pahala Hardware Store';
+    ctx.fillStyle = '#6b7280';
+    ctx.font      = '38px Arial, sans-serif';
+    ctx.fillText(storeMsg, PAD, nextY);
+    nextY += 50;
+
+    // ── Visit line ─────────────────────────────────────────────────────────
+    const visitMsg = lang === 'sw'
+      ? '🔗  Tembelea: www.pahala.store kwa bidhaa zaidi'
+      : '🔗  Visit: www.pahala.store for more products';
+    ctx.fillStyle = '#2563eb';
+    ctx.font      = '36px Arial, sans-serif';
+    ctx.fillText(visitMsg, PAD, nextY);
+
+    return new Promise<Blob | null>(resolve => {
+      canvas.toBlob(b => resolve(b), 'image/jpeg', 0.93);
+    });
+  } catch (err) {
+    console.error('buildShareCard failed:', err);
+    return null;
+  }
+}
+
+// ─── Component ─────────────────────────────────────────────────────────────────
+
 const ShareButton: React.FC<ShareButtonProps> = ({
   title, text, url, image, price,
   className = '', children, style,
 }) => {
-  const [isLoading, setIsLoading]     = useState(false);
-  const [isFallback, setIsFallback]   = useState(false);
-  const [copied, setCopied]           = useState(false);
-  const [isMobile, setIsMobile]       = useState(false);
-  const modalRef                       = useRef<HTMLDivElement>(null);
-  const { language }                   = useLanguage();
-
-  useEffect(() => {
-    setIsMobile(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
-  }, []);
-
-  useEffect(() => {
-    const onOutside = (e: MouseEvent) => {
-      if (modalRef.current && !modalRef.current.contains(e.target as Node)) setIsFallback(false);
-    };
-    const onEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') setIsFallback(false); };
-    if (isFallback) {
-      document.addEventListener('mousedown', onOutside);
-      document.addEventListener('keydown', onEsc);
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => {
-      document.removeEventListener('mousedown', onOutside);
-      document.removeEventListener('keydown', onEsc);
-      document.body.style.overflow = 'unset';
-    };
-  }, [isFallback]);
-
-  const shareText = language === 'sw'
-    ? `🔩 ${title}\n💰 ${price ?? ''}\n\n🏪 Inapatikana: Pahala Hardware Store\nTembelea duka au agiza mtandaoni:\n👉 ${url}`
-    : `🔩 ${title}\n💰 ${price ?? ''}\n\n🏪 Available at: Pahala Hardware Store\nVisit our store or order online:\n👉 ${url}`;
+  const [isLoading, setIsLoading] = useState(false);
+  const { language } = useLanguage();
 
   const handleShare = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
     setIsLoading(true);
-
     try {
-      // Fetch the product image as a real File so it appears as an image, not a URL
-      let imageFile: File | undefined;
+      let fileToShare: File | undefined;
+
       if (image) {
-        try {
-          const resp  = await fetch(image);
-          const blob  = await resp.blob();
-          const ext   = blob.type.includes('png') ? 'png' : 'jpg';
-          imageFile   = new File([blob], `product.${ext}`, { type: blob.type || 'image/jpeg' });
-        } catch {
-          // image fetch failed — proceed without it
+        // Build card: photo + title + price + store message baked into one image
+        const blob = await buildShareCard(image, title, price, language);
+        if (blob) {
+          fileToShare = new File([blob], `${title.replace(/\s+/g, '-')}.jpg`, { type: 'image/jpeg' });
         }
       }
 
-      if (navigator.share) {
-        // Try with image file first
-        if (imageFile && navigator.canShare?.({ files: [imageFile] })) {
-          await navigator.share({ files: [imageFile], title, text: shareText });
-          return;
-        }
-        // Fallback: share without file (text + url only)
-        await navigator.share({ title, text: shareText, url });
+      if (!navigator.share) {
+        // No native share API — fall back to copying the URL
+        await navigator.clipboard?.writeText(url).catch(() => {});
+        alert(language === 'sw' ? 'Kiungo kimenakiliwa!' : 'Link copied to clipboard!');
         return;
       }
 
-      // Browser has no native share — show fallback sheet
-      setIsFallback(true);
+      if (fileToShare && navigator.canShare?.({ files: [fileToShare] })) {
+        // Share the card image + the URL as text.
+        // The image carries all visual details; the URL appears as a
+        // real clickable link in WhatsApp / Telegram / etc.
+        await navigator.share({ files: [fileToShare], title });
+      } else {
+        // Fallback: native share without image file (text + link)
+        await navigator.share({ title, text, url });
+      }
     } catch (err: unknown) {
+      // AbortError = user cancelled — do nothing
       if (err instanceof Error && err.name !== 'AbortError') {
-        setIsFallback(true);
+        console.error('Share failed:', err);
       }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const copyMessage = async () => {
-    try {
-      await navigator.clipboard.writeText(shareText);
-    } catch {
-      const ta = document.createElement('textarea');
-      ta.value = shareText;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-    }
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2500);
-  };
-
   return (
-    <>
-      <button
-        onClick={handleShare}
-        disabled={isLoading}
-        className={`btn btn-outline-secondary d-flex align-items-center gap-2 ${className}`}
-        style={style}
-        aria-label={language === 'sw' ? 'Shiriki' : 'Share'}
-      >
-        {isLoading
-          ? <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" />
-          : (children || <><Share2 size={16} />{language === 'sw' ? 'Shiriki' : 'Share'}</>)
-        }
-      </button>
-
-      {/* Fallback sheet — shown only when native share is unavailable */}
-      {isFallback && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center">
-          <div
-            className="absolute inset-0 bg-black bg-opacity-50"
-            onClick={() => setIsFallback(false)}
-            aria-hidden="true"
-          />
-          <div
-            ref={modalRef}
-            className={`relative bg-white rounded-t-2xl md:rounded-2xl w-full max-w-sm shadow-xl overflow-hidden ${
-              isMobile ? 'animate-slide-up' : 'animate-scale-in'
-            }`}
-            role="dialog"
-            aria-modal="true"
-          >
-            {isMobile && (
-              <div className="flex justify-center pt-3 pb-1">
-                <div className="w-10 h-1 bg-gray-300 rounded-full" />
-              </div>
-            )}
-
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b">
-              <h3 className="text-sm font-semibold text-gray-800">
-                {language === 'sw' ? 'Shiriki Bidhaa' : 'Share Product'}
-              </h3>
-              <button
-                onClick={() => setIsFallback(false)}
-                className="p-1.5 rounded-full hover:bg-gray-100 transition-colors"
-                aria-label="Close"
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            <div className="p-4 space-y-3">
-              {/* Product preview */}
-              <div className="flex gap-3 items-start bg-gray-50 rounded-xl p-3 border border-gray-100">
-                {image && (
-                  <img
-                    src={image}
-                    alt={title}
-                    className="w-16 h-16 rounded-lg object-cover flex-shrink-0 border border-gray-200"
-                  />
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm text-gray-900 leading-snug">{title}</p>
-                  {price && <p className="text-sm text-orange-600 font-medium mt-0.5">{price}</p>}
-                  <p className="text-xs text-gray-500 mt-1">
-                    {language === 'sw' ? 'Pahala Hardware Store' : 'Pahala Hardware Store'}
-                  </p>
-                </div>
-              </div>
-
-              {/* Message preview */}
-              <pre className="text-xs text-gray-600 bg-gray-50 rounded-xl p-3 border border-gray-100 whitespace-pre-wrap font-sans leading-relaxed">
-                {shareText}
-              </pre>
-
-              {/* Copy button */}
-              <button
-                onClick={copyMessage}
-                className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
-                  copied
-                    ? 'bg-green-50 border border-green-400 text-green-700'
-                    : 'bg-gray-900 text-white hover:bg-gray-800'
-                }`}
-              >
-                <Copy size={15} />
-                {copied
-                  ? (language === 'sw' ? '✓ Imenakiliwa!' : '✓ Copied!')
-                  : (language === 'sw' ? 'Nakili Ujumbe' : 'Copy Message')
-                }
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
+    <button
+      onClick={handleShare}
+      disabled={isLoading}
+      className={`btn btn-outline-secondary d-flex align-items-center gap-2 ${className}`}
+      style={style}
+      aria-label={language === 'sw' ? 'Shiriki' : 'Share'}
+    >
+      {isLoading
+        ? <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" />
+        : (children || <><Share2 size={16} />{language === 'sw' ? 'Shiriki' : 'Share'}</>)
+      }
+    </button>
   );
 };
 
