@@ -1,4 +1,4 @@
-import { Copy, Facebook, Mail, MessageCircle, Send, Share2, Twitter, X } from 'lucide-react';
+import { Copy, Share2, X } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -6,271 +6,198 @@ interface ShareButtonProps {
   title: string;
   text: string;
   url: string;
+  image?: string;
+  price?: string;
   className?: string;
   children?: React.ReactNode;
   style?: React.CSSProperties;
-  image?: string; // Product image for rich media sharing
 }
 
-const ShareButton: React.FC<ShareButtonProps> = ({ 
-  title, 
-  text, 
-  url, 
-  className = '',
-  children,
-  style,
-  image 
+const ShareButton: React.FC<ShareButtonProps> = ({
+  title, text, url, image, price,
+  className = '', children, style,
 }) => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [copiedText, setCopiedText] = useState('');
-  const [isNativeShareSupported, setIsNativeShareSupported] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-  const modalRef = useRef<HTMLDivElement>(null);
-  const { language, t } = useLanguage();
+  const [isLoading, setIsLoading]     = useState(false);
+  const [isFallback, setIsFallback]   = useState(false);
+  const [copied, setCopied]           = useState(false);
+  const [isMobile, setIsMobile]       = useState(false);
+  const modalRef                       = useRef<HTMLDivElement>(null);
+  const { language }                   = useLanguage();
 
-  // Check for device type only (disabled native share to avoid lovable icons)
   useEffect(() => {
-    setIsNativeShareSupported(!!navigator.share);
     setIsMobile(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
   }, []);
 
-  // Handle click outside modal
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
-        setIsModalOpen(false);
-      }
+    const onOutside = (e: MouseEvent) => {
+      if (modalRef.current && !modalRef.current.contains(e.target as Node)) setIsFallback(false);
     };
-
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setIsModalOpen(false);
-      }
-    };
-
-    if (isModalOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('keydown', handleEscape);
+    const onEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') setIsFallback(false); };
+    if (isFallback) {
+      document.addEventListener('mousedown', onOutside);
+      document.addEventListener('keydown', onEsc);
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
     }
-
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleEscape);
+      document.removeEventListener('mousedown', onOutside);
+      document.removeEventListener('keydown', onEsc);
       document.body.style.overflow = 'unset';
     };
-  }, [isModalOpen]);
+  }, [isFallback]);
 
-  const handleShare = async () => {
-    if (isNativeShareSupported) {
-      try {
-        const shareData: ShareData = {
-          title,
-          text,
-          url
-        };
-        
-        // Add image file if available and supported
-        if (image && navigator.canShare && navigator.canShare({ files: [] })) {
-          try {
-            // For native sharing with images, we'd need to fetch the image and convert to File
-            // This is complex and may not work on all platforms, so we'll focus on the URL/meta approach
-            console.log('Image available for sharing:', image);
-          } catch (error) {
-            console.log('Image preparation failed:', error);
-          }
-        }
-        
-        await navigator.share(shareData);
-        console.log('Content shared successfully');
-      } catch (error) {
-        console.log('Share failed or was cancelled:', error);
-        // Fallback to modal if native share fails
-        setIsModalOpen(true);
-      }
-    } else {
-      setIsModalOpen(true);
-    }
-  };
+  const shareText = language === 'sw'
+    ? `🔩 ${title}\n💰 ${price ?? ''}\n\n🏪 Inapatikana: Pahala Hardware Store\nTembelea duka au agiza mtandaoni:\n👉 ${url}`
+    : `🔩 ${title}\n💰 ${price ?? ''}\n\n🏪 Available at: Pahala Hardware Store\nVisit our store or order online:\n👉 ${url}`;
 
-  const copyToClipboard = async () => {
+  const handleShare = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    setIsLoading(true);
+
     try {
-      await navigator.clipboard.writeText(url);
-      setCopiedText('copied');
-      setTimeout(() => setCopiedText(''), 2000);
-    } catch (error) {
-      console.error('Failed to copy:', error);
-      // Fallback for older browsers
-      const textArea = document.createElement('textarea');
-      textArea.value = url;
-      document.body.appendChild(textArea);
-      textArea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textArea);
-      setCopiedText('copied');
-      setTimeout(() => setCopiedText(''), 2000);
+      // Fetch the product image as a real File so it appears as an image, not a URL
+      let imageFile: File | undefined;
+      if (image) {
+        try {
+          const resp  = await fetch(image);
+          const blob  = await resp.blob();
+          const ext   = blob.type.includes('png') ? 'png' : 'jpg';
+          imageFile   = new File([blob], `product.${ext}`, { type: blob.type || 'image/jpeg' });
+        } catch {
+          // image fetch failed — proceed without it
+        }
+      }
+
+      if (navigator.share) {
+        // Try with image file first
+        if (imageFile && navigator.canShare?.({ files: [imageFile] })) {
+          await navigator.share({ files: [imageFile], title, text: shareText });
+          return;
+        }
+        // Fallback: share without file (text + url only)
+        await navigator.share({ title, text: shareText, url });
+        return;
+      }
+
+      // Browser has no native share — show fallback sheet
+      setIsFallback(true);
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name !== 'AbortError') {
+        setIsFallback(true);
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const shareOptions = [
-    {
-      name: language === 'sw' ? 'Nakili Kiungo' : 'Copy Link',
-      icon: Copy,
-      action: copyToClipboard,
-      color: 'text-gray-600',
-      hoverColor: 'hover:bg-gray-100',
-      feedback: copiedText
-    },
-    {
-      name: 'WhatsApp',
-      icon: MessageCircle,
-      action: () => {
-        // WhatsApp will automatically fetch OG tags from the URL
-        const message = encodeURIComponent(`${text}\n\n${url}`);
-        window.open(`https://wa.me/?text=${message}`, '_blank');
-      },
-      color: 'text-green-600',
-      hoverColor: 'hover:bg-green-50'
-    },
-    {
-      name: 'Telegram',
-      icon: Send,
-      action: () => {
-        // Telegram will automatically fetch OG tags from the URL
-        const message = encodeURIComponent(`${text}\n\n${url}`);
-        window.open(`https://t.me/share/url?text=${message}&url=${encodeURIComponent(url)}`, '_blank');
-      },
-      color: 'text-blue-600',
-      hoverColor: 'hover:bg-blue-50'
-    },
-    {
-      name: language === 'sw' ? 'Barua Pepe' : 'Email',
-      icon: Mail,
-      action: () => {
-        const subject = encodeURIComponent(title);
-        const body = encodeURIComponent(`${text}\n\n${url}`);
-        window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
-      },
-      color: 'text-gray-600',
-      hoverColor: 'hover:bg-gray-100'
-    },
-    {
-      name: 'Twitter/X',
-      icon: Twitter,
-      action: () => {
-        // Twitter cards will use OG tags for image preview
-        const tweetText = encodeURIComponent(`${text} ${url}`);
-        window.open(`https://twitter.com/intent/tweet?text=${tweetText}`, '_blank');
-      },
-      color: 'text-sky-600',
-      hoverColor: 'hover:bg-sky-50'
-    },
-    {
-      name: 'Facebook',
-      icon: Facebook,
-      action: () => {
-        // Facebook will automatically fetch OG tags including image
-        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
-      },
-      color: 'text-blue-700',
-      hoverColor: 'hover:bg-blue-50'
+  const copyMessage = async () => {
+    try {
+      await navigator.clipboard.writeText(shareText);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = shareText;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
     }
-  ];
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  };
 
   return (
     <>
       <button
         onClick={handleShare}
+        disabled={isLoading}
         className={`btn btn-outline-secondary d-flex align-items-center gap-2 ${className}`}
         style={style}
         aria-label={language === 'sw' ? 'Shiriki' : 'Share'}
       >
-        {children || <><Share2 size={16} /> {language === 'sw' ? 'Shiriki' : 'Share'}</>}
+        {isLoading
+          ? <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" />
+          : (children || <><Share2 size={16} />{language === 'sw' ? 'Shiriki' : 'Share'}</>)
+        }
       </button>
 
-      {/* Share Modal */}
-      {isModalOpen && (
+      {/* Fallback sheet — shown only when native share is unavailable */}
+      {isFallback && (
         <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center">
-          {/* Backdrop */}
-          <div 
-            className="absolute inset-0 bg-black bg-opacity-50 transition-opacity"
-            onClick={() => setIsModalOpen(false)}
+          <div
+            className="absolute inset-0 bg-black bg-opacity-50"
+            onClick={() => setIsFallback(false)}
             aria-hidden="true"
           />
-          
-          {/* Modal Content */}
           <div
             ref={modalRef}
-            className={`relative bg-white rounded-t-2xl md:rounded-2xl w-full max-w-md shadow-xl transform transition-all ${
+            className={`relative bg-white rounded-t-2xl md:rounded-2xl w-full max-w-sm shadow-xl overflow-hidden ${
               isMobile ? 'animate-slide-up' : 'animate-scale-in'
             }`}
             role="dialog"
             aria-modal="true"
-            aria-labelledby="share-modal-title"
           >
-            {/* Handle for mobile swipe */}
             {isMobile && (
-              <div className="flex justify-center pt-3 pb-2">
-                <div className="w-12 h-1 bg-gray-300 rounded-full"></div>
+              <div className="flex justify-center pt-3 pb-1">
+                <div className="w-10 h-1 bg-gray-300 rounded-full" />
               </div>
             )}
 
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b">
-              <h3 id="share-modal-title" className="text-lg font-semibold">
-                {language === 'sw' ? 'Shiriki' : 'Share'}
+            <div className="flex items-center justify-between px-4 py-3 border-b">
+              <h3 className="text-sm font-semibold text-gray-800">
+                {language === 'sw' ? 'Shiriki Bidhaa' : 'Share Product'}
               </h3>
               <button
-                onClick={() => setIsModalOpen(false)}
-                className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-                aria-label={language === 'sw' ? 'Funga' : 'Close'}
+                onClick={() => setIsFallback(false)}
+                className="p-1.5 rounded-full hover:bg-gray-100 transition-colors"
+                aria-label="Close"
               >
-                <X size={20} />
+                <X size={16} />
               </button>
             </div>
 
-            {/* Share Options */}
-            <div className="p-4">
-              <div className="grid grid-cols-2 gap-3">
-                {shareOptions.map((option) => (
-                  <button
-                    key={option.name}
-                    onClick={option.action}
-                    className={`flex flex-col items-center justify-center p-4 rounded-xl transition-all ${option.hoverColor} ${
-                      option.feedback ? 'ring-2 ring-green-500 ring-opacity-50' : ''
-                    }`}
-                    aria-label={option.name}
-                  >
-                    <option.icon 
-                      size={24} 
-                      className={option.color}
-                    />
-                    <span className="mt-2 text-sm font-medium text-gray-700">
-                      {option.feedback === 'copied' 
-                        ? (language === 'sw' ? 'Imenakiliwa!' : 'Copied!')
-                        : option.name
-                      }
-                    </span>
-                    {option.feedback === 'copied' && (
-                      <span className="text-xs text-green-600 mt-1">
-                        ✓
-                      </span>
-                    )}
-                  </button>
-                ))}
+            <div className="p-4 space-y-3">
+              {/* Product preview */}
+              <div className="flex gap-3 items-start bg-gray-50 rounded-xl p-3 border border-gray-100">
+                {image && (
+                  <img
+                    src={image}
+                    alt={title}
+                    className="w-16 h-16 rounded-lg object-cover flex-shrink-0 border border-gray-200"
+                  />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm text-gray-900 leading-snug">{title}</p>
+                  {price && <p className="text-sm text-orange-600 font-medium mt-0.5">{price}</p>}
+                  <p className="text-xs text-gray-500 mt-1">
+                    {language === 'sw' ? 'Pahala Hardware Store' : 'Pahala Hardware Store'}
+                  </p>
+                </div>
               </div>
 
-              {/* URL Preview */}
-              <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                <p className="text-xs text-gray-500 mb-1">
-                  {language === 'sw' ? 'Kiungo cha kushiriki:' : 'Share link:'}
-                </p>
-                <p className="text-xs text-gray-700 break-all font-mono">
-                  {url}
-                </p>
-              </div>
+              {/* Message preview */}
+              <pre className="text-xs text-gray-600 bg-gray-50 rounded-xl p-3 border border-gray-100 whitespace-pre-wrap font-sans leading-relaxed">
+                {shareText}
+              </pre>
+
+              {/* Copy button */}
+              <button
+                onClick={copyMessage}
+                className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+                  copied
+                    ? 'bg-green-50 border border-green-400 text-green-700'
+                    : 'bg-gray-900 text-white hover:bg-gray-800'
+                }`}
+              >
+                <Copy size={15} />
+                {copied
+                  ? (language === 'sw' ? '✓ Imenakiliwa!' : '✓ Copied!')
+                  : (language === 'sw' ? 'Nakili Ujumbe' : 'Copy Message')
+                }
+              </button>
             </div>
           </div>
         </div>

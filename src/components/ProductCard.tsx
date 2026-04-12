@@ -24,10 +24,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
   const getShareContent = () => {
     const title = product.name;
-    const text = language === 'sw' 
-      ? `Angalia bidhaa hii kutoka Pahala Store!\n\n${product.name}\n${formatPrice(product.price)}/${product.unit}`
-      : `Check out this product from Pahala Store!\n\n${product.name}\n${formatPrice(product.price)}/${product.unit}`;
     const url = `${window.location.origin}${createProductUrl(product.id, product.name)}`;
+    const text = language === 'sw'
+      ? `🔩 ${product.name}\n💰 ${formatPrice(product.price)}/${product.unit}\n\n🏪 Inapatikana katika Pahala Hardware Store\nTembelea duka letu au agiza mtandaoni!\n\n👉 ${url}`
+      : `🔩 ${product.name}\n💰 ${formatPrice(product.price)}/${product.unit}\n\n🏪 Available at Pahala Hardware Store\nVisit our store or order online!\n\n👉 ${url}`;
     return { title, text, url };
   };
 
@@ -66,6 +66,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               title={getShareContent().title}
               text={getShareContent().text}
               url={getShareContent().url}
+              image={imageError ? undefined : product.image}
+              price={`${formatPrice(product.price)} / ${product.unit}`}
               className="btn btn-outline-secondary btn-sm"
               aria-label={t('products_share')}
             >

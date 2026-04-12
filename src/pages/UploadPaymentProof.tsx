@@ -165,7 +165,7 @@ const UploadPaymentProof: React.FC<UploadPaymentProofProps> = ({ orderIdProp }) 
       xhr.upload.addEventListener('progress', (e) => {
         if (e.lengthComputable) {
           const progress = Math.round((e.loaded / e.total) * 100);
-          setUploadedFiles(prev => prev.map(f => 
+          setUploadedFiles(prev => prev.map(f =>
             f.id === fileData.id ? { ...f, uploadProgress: progress } : f
           ));
         }
@@ -173,7 +173,7 @@ const UploadPaymentProof: React.FC<UploadPaymentProofProps> = ({ orderIdProp }) 
 
       xhr.addEventListener('load', () => {
         if (xhr.status >= 200 && xhr.status < 300) {
-          setUploadedFiles(prev => prev.map(f => 
+          setUploadedFiles(prev => prev.map(f =>
             f.id === fileData.id ? { ...f, uploadStatus: 'success', uploadProgress: 100 } : f
           ));
           resolve();
@@ -191,7 +191,7 @@ const UploadPaymentProof: React.FC<UploadPaymentProofProps> = ({ orderIdProp }) 
             errorMsg = 'Server error - please try again later';
           }
           
-          setUploadedFiles(prev => prev.map(f => 
+          setUploadedFiles(prev => prev.map(f =>
             f.id === fileData.id ? { ...f, uploadStatus: 'error', error: errorMsg } : f
           ));
           reject(new Error(errorMsg));
@@ -200,7 +200,7 @@ const UploadPaymentProof: React.FC<UploadPaymentProofProps> = ({ orderIdProp }) 
 
       xhr.addEventListener('error', () => {
         const errorMsg = 'Network error during upload';
-        setUploadedFiles(prev => prev.map(f => 
+        setUploadedFiles(prev => prev.map(f =>
           f.id === fileData.id ? { ...f, uploadStatus: 'error', error: errorMsg } : f
         ));
         reject(new Error(errorMsg));

@@ -87,6 +87,19 @@ const AdminPaymentProofs: React.FC = () => {
           <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => load()}>
             Refresh
           </button>
+          <button type="button" className="btn btn-outline-warning btn-sm" onClick={async () => {
+            try {
+              console.log('Debug: Fetching all payment proofs...');
+              const allProofs = await adminService.getAllPaymentProofsForDebug();
+              console.log('All proofs:', allProofs);
+              alert(`Debug: Found ${allProofs?.data?.length || 0} total proofs. Check console for details.`);
+            } catch (err: any) {
+              console.error('Debug error:', err);
+              alert(`Debug error: ${err.message}`);
+            }
+          }}>
+            Debug: All Proofs
+          </button>
           <button type="button" className="btn btn-outline-primary btn-sm" onClick={() => navigate(`/admin/orders`)}>
             {t('admin_orders')}
           </button>

@@ -645,6 +645,18 @@ export const adminService = {
     throw lastError;
   },
 
+  // Debug method to fetch all payment proofs regardless of status
+  getAllPaymentProofsForDebug: async (): Promise<any> => {
+    try {
+      const response = await apiClient.get('/api/v1/payments/proofs');
+      console.log('All payment proofs API response:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('Failed to fetch all payment proofs:', error);
+      throw error;
+    }
+  },
+
   approvePaymentProof: async (proofId: string, verificationNotes?: string): Promise<void> => {
     await apiClient.post(`/api/v1/payments/proofs/${proofId}/approve`, null, {
       params: verificationNotes ? { verification_notes: verificationNotes } : undefined,
