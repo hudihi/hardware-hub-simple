@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import authService from '../services/auth.service';
+import apiClient from '../services/api';
 
 type UploadPaymentProofProps = {
   /** When embedded under a route that uses `:id` instead of `:orderId` */
@@ -159,63 +160,36 @@ const UploadPaymentProof: React.FC<UploadPaymentProofProps> = ({ orderIdProp }) 
   };
 
   const uploadSingleFile = async (fileData: UploadedFile, formData: FormData): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      
-      xhr.upload.addEventListener('progress', (e) => {
-        if (e.lengthComputable) {
-          const progress = Math.round((e.loaded / e.total) * 100);
-          setUploadedFiles(prev => prev.map(f =>
-            f.id === fileData.id ? { ...f, uploadProgress: progress } : f
-          ));
-        }
-      });
-
-      xhr.addEventListener('load', () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          setUploadedFiles(prev => prev.map(f =>
-            f.id === fileData.id ? { ...f, uploadStatus: 'success', uploadProgress: 100 } : f
-          ));
-          resolve();
-        } else {
-          let errorMsg = 'Upload failed';
-          
-          // Provide specific error messages based on status code
-          if (xhr.status === 401) {
-            errorMsg = 'Authentication expired - please log in again';
-          } else if (xhr.status === 413) {
-            errorMsg = 'File too large - please use a smaller file';
-          } else if (xhr.status === 415) {
-            errorMsg = 'Unsupported file type - please use JPG, PNG, or PDF';
-          } else if (xhr.status >= 500) {
-            errorMsg = 'Server error - please try again later';
+    try {
+      // Use apiClient so the correct base URL (https://api.pahala.store) and
+      // customer auth token are applied automatically via the request interceptor.
+      await apiClient.post('/api/v1/payments/upload-proof', formData, {
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            const progress = Math.round((progressEvent.loaded / progressEvent.total) * 100);
+            setUploadedFiles(prev => prev.map(f =>
+              f.id === fileData.id ? { ...f, uploadProgress: progress } : f
+            ));
           }
-          
-          setUploadedFiles(prev => prev.map(f =>
-            f.id === fileData.id ? { ...f, uploadStatus: 'error', error: errorMsg } : f
-          ));
-          reject(new Error(errorMsg));
-        }
+        },
       });
+      setUploadedFiles(prev => prev.map(f =>
+        f.id === fileData.id ? { ...f, uploadStatus: 'success', uploadProgress: 100 } : f
+      ));
+    } catch (error: any) {
+      const status = error.response?.status;
+      let errorMsg = 'Upload failed';
+      if (status === 401)      errorMsg = 'Authentication expired - please log in again';
+      else if (status === 413) errorMsg = 'File too large - please use a smaller file';
+      else if (status === 415) errorMsg = 'Unsupported file type - please use JPG, PNG, or PDF';
+      else if (status >= 500)  errorMsg = 'Server error - please try again later';
+      else if (error.message)  errorMsg = error.message;
 
-      xhr.addEventListener('error', () => {
-        const errorMsg = 'Network error during upload';
-        setUploadedFiles(prev => prev.map(f =>
-          f.id === fileData.id ? { ...f, uploadStatus: 'error', error: errorMsg } : f
-        ));
-        reject(new Error(errorMsg));
-      });
-
-      xhr.open('POST', '/api/v1/payments/upload-proof');
-      
-      // Add auth token if available
-      const token = authService.getCustomerToken();
-      if (token) {
-        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-      }
-
-      xhr.send(formData);
-    });
+      setUploadedFiles(prev => prev.map(f =>
+        f.id === fileData.id ? { ...f, uploadStatus: 'error', error: errorMsg } : f
+      ));
+      throw new Error(errorMsg);
+    }
   };
 
   const handleSubmit = async (event: React.FormEvent) => {

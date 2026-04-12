@@ -614,35 +614,23 @@ export const adminService = {
   },
 
   getPendingPaymentProofs: async (): Promise<PaymentProofPending[]> => {
-    const maxRetries = 3;
-    let lastError: any;
-    
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        const response = await apiClient.get('/api/v1/payments/proofs/pending');
-        console.log('Payment proofs API response:', response.data);
-        const data = response.data?.data || response.data; // Handle both response formats
-        return Array.isArray(data) ? data : [];
-      } catch (error: any) {
-        lastError = error;
-        console.error(`Attempt ${attempt} failed:`, error.message);
-        
-        // Don't retry on non-timeout errors
-        if (!error.message.includes('timeout') && error.code !== 'ECONNABORTED') {
-          throw error;
-        }
-        
-        // If this is the last attempt, throw the error
-        if (attempt === maxRetries) {
-          throw error;
-        }
-        
-        // Wait before retrying (exponential backoff)
-        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
-      }
+    try {
+      const response = await apiClient.get('/api/v1/payments/proofs/pending');
+      console.log('Payment proofs API response:', response.data);
+      const raw = response.data;
+      // Handle all common API response shapes
+      if (Array.isArray(raw))             return raw;
+      if (Array.isArray(raw?.data))       return raw.data;
+      if (Array.isArray(raw?.items))      return raw.items;
+      if (Array.isArray(raw?.results))    return raw.results;
+      console.warn('Unexpected payment proofs response format:', raw);
+      return [];
+    } catch (error: any) {
+      console.error('Failed to fetch payment proofs:', error);
+      if (error.response?.status === 401) throw new Error('Authentication required. Please log in as admin.');
+      if (error.response?.status === 403) throw new Error('Access denied. Admin privileges required.');
+      throw error;
     }
-    
-    throw lastError;
   },
 
   // Debug method to fetch all payment proofs regardless of status

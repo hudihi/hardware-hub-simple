@@ -13,17 +13,7 @@ interface ShareButtonProps {
   style?: React.CSSProperties;
 }
 
-// ── Brand palette ─────────────────────────────────────────────────────────────
-const BRAND = {
-  brown:      '#7C5A3C',
-  brownDark:  '#5C3D2E',
-  brownLight: '#A67C52',
-  cream:      '#FDF8F3',
-  beige:      '#F5EDE4',
-  gray:       '#6C757D',
-} as const;
-
-// ── Canvas helpers ────────────────────────────────────────────────────────────
+// ─── Canvas helpers ────────────────────────────────────────────────────────────
 
 function roundedRect(
   ctx: CanvasRenderingContext2D,
@@ -42,6 +32,7 @@ function roundedRect(
   ctx.closePath();
 }
 
+/** Draws wrapped text and returns the Y position after the last line */
 function drawWrappedText(
   ctx: CanvasRenderingContext2D,
   text: string,
@@ -51,7 +42,7 @@ function drawWrappedText(
 ): number {
   const words = text.split(' ');
   let line = '';
-  let curY = y;
+  let curY  = y;
   for (const word of words) {
     const test = line + word + ' ';
     if (ctx.measureText(test).width > maxWidth && line !== '') {
@@ -66,8 +57,12 @@ function drawWrappedText(
   return curY;
 }
 
-// ── Share card generator ──────────────────────────────────────────────────────
-
+/**
+ * Builds a share card image:
+ * product photo (top) · title · price · store message
+ * The URL is NOT embedded — it is passed separately to navigator.share
+ * so messaging apps render it as a real clickable link.
+ */
 async function buildShareCard(
   imageUrl: string,
   title: string,
@@ -75,7 +70,7 @@ async function buildShareCard(
   lang: string
 ): Promise<Blob | null> {
   try {
-    // Fetch image as blob — avoids CORS taint on canvas
+    // Fetch image as blob to avoid canvas CORS taint
     const imgResp   = await fetch(imageUrl);
     const imgBlob   = await imgResp.blob();
     const imgObjUrl = URL.createObjectURL(imgBlob);
@@ -84,203 +79,141 @@ async function buildShareCard(
     productImg.src   = imgObjUrl;
     await new Promise<void>((res, rej) => {
       productImg.onload  = () => res();
-      productImg.onerror = () => rej(new Error('Image load failed'));
+      productImg.onerror = () => rej(new Error('img load failed'));
     });
 
-    // ── Dimensions ───────────────────────────────────────────────────────
-    const W       = 1080;
-    const PAD_X   = 52;
-    const TOP_BAR = 10;
-    const BOT_BAR = 10;
+    // Load store logo (fail silently — card still works without it)
+    const logoImg = new Image();
+    await new Promise<void>((res) => {
+      logoImg.onload  = () => res();
+      logoImg.onerror = () => res();
+      logoImg.src = '/PAHELA_27_FEBRUARY_2025.svg';
+    });
 
-    // Text column starts after the left accent bar
-    const ACCENT_W = 6;
-    const ACCENT_GAP = 20;
-    const TEXT_X   = PAD_X + ACCENT_W + ACCENT_GAP;
-    const TEXT_MAX = W - TEXT_X - PAD_X;
-
-    // Measure title line count
-    const mc = document.createElement('canvas').getContext('2d')!;
-    mc.font = 'bold 54px Arial, sans-serif';
-    let titleLines = 1;
-    let tLine = '';
+    // ── Measure title to compute exact canvas height ────────────────────
+    const W   = 1080;
+    const PAD = 52;
+    const measureCanvas = document.createElement('canvas');
+    const mCtx = measureCanvas.getContext('2d')!;
+    mCtx.font = 'bold 56px Arial, sans-serif';
+    const maxTextW = W - PAD * 2;
+    let titleLines = 1, line = '';
     for (const word of title.split(' ')) {
-      const test = tLine + word + ' ';
-      if (mc.measureText(test).width > TEXT_MAX && tLine !== '') {
+      const test = line + word + ' ';
+      if (mCtx.measureText(test).width > maxTextW && line !== '') {
         titleLines++;
-        tLine = word + ' ';
-      } else {
-        tLine = test;
-      }
+        line = word + ' ';
+      } else { line = test; }
     }
-    titleLines = Math.min(titleLines, 2);
+    titleLines = Math.min(titleLines, 3);
 
-    const IMG_Y    = TOP_BAR + 44;
-    const IMG_SIZE = W - PAD_X * 2;           // 976 × 976 square
-    const INFO_Y   = IMG_Y + IMG_SIZE + 44;
+    // ── Layout ──────────────────────────────────────────────────────────
+    const IMG_SIZE = W - PAD * 2;                 // square photo
+    const IMG_Y    = PAD;
+    const INFO_Y   = IMG_Y + IMG_SIZE + 44;       // gap below photo
 
-    const TITLE_H   = titleLines * 66;
-    const PRICE_H   = price ? 66 : 0;
-    const DIVIDER_H = 52;                      // gap + rule + gap
-    const STORE_H   = 54;
-    const VISIT_H   = 52;
-    const STAMP_H   = 52;
-    const BOT_PAD   = 36;
+    const TITLE_BLOCK  = titleLines * 68;
+    const PRICE_BLOCK  = price ? 68 : 0;
+    const DIVIDER_H    = 36;
+    const STORE_BLOCK  = 56;
+    const VISIT_BLOCK  = 50;
+    const BOTTOM_PAD   = 56;
 
-    const H = INFO_Y + TITLE_H + PRICE_H + DIVIDER_H + STORE_H + VISIT_H + STAMP_H + BOT_PAD + BOT_BAR;
+    const H = INFO_Y + TITLE_BLOCK + PRICE_BLOCK + DIVIDER_H + STORE_BLOCK + VISIT_BLOCK + BOTTOM_PAD;
 
     const canvas = document.createElement('canvas');
     canvas.width  = W;
     canvas.height = H;
     const ctx = canvas.getContext('2d')!;
 
-    // ── 1. Cream background ───────────────────────────────────────────────
-    ctx.fillStyle = BRAND.cream;
+    // ── Background ──────────────────────────────────────────────────────
+    ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, W, H);
 
-    // ── 2. Subtle diagonal texture (gives it a premium paper feel) ────────
+    // ── Product photo (cover-fit square, rounded) ────────────────────────
     ctx.save();
-    ctx.strokeStyle = 'rgba(124, 90, 60, 0.055)';
-    ctx.lineWidth = 1.5;
-    for (let i = -H; i < W + H; i += 32) {
-      ctx.beginPath();
-      ctx.moveTo(i, 0);
-      ctx.lineTo(i + H, H);
-      ctx.stroke();
-    }
-    ctx.restore();
-
-    // ── 3. Top + bottom brand bars ────────────────────────────────────────
-    ctx.fillStyle = BRAND.brown;
-    ctx.fillRect(0, 0, W, TOP_BAR);
-    ctx.fillStyle = BRAND.brown;
-    ctx.fillRect(0, H - BOT_BAR, W, BOT_BAR);
-
-    // Thin accent line below top bar
-    ctx.fillStyle = BRAND.brownLight;
-    ctx.fillRect(0, TOP_BAR, W, 3);
-
-    // ── 4. Image shadow ───────────────────────────────────────────────────
-    ctx.save();
-    ctx.shadowColor   = 'rgba(92, 61, 46, 0.22)';
-    ctx.shadowBlur    = 32;
-    ctx.shadowOffsetY = 10;
-    roundedRect(ctx, PAD_X, IMG_Y, IMG_SIZE, IMG_SIZE, 20);
-    ctx.fillStyle = '#ffffff';
-    ctx.fill();
-    ctx.restore();
-
-    // ── 5. Product image (cover-fit, rounded) ─────────────────────────────
-    ctx.save();
-    roundedRect(ctx, PAD_X, IMG_Y, IMG_SIZE, IMG_SIZE, 20);
+    roundedRect(ctx, PAD, IMG_Y, IMG_SIZE, IMG_SIZE, 28);
     ctx.clip();
     const nw = productImg.naturalWidth, nh = productImg.naturalHeight;
     let sx = 0, sy = 0, sw = nw, sh = nh;
     if (nw / nh > 1) { sw = nh; sx = (nw - sw) / 2; }
     else             { sh = nw; sy = (nh - sh) / 2;  }
-    ctx.drawImage(productImg, sx, sy, sw, sh, PAD_X, IMG_Y, IMG_SIZE, IMG_SIZE);
+    ctx.drawImage(productImg, sx, sy, sw, sh, PAD, IMG_Y, IMG_SIZE, IMG_SIZE);
     ctx.restore();
     URL.revokeObjectURL(imgObjUrl);
 
-    // ── 6. Brown border on image ──────────────────────────────────────────
+    // Brand-color border around photo
     ctx.save();
-    roundedRect(ctx, PAD_X, IMG_Y, IMG_SIZE, IMG_SIZE, 20);
-    ctx.strokeStyle = BRAND.brown;
-    ctx.lineWidth   = 5;
+    roundedRect(ctx, PAD, IMG_Y, IMG_SIZE, IMG_SIZE, 28);
+    ctx.strokeStyle = '#7C5A3C';
+    ctx.lineWidth = 6;
     ctx.stroke();
     ctx.restore();
 
-    // ── 7. Brand seal — "P" monogram, bottom-right of photo ──────────────
-    const SEAL_R  = 46;
-    const SEAL_CX = PAD_X + IMG_SIZE - SEAL_R - 18;
-    const SEAL_CY = IMG_Y  + IMG_SIZE - SEAL_R - 18;
+    // ── Store logo — bottom-right corner of photo ─────────────────────────
+    if (logoImg.naturalWidth > 0) {
+      const LOGO_SIZE = 148;
+      const INSET     = 20;
+      const LOGO_X    = PAD + IMG_SIZE - LOGO_SIZE - INSET;
+      const LOGO_Y    = IMG_Y + IMG_SIZE - LOGO_SIZE - INSET;
+      const CX        = LOGO_X + LOGO_SIZE / 2;
+      const CY        = LOGO_Y + LOGO_SIZE / 2;
+      const R         = LOGO_SIZE / 2 + 6;
 
-    // Outer ring
-    ctx.save();
-    ctx.strokeStyle = BRAND.cream;
-    ctx.lineWidth   = 3;
-    ctx.beginPath();
-    ctx.arc(SEAL_CX, SEAL_CY, SEAL_R + 4, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.restore();
+      // Soft white circle backdrop — just enough to lift the logo off the photo
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(CX, CY, R, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.82)';
+      ctx.fill();
+      ctx.restore();
 
-    // Filled circle
-    ctx.fillStyle = 'rgba(92, 61, 46, 0.92)';
-    ctx.beginPath();
-    ctx.arc(SEAL_CX, SEAL_CY, SEAL_R, 0, Math.PI * 2);
-    ctx.fill();
-
-    // "P" letter
-    ctx.fillStyle    = BRAND.cream;
-    ctx.font         = 'bold 46px Arial, sans-serif';
-    ctx.textAlign    = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('P', SEAL_CX, SEAL_CY + 1);
-
-    // ── 8. Info section ───────────────────────────────────────────────────
-    ctx.textAlign    = 'left';
-    ctx.textBaseline = 'top';
-
-    let nextY = INFO_Y;
-
-    // Product title
-    ctx.fillStyle = BRAND.brownDark;
-    ctx.font      = 'bold 54px Arial, sans-serif';
-    nextY = drawWrappedText(ctx, title, TEXT_X, nextY, TEXT_MAX, 66);
-    nextY += 4;
-
-    // Price
-    if (price) {
-      ctx.fillStyle = BRAND.brown;
-      ctx.font      = 'bold 50px Arial, sans-serif';
-      ctx.fillText(price, TEXT_X, nextY);
-      nextY += 66;
+      // Logo itself (clipped to the circle so no square edge shows)
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(CX, CY, R, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.drawImage(logoImg, LOGO_X, LOGO_Y, LOGO_SIZE, LOGO_SIZE);
+      ctx.restore();
     }
 
-    // Divider rule
-    nextY += 18;
-    ctx.fillStyle = BRAND.beige;
-    ctx.fillRect(PAD_X, nextY, W - PAD_X * 2, 2);
-    nextY += 20;
-
-    // Small decorative diamond before store line
-    const DX = TEXT_X - 10;
-    ctx.fillStyle = BRAND.brownLight;
-    ctx.save();
-    ctx.translate(DX - 12, nextY + 19);
-    ctx.rotate(Math.PI / 4);
-    ctx.fillRect(-7, -7, 14, 14);
-    ctx.restore();
-
-    // Store message
-    const storeMsg = lang === 'sw'
-      ? '  Inapatikana: Pahala Hardware Store'
-      : '  Available at: Pahala Hardware Store';
-    ctx.fillStyle = BRAND.gray;
-    ctx.font      = '38px Arial, sans-serif';
-    ctx.fillText(storeMsg, TEXT_X, nextY);
-    nextY += 54;
-
-    // Visit line
-    const visitMsg = lang === 'sw'
-      ? '  Tembelea: www.pahala.store kwa bidhaa zaidi'
-      : '  Visit: www.pahala.store for more products';
-    ctx.fillStyle = BRAND.brown;
-    ctx.font      = '36px Arial, sans-serif';
-    ctx.fillText(visitMsg, TEXT_X, nextY);
-    nextY += 52;
-
-    // ── 9. Left accent bar (drawn last, full height of info block) ────────
-    const barHeight = nextY - INFO_Y;
-    ctx.fillStyle = BRAND.brown;
-    ctx.fillRect(PAD_X, INFO_Y, ACCENT_W, barHeight);
-
-    // ── 10. Bottom-right hallmark stamp ────────────────────────────────────
-    ctx.fillStyle    = BRAND.brownLight;
-    ctx.font         = 'bold 24px Arial, sans-serif';
-    ctx.textAlign    = 'right';
+    // ── Product title ────────────────────────────────────────────────────
+    ctx.fillStyle    = '#111827';
+    ctx.font         = 'bold 56px Arial, sans-serif';
+    ctx.textAlign    = 'left';
     ctx.textBaseline = 'top';
-    ctx.fillText('PAHALA  ·  HARDWARE', W - PAD_X, nextY + 10);
+    let nextY = drawWrappedText(ctx, title, PAD, INFO_Y, maxTextW, 68);
+
+    // ── Price ─────────────────────────────────────────────────────────────
+    if (price) {
+      ctx.fillStyle = '#ea580c';
+      ctx.font      = 'bold 50px Arial, sans-serif';
+      ctx.fillText(price, PAD, nextY + 6);
+      nextY += 68;
+    }
+
+    // ── Divider ───────────────────────────────────────────────────────────
+    nextY += 18;
+    ctx.fillStyle = '#e5e7eb';
+    ctx.fillRect(PAD, nextY, W - PAD * 2, 2);
+    nextY += 18;
+
+    // ── Store message ──────────────────────────────────────────────────────
+    const storeMsg = lang === 'sw'
+      ? '🏪  Inapatikana: Pahala Hardware Store'
+      : '🏪  Available at: Pahala Hardware Store';
+    ctx.fillStyle = '#6b7280';
+    ctx.font      = '38px Arial, sans-serif';
+    ctx.fillText(storeMsg, PAD, nextY);
+    nextY += 50;
+
+    // ── Visit line ─────────────────────────────────────────────────────────
+    const visitMsg = lang === 'sw'
+      ? '🔗  Tembelea: www.pahala.store kwa bidhaa zaidi'
+      : '🔗  Visit: www.pahala.store for more products';
+    ctx.fillStyle = '#2563eb';
+    ctx.font      = '36px Arial, sans-serif';
+    ctx.fillText(visitMsg, PAD, nextY);
 
     return new Promise<Blob | null>(resolve => {
       canvas.toBlob(b => resolve(b), 'image/jpeg', 0.93);
@@ -291,7 +224,7 @@ async function buildShareCard(
   }
 }
 
-// ── Component ─────────────────────────────────────────────────────────────────
+// ─── Component ─────────────────────────────────────────────────────────────────
 
 const ShareButton: React.FC<ShareButtonProps> = ({
   title, text, url, image, price,
@@ -309,28 +242,31 @@ const ShareButton: React.FC<ShareButtonProps> = ({
       let fileToShare: File | undefined;
 
       if (image) {
+        // Build card: photo + title + price + store message baked into one image
         const blob = await buildShareCard(image, title, price, language);
         if (blob) {
-          fileToShare = new File(
-            [blob],
-            `${title.replace(/\s+/g, '-')}.jpg`,
-            { type: 'image/jpeg' }
-          );
+          fileToShare = new File([blob], `${title.replace(/\s+/g, '-')}.jpg`, { type: 'image/jpeg' });
         }
       }
 
       if (!navigator.share) {
+        // No native share API — fall back to copying the URL
         await navigator.clipboard?.writeText(url).catch(() => {});
         alert(language === 'sw' ? 'Kiungo kimenakiliwa!' : 'Link copied to clipboard!');
         return;
       }
 
       if (fileToShare && navigator.canShare?.({ files: [fileToShare] })) {
+        // Share the card image + the URL as text.
+        // The image carries all visual details; the URL appears as a
+        // real clickable link in WhatsApp / Telegram / etc.
         await navigator.share({ files: [fileToShare], title });
       } else {
+        // Fallback: native share without image file (text + link)
         await navigator.share({ title, text, url });
       }
     } catch (err: unknown) {
+      // AbortError = user cancelled — do nothing
       if (err instanceof Error && err.name !== 'AbortError') {
         console.error('Share failed:', err);
       }
