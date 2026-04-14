@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useTranslatedContent } from '../hooks/useTranslatedContent';
 import { Product } from '../types';
 import { formatPrice } from '../utils/format';
 import { createProductUrl } from '../utils/slug';
@@ -16,6 +17,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const { language, t } = useLanguage();
   const [imageError, setImageError] = React.useState(false);
   const [imageLoaded, setImageLoaded] = React.useState(false);
+  const translatedName = useTranslatedContent(product.name);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -26,9 +28,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const getShareContent = () => {
     const title = product.name;
     const url = `${window.location.origin}${createProductUrl(product.id, product.name)}`;
-    const text = language === 'sw'
-      ? `🔩 ${product.name}\n💰 ${formatPrice(product.price)}/${product.unit}\n\n🏪 Inapatikana katika Pahala Hardware Store\nTembelea duka letu au agiza mtandaoni!\n\n👉 ${url}`
-      : `🔩 ${product.name}\n💰 ${formatPrice(product.price)}/${product.unit}\n\n🏪 Available at Pahala Hardware Store\nVisit our store or order online!\n\n👉 ${url}`;
+    const text = t('share_product_text', {
+      name: product.name,
+      price: formatPrice(product.price),
+      unit: product.unit,
+    }) + `\n\n👉 ${url}`;
     return { title, text, url };
   };
 
@@ -58,7 +62,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           />
         </div>
         <div className="p-3">
-          <h6 className="mb-1 text-dark fw-semibold text-truncate">{product.name}</h6>
+          <h6 className="mb-1 text-dark fw-semibold text-truncate">{translatedName || product.name}</h6>
           <div className="d-flex align-items-baseline gap-1 mb-2">
             <span className="product-price">{formatPrice(product.price)}</span>
             <span className="product-unit">/ {product.unit}</span>

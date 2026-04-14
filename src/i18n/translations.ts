@@ -216,6 +216,32 @@ export const translations = {
   // Language
   lang_toggle: { en: 'SW', sw: 'EN' },
   lang_switch_label: { en: 'Switch to Swahili', sw: 'Badilisha kwa Kiingereza' },
+  lang_current_en: { en: 'English', sw: 'English' },
+  lang_current_sw: { en: 'Kiswahili', sw: 'Kiswahili' },
+
+  // Product specifications panel (were hardcoded inline)
+  product_specifications: { en: 'Specifications', sw: 'Maelezo Zaidi' },
+  product_spec_unit: { en: 'Unit', sw: 'Kitengo' },
+  product_spec_stock_status: { en: 'Stock Status', sw: 'Hali ya Stoki' },
+  product_spec_in_stock: { en: 'In Stock', sw: 'Inapatikana' },
+  product_spec_out_of_stock: { en: 'Out of Stock', sw: 'Haipo' },
+  product_spec_qty: { en: 'Available Qty', sw: 'Kiasi' },
+  product_spec_category: { en: 'Category', sw: 'Kategoria' },
+
+  // Share (were hardcoded inline)
+  share_link_copied: { en: 'Link copied to clipboard!', sw: 'Kiungo kimenakiliwa!' },
+  share_label: { en: 'Share', sw: 'Shiriki' },
+  share_store_available: { en: '🏪  Available at: Pahala Hardware Store', sw: '🏪  Inapatikana: Pahala Hardware Store' },
+  share_visit_store: { en: '🔗  Visit: www.pahala.store for more products', sw: '🔗  Tembelea: www.pahala.store kwa bidhaa zaidi' },
+  // {{name}}, {{price}}, {{unit}} are replaced at runtime
+  share_product_text: {
+    en: 'Check out this product from Pahala Store!\n\n{{name}}\n{{price}}/{{unit}}',
+    sw: 'Angalia bidhaa hii kutoka Pahala Store!\n\n{{name}}\n{{price}}/{{unit}}',
+  },
+  share_product_og: {
+    en: 'Check out {{name}} from Pahala Store. {{price}}/{{unit}}',
+    sw: 'Angalia {{name}} kutoka Pahala Store. {{price}}/{{unit}}',
+  },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

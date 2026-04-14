@@ -44,10 +44,10 @@ const Navbar: React.FC = () => {
             <button
               className="btn btn-sm btn-outline-light rounded-pill px-3"
               onClick={toggleLanguage}
-              title={language === 'en' ? 'Switch to Swahili' : 'Badilisha kwa Kiingereza'}
+              title={t('lang_switch_label')}
             >
-              <i className="bi bi-translate me-1"></i>
-              {t('lang_toggle')}
+              <i className="bi bi-globe me-1"></i>
+              {language === 'en' ? t('lang_current_en') : t('lang_current_sw')}
             </button>
           </div>
         </div>
@@ -66,11 +66,13 @@ const Navbar: React.FC = () => {
           </Link>
           <div className="d-flex align-items-center gap-2">
             <button
-              className="btn btn-sm btn-outline-light rounded-pill px-2 py-1"
+              className="btn btn-sm btn-outline-light rounded-pill px-2 py-1 d-flex align-items-center gap-1"
               onClick={toggleLanguage}
+              title={t('lang_switch_label')}
               style={{ fontSize: '0.75rem' }}
             >
-              {t('lang_toggle')}
+              <i className="bi bi-globe"></i>
+              {language === 'en' ? t('lang_current_en') : t('lang_current_sw')}
             </button>
             <Link to="/cart" className="text-white position-relative">
               <i className="bi bi-cart3 fs-4"></i>

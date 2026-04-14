@@ -3,13 +3,10 @@ import { useLanguage } from '../context/LanguageContext';
 import { openWhatsApp } from '../utils/whatsapp';
 
 const WhatsAppButton: React.FC = () => {
-  const { language, t } = useLanguage();
+  const { t } = useLanguage();
 
   const handleClick = () => {
-    const message = language === 'sw'
-      ? 'Habari! Nina swali kuhusu duka la Pahala Store.'
-      : 'Hello! I have a question about Pahala Store hardware store.';
-    openWhatsApp(message);
+    openWhatsApp(t('wa_hello'));
   };
 
   return (

@@ -5,7 +5,7 @@ interface LanguageContextType {
   language: Language;
   toggleLanguage: () => void;
   setLanguage: (lang: Language) => void;
-  t: (key: TranslationKey) => string;
+  t: (key: TranslationKey, vars?: Record<string, string>) => string;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -13,7 +13,10 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>(() => {
     const stored = localStorage.getItem('pahala-lang') as Language;
-    return stored === 'sw' || stored === 'en' ? stored : 'en';
+    if (stored === 'sw' || stored === 'en') return stored;
+    // Auto-detect from browser on first visit
+    const browserLang = navigator.language?.toLowerCase() ?? '';
+    return browserLang.startsWith('sw') ? 'sw' : 'en';
   });
 
   const setLanguage = useCallback((lang: Language) => {
@@ -27,8 +30,20 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [language, setLanguage]);
 
   const t = useCallback(
-    (key: TranslationKey): string => {
-      return translations[key]?.[language] || key;
+    (key: TranslationKey, vars?: Record<string, string>): string => {
+      let value: string = translations[key]?.[language] ?? '';
+      if (!value) {
+        if (import.meta.env.DEV) {
+          console.warn(`[i18n] Missing translation: "${key}" for language "${language}"`);
+        }
+        return key;
+      }
+      if (vars) {
+        Object.entries(vars).forEach(([k, v]) => {
+          value = value.replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), v);
+        });
+      }
+      return value;
     },
     [language]
   );

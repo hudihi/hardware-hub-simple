@@ -239,7 +239,7 @@ const ShareButton: React.FC<ShareButtonProps> = ({
   className = '', children, style,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
 
   const handleShare = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -260,7 +260,7 @@ const ShareButton: React.FC<ShareButtonProps> = ({
       if (!navigator.share) {
         // No native share API — fall back to copying the URL
         await navigator.clipboard?.writeText(url).catch(() => {});
-        alert(language === 'sw' ? 'Kiungo kimenakiliwa!' : 'Link copied to clipboard!');
+        alert(t('share_link_copied'));
         return;
       }
 
@@ -289,11 +289,11 @@ const ShareButton: React.FC<ShareButtonProps> = ({
       disabled={isLoading}
       className={`btn btn-outline-secondary d-flex align-items-center gap-2 ${className}`}
       style={style}
-      aria-label={language === 'sw' ? 'Shiriki' : 'Share'}
+      aria-label={t('share_label')}
     >
       {isLoading
         ? <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" />
-        : (children || <><Share2 size={16} />{language === 'sw' ? 'Shiriki' : 'Share'}</>)
+        : (children || <><Share2 size={16} />{t('share_label')}</>)
       }
     </button>
   );

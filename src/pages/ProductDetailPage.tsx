@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import ShareButton from '../components/ShareButton';
 import { useCart } from '../context/CartContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useTranslatedContent } from '../hooks/useTranslatedContent';
 import { categoryService } from '../services/category.service';
 import { productService } from '../services/product.service';
 import { Category, Product } from '../types';
@@ -24,6 +25,10 @@ const ProductDetailPage: React.FC = () => {
   const { t, language } = useLanguage();
   const { addItem } = useCart();
   const [specsOpen, setSpecsOpen] = useState(false);
+
+  // Dynamic translation of admin-posted content
+  const translatedName = useTranslatedContent(product?.name ?? '');
+  const translatedDescription = useTranslatedContent(product?.description ?? '');
 
   // Extract product ID from slug
   const productId = slugWithId ? extractProductIdFromSlug(slugWithId) : null;
@@ -117,19 +122,20 @@ const ProductDetailPage: React.FC = () => {
       
       // Update Open Graph tags
       updateMetaTag('og:title', product.name);
-      updateMetaTag('og:description', language === 'sw' 
-        ? `Angalia ${product.name} kutoka Pahala Store. ${formatPrice(product.price || 0)}/${product.unit}`
-        : `Check out ${product.name} from Pahala Store. ${formatPrice(product.price || 0)}/${product.unit}`);
+      const ogDesc = t('share_product_og', {
+        name: product.name,
+        price: formatPrice(product.price || 0),
+        unit: product.unit,
+      });
+      updateMetaTag('og:description', ogDesc);
       updateMetaTag('og:image', getImageUrl(product));
       updateMetaTag('og:url', shareUrl);
       updateMetaTag('og:type', 'product');
-      
+
       // Update Twitter card tags
       updateMetaName('twitter:card', 'summary_large_image');
       updateMetaName('twitter:title', product.name);
-      updateMetaName('twitter:description', language === 'sw' 
-        ? `Angalia ${product.name} kutoka Pahala Store. ${formatPrice(product.price || 0)}/${product.unit}`
-        : `Check out ${product.name} from Pahala Store. ${formatPrice(product.price || 0)}/${product.unit}`);
+      updateMetaName('twitter:description', ogDesc);
       updateMetaName('twitter:image', getImageUrl(product));
 
       // Cleanup function to restore original meta tags when component unmounts
@@ -196,9 +202,11 @@ const ProductDetailPage: React.FC = () => {
 
   const getShareContent = () => {
     const title = product?.name || '';
-    const text = language === 'sw' 
-      ? `Angalia bidhaa hii kutoka Pahala Store!\n\n${product?.name}\n${formatPrice(product?.price || 0)}/${product?.unit}`
-      : `Check out this product from Pahala Store!\n\n${product?.name}\n${formatPrice(product?.price || 0)}/${product?.unit}`;
+    const text = t('share_product_text', {
+      name: product?.name ?? '',
+      price: formatPrice(product?.price || 0),
+      unit: product?.unit ?? '',
+    });
     return { title, text, url: shareUrl };
   };
 
@@ -244,7 +252,7 @@ const ProductDetailPage: React.FC = () => {
             {/* Title & Share */}
             <div className="d-flex justify-content-between align-items-start gap-3 mb-2">
               <h1 className="h4 fw-bold mb-0" style={{ lineHeight: 1.3 }}>
-                {product.name}
+                {translatedName || product.name}
               </h1>
               <ShareButton
                 title={getShareContent().title}
@@ -282,7 +290,7 @@ const ProductDetailPage: React.FC = () => {
 
             {/* Description */}
             <p className="text-muted mb-4 whitespace-pre-line" style={{ lineHeight: 1.7 }}>
-              {product.description}
+              {translatedDescription || product.description}
             </p>
 
             {/* Divider */}
@@ -336,7 +344,7 @@ const ProductDetailPage: React.FC = () => {
                 onClick={() => setSpecsOpen(!specsOpen)}
                 style={{ color: 'var(--pahala-brown-dark)', fontWeight: 600, fontSize: '0.9rem' }}
               >
-                {language === 'sw' ? 'Maelezo Zaidi' : 'Specifications'}
+                {t('product_specifications')}
                 {specsOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </button>
               {specsOpen && (
@@ -345,29 +353,29 @@ const ProductDetailPage: React.FC = () => {
                     <tbody>
                       <tr>
                         <td className="text-muted" style={{ width: '40%' }}>
-                          {language === 'sw' ? 'Kitengo' : 'Unit'}
+                          {t('product_spec_unit')}
                         </td>
                         <td className="fw-medium">{product.unit}</td>
                       </tr>
                       <tr>
                         <td className="text-muted">
-                          {language === 'sw' ? 'Hali ya Stoki' : 'Stock Status'}
+                          {t('product_spec_stock_status')}
                         </td>
                         <td className="fw-medium">
                           {product.stock > 0
-                            ? language === 'sw' ? 'Inapatikana' : 'In Stock'
-                            : language === 'sw' ? 'Haipo' : 'Out of Stock'}
+                            ? t('product_spec_in_stock')
+                            : t('product_spec_out_of_stock')}
                         </td>
                       </tr>
                       <tr>
                         <td className="text-muted">
-                          {language === 'sw' ? 'Kiasi' : 'Available Qty'}
+                          {t('product_spec_qty')}
                         </td>
                         <td className="fw-medium">{product.stock}</td>
                       </tr>
                       <tr>
                         <td className="text-muted">
-                          {language === 'sw' ? 'Kategoria' : 'Category'}
+                          {t('product_spec_category')}
                         </td>
                         <td className="fw-medium text-capitalize">{getCategoryName(product.category)}</td>
                       </tr>
