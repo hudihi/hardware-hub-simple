@@ -2,12 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { useLanguage } from '../context/LanguageContext';
 import { useOrderFlow } from '../hooks/useOrderFlow';
 import { formatOrderDisplayCode, formatPrice } from '../utils/format';
 
 const OrderConfirmationPage: React.FC = () => {
   const navigate = useNavigate();
   const { orderState } = useOrderFlow();
+  const { t } = useLanguage();
   const [copiedNumber, setCopiedNumber] = useState<string>('');
 
   // Redirect if no active order
@@ -53,8 +55,8 @@ const OrderConfirmationPage: React.FC = () => {
     <div className="page-container py-8">
       <div className="max-w-3xl mx-auto px-4 space-y-6">
         <div className="text-center mb-2">
-          <h1 className="text-2xl sm:text-3xl font-bold text-green-600">Order Placed Successfully</h1>
-          <p className="text-sm text-gray-600 mt-1">Complete payment and upload proof to continue</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-green-600">{t('confirm_order_success')}</h1>
+          <p className="text-sm text-gray-600 mt-1">{t('confirm_order_hint')}</p>
         </div>
 
         {/* 1) Order Card */}
@@ -64,19 +66,19 @@ const OrderConfirmationPage: React.FC = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between gap-3">
-              <p className="text-sm text-gray-600 mb-0">Order Code</p>
+              <p className="text-sm text-gray-600 mb-0">{t('confirm_order_code')}</p>
               <p className="font-mono font-semibold text-right mb-0" title={orderState.order_id}>
                 {orderDisplayCode}
               </p>
             </div>
             <div className="flex items-center justify-between gap-3">
-              <p className="text-sm text-gray-600 mb-0">Total Amount</p>
+              <p className="text-sm text-gray-600 mb-0">{t('order_total_amount_label')}</p>
               <p className="text-xl font-bold text-green-600 text-right mb-0">{formatPrice(orderState.amount)}</p>
             </div>
             <div className="flex items-center justify-between gap-3">
-              <p className="text-sm text-gray-600 mb-0">Payment Status</p>
+              <p className="text-sm text-gray-600 mb-0">{t('confirm_payment_status')}</p>
               <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs sm:text-sm font-semibold text-amber-700">
-                Awaiting Payment
+                {t('order_status_awaiting_payment')}
               </span>
             </div>
           </CardContent>
@@ -85,12 +87,12 @@ const OrderConfirmationPage: React.FC = () => {
         {/* 2) Payment Instructions Card */}
         <Card>
           <CardHeader>
-            <CardTitle>Payment Instructions</CardTitle>
+            <CardTitle>{t('order_payment_instructions_title')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="hidden sm:grid sm:grid-cols-[170px_1fr] gap-3 text-sm font-semibold text-gray-700 border-b pb-2">
-              <p>Payment Method</p>
-              <p>Mobile Money / Bank Details</p>
+              <p>{t('confirm_payment_method')}</p>
+              <p>{t('confirm_bank_details')}</p>
             </div>
 
             {paymentRows.map((row) => (
@@ -108,7 +110,7 @@ const OrderConfirmationPage: React.FC = () => {
                     className="whitespace-nowrap !bg-[var(--pahala-brown)] !text-white !border-[var(--pahala-brown)] hover:!bg-[var(--pahala-brown-dark)]"
                     onClick={() => copyToClipboard(row.number)}
                   >
-                    {copiedNumber === row.number ? 'Copied' : 'Copy Number'}
+                    {copiedNumber === row.number ? t('confirm_copied') : t('confirm_copy')}
                   </Button>
                 </div>
               </div>
@@ -119,13 +121,13 @@ const OrderConfirmationPage: React.FC = () => {
         {/* 3) Next Steps Card */}
         <Card>
           <CardHeader>
-            <CardTitle>📌 Next Steps</CardTitle>
+            <CardTitle>{t('confirm_next_steps')}</CardTitle>
           </CardHeader>
           <CardContent>
             <ol className="list-decimal pl-5 space-y-2 text-sm text-gray-700">
-              <li>Pay using the payment details above</li>
-              <li>Click &quot;Track My Order&quot; below</li>
-              <li>Upload your payment proof</li>
+              <li>{t('confirm_step1')}</li>
+              <li>{t('confirm_step2')}</li>
+              <li>{t('confirm_step3')}</li>
             </ol>
           </CardContent>
         </Card>
@@ -140,14 +142,14 @@ const OrderConfirmationPage: React.FC = () => {
               )
             }
           >
-            Verify phone &amp; upload payment proof
+            {t('confirm_verify_upload')}
           </Button>
           <Button
             variant="outline"
             className="w-full"
             onClick={() => navigate('/track-order')}
           >
-            Track my orders only
+            {t('confirm_track_only')}
           </Button>
         </div>
       </div>

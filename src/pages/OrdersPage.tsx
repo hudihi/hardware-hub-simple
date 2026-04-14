@@ -59,9 +59,9 @@ const OrdersPage: React.FC = () => {
         <h1 className="section-header">{t('orders_title')}</h1>
         <div className="card-pahala card mb-4">
           <div className="card-body text-center">
-            <h6 className="fw-bold mb-2">Track your orders</h6>
+            <h6 className="fw-bold mb-2">{t('orders_track_title')}</h6>
             <p className="text-muted small mb-3">
-              Verify your phone with OTP to access your order history and status updates.
+              {t('orders_track_desc')}
             </p>
             <button
               type="button"
@@ -69,7 +69,7 @@ const OrdersPage: React.FC = () => {
               onClick={() => navigate('/track-order')}
             >
               <i className="bi bi-shield-check me-2"></i>
-              Track Orders
+              {t('orders_track_btn')}
             </button>
           </div>
         </div>
@@ -77,8 +77,8 @@ const OrdersPage: React.FC = () => {
         {customerOrders.length === 0 ? (
           <EmptyState
             icon="bi-box"
-            title="No orders loaded yet"
-            description="Use Track Orders above and complete phone verification to view your orders."
+            title={t('orders_empty_loaded')}
+            description={t('orders_empty_loaded_desc')}
           />
         ) : (
           <div>

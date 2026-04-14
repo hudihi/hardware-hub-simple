@@ -6,6 +6,7 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '../components/ui/input-otp';
 import { Label } from '../components/ui/label';
+import { useLanguage } from '../context/LanguageContext';
 import { useOrderFlow } from '../hooks/useOrderFlow';
 
 type TrackOrderStep = 'phone' | 'otp';
@@ -19,6 +20,7 @@ const TrackOrderPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { requestOTP, verifyOTP, fetchCustomerOrders } = useOrderFlow();
+  const { t } = useLanguage();
 
   const [currentStep, setCurrentStep] = useState<TrackOrderStep>('phone');
   const [normalizedPhone, setNormalizedPhone] = useState('');
@@ -42,7 +44,7 @@ const TrackOrderPage: React.FC = () => {
 
   const handleSendOTP = async () => {
     if (!isPhoneValid || !normalizedPhone) {
-      setError('Please enter a valid phone number');
+      setError(t('checkout_phone_required'));
       return;
     }
 
@@ -56,7 +58,7 @@ const TrackOrderPage: React.FC = () => {
       setCurrentStep('otp');
     } catch (err: any) {
       console.error('Send OTP error:', err);
-      setError(err.message || 'Failed to send OTP. Please try again.');
+      setError(err.message || t('track_send_failed'));
     } finally {
       setIsLoading(false);
     }
@@ -65,7 +67,7 @@ const TrackOrderPage: React.FC = () => {
   const handleVerifyOTP = async () => {
     // This app currently expects a full 6-digit OTP.
     if (otp.length !== 6) {
-      setError('Please enter the full OTP code');
+      setError(t('track_otp_invalid'));
       return;
     }
 
@@ -75,7 +77,7 @@ const TrackOrderPage: React.FC = () => {
     try {
       const success = await verifyOTP(otp);
       if (!success) {
-        setError('Invalid OTP code. Please try again.');
+        setError(t('track_otp_wrong'));
         return;
       }
 
@@ -89,7 +91,7 @@ const TrackOrderPage: React.FC = () => {
       navigate(next || '/orders');
     } catch (err: any) {
       console.error('OTP verification error:', err);
-      setError(err.message || 'OTP verification failed. Please try again.');
+      setError(err.message || t('track_otp_failed'));
     } finally {
       setIsLoading(false);
     }
@@ -102,7 +104,7 @@ const TrackOrderPage: React.FC = () => {
     try {
       await requestOTP(normalizedPhone);
     } catch (err: any) {
-      setError(err.message || 'Failed to resend OTP. Please try again.');
+      setError(err.message || t('track_resend_failed'));
     } finally {
       setResending(false);
     }
@@ -115,14 +117,14 @@ const TrackOrderPage: React.FC = () => {
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)} aria-label="Go back">
             <ArrowLeft size={18} />
           </Button>
-          <p className="font-semibold text-[#5C3D2E]">Track Order</p>
+          <p className="font-semibold text-[#5C3D2E]">{t('track_order_title')}</p>
         </div>
       </header>
 
       <main className="max-w-lg mx-auto px-4 py-6 space-y-6 animate-fade-in">
         <div className="text-center space-y-1">
-          <h1 className="text-xl font-bold text-[#5C3D2E]">Verify Your Identity</h1>
-          <p className="text-sm text-muted-foreground">Enter your phone number to access your orders</p>
+          <h1 className="text-xl font-bold text-[#5C3D2E]">{t('track_verify_identity')}</h1>
+          <p className="text-sm text-muted-foreground">{t('track_phone_hint')}</p>
         </div>
 
         {/* 2-step indicator */}
@@ -140,7 +142,7 @@ const TrackOrderPage: React.FC = () => {
                 {isStep1Completed ? <Check size={16} /> : '1'}
               </div>
               <div className="mt-2 text-xs sm:text-sm font-semibold text-gray-700 text-center">
-                Phone Number
+                {t('track_step_phone')}
               </div>
             </div>
 
@@ -155,7 +157,7 @@ const TrackOrderPage: React.FC = () => {
                 2
               </div>
               <div className="mt-2 text-xs sm:text-sm font-semibold text-gray-700 text-center">
-                Verify OTP
+                {t('track_step_otp')}
               </div>
             </div>
           </div>
@@ -164,7 +166,7 @@ const TrackOrderPage: React.FC = () => {
         <Card className="rounded-2xl border bg-card">
           <CardHeader className="text-center pb-2">
             <CardTitle className="text-lg text-[#5C3D2E]">
-              {currentStep === 'phone' ? 'Phone Number' : 'Verify OTP'}
+              {currentStep === 'phone' ? t('track_step_phone') : t('track_step_otp')}
             </CardTitle>
           </CardHeader>
 
@@ -172,7 +174,7 @@ const TrackOrderPage: React.FC = () => {
             {currentStep === 'phone' ? (
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">Phone Number</Label>
+                  <Label className="text-sm font-medium">{t('track_phone_label')}</Label>
                   <PhoneInput
                     value={normalizedPhone}
                     onChange={(phone, isValid) => {
@@ -199,11 +201,11 @@ const TrackOrderPage: React.FC = () => {
                   {isLoading ? (
                     <>
                       <Loader2 size={16} className="mr-2 animate-spin" />
-                      Sending OTP...
+                      {t('track_sending_otp')}
                     </>
                   ) : (
                     <>
-                      Send OTP
+                      {t('track_send_otp')}
                       <ArrowRight size={16} className="ml-2" />
                     </>
                   )}
@@ -212,12 +214,12 @@ const TrackOrderPage: React.FC = () => {
             ) : (
               <div className="space-y-4">
                 <div className="text-sm text-gray-700">
-                  OTP sent to <span className="font-semibold">{normalizedPhone}</span>
+                  {t('track_otp_sent')} <span className="font-semibold">{normalizedPhone}</span>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">OTP Code</Label>
-                  <div className="text-xs text-gray-500">Enter 4-6 digit code sent</div>
+                  <Label className="text-sm font-medium">{t('track_otp_label')}</Label>
+                  <div className="text-xs text-gray-500">{t('track_otp_hint')}</div>
 
                   <div className="flex justify-start">
                     <InputOTP
@@ -252,11 +254,11 @@ const TrackOrderPage: React.FC = () => {
                   {isLoading ? (
                     <>
                       <Loader2 size={16} className="mr-2 animate-spin" />
-                      Verifying...
+                      {t('track_verifying')}
                     </>
                   ) : (
                     <>
-                      Verify
+                      {t('track_verify_btn')}
                       <ArrowRight size={16} className="ml-2" />
                     </>
                   )}
@@ -268,7 +270,7 @@ const TrackOrderPage: React.FC = () => {
                   disabled={resending || isLoading}
                   onClick={handleResendOTP}
                 >
-                  {resending ? 'Resending...' : 'Resend OTP'}
+                  {resending ? t('track_resending') : t('track_resend_otp')}
                 </button>
               </div>
             )}

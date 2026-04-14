@@ -23,14 +23,14 @@ function canUploadPaymentProof(order: OrderFlowState): boolean {
   return true;
 }
 
-function displayStatusLabel(order: OrderFlowState): string {
+function displayStatusKey(order: OrderFlowState): string {
   const ps = (order.payment_status || '').toUpperCase();
   const os = (order.order_status || '').toUpperCase();
-  if (ps === 'PAID' || os === 'CONFIRMED') return 'Paid';
-  if (ps === 'AWAITING_CONFIRMATION' || os === 'AWAITING_VERIFICATION') return 'Verifying payment';
-  if (os === 'REJECTED' || ps === 'PROOF_REJECTED') return 'Proof rejected — upload again';
-  if (os === 'AWAITING_PAYMENT' || os === 'PENDING_PAYMENT' || ps === 'PENDING') return 'Awaiting payment';
-  return os || ps || 'In progress';
+  if (ps === 'PAID' || os === 'CONFIRMED') return 'order_status_paid';
+  if (ps === 'AWAITING_CONFIRMATION' || os === 'AWAITING_VERIFICATION') return 'order_status_verifying';
+  if (os === 'REJECTED' || ps === 'PROOF_REJECTED') return 'order_status_proof_rejected';
+  if (os === 'AWAITING_PAYMENT' || os === 'PENDING_PAYMENT' || ps === 'PENDING') return 'order_status_awaiting_payment';
+  return 'order_status_in_progress';
 }
 
 const POLL_INTERVAL_MS = 8000; // check every 8 seconds
@@ -129,40 +129,40 @@ const OrderDetailPage: React.FC = () => {
         return {
           current: 0,
           steps: [
-            { id: 0, label: 'Order placed', completed: true, active: true },
-            { id: 1, label: 'Pay & upload proof', completed: false, active: false },
-            { id: 2, label: 'We verify your payment', completed: false, active: false },
-            { id: 3, label: 'Order confirmed', completed: false, active: false },
+            { id: 0, labelKey: 'timeline_order_placed', completed: true, active: true },
+            { id: 1, labelKey: 'timeline_pay_upload', completed: false, active: false },
+            { id: 2, labelKey: 'timeline_we_verify', completed: false, active: false },
+            { id: 3, labelKey: 'timeline_order_confirmed', completed: false, active: false },
           ],
         };
       case 'awaiting_confirmation':
         return {
           current: 1,
           steps: [
-            { id: 0, label: 'Order placed', completed: true, active: false },
-            { id: 1, label: 'Pay & upload proof', completed: true, active: false },
-            { id: 2, label: 'We verify your payment', completed: false, active: true },
-            { id: 3, label: 'Order confirmed', completed: false, active: false },
+            { id: 0, labelKey: 'timeline_order_placed', completed: true, active: false },
+            { id: 1, labelKey: 'timeline_pay_upload', completed: true, active: false },
+            { id: 2, labelKey: 'timeline_we_verify', completed: false, active: true },
+            { id: 3, labelKey: 'timeline_order_confirmed', completed: false, active: false },
           ],
         };
       case 'paid':
         return {
           current: 3,
           steps: [
-            { id: 0, label: 'Order placed', completed: true, active: false },
-            { id: 1, label: 'Pay & upload proof', completed: true, active: false },
-            { id: 2, label: 'We verify your payment', completed: true, active: false },
-            { id: 3, label: 'Order confirmed', completed: true, active: true },
+            { id: 0, labelKey: 'timeline_order_placed', completed: true, active: false },
+            { id: 1, labelKey: 'timeline_pay_upload', completed: true, active: false },
+            { id: 2, labelKey: 'timeline_we_verify', completed: true, active: false },
+            { id: 3, labelKey: 'timeline_order_confirmed', completed: true, active: true },
           ],
         };
       default:
         return {
           current: 0,
           steps: [
-            { id: 0, label: 'Order placed', completed: true, active: true },
-            { id: 1, label: 'Pay & upload proof', completed: false, active: false },
-            { id: 2, label: 'We verify your payment', completed: false, active: false },
-            { id: 3, label: 'Order confirmed', completed: false, active: false },
+            { id: 0, labelKey: 'timeline_order_placed', completed: true, active: true },
+            { id: 1, labelKey: 'timeline_pay_upload', completed: false, active: false },
+            { id: 2, labelKey: 'timeline_we_verify', completed: false, active: false },
+            { id: 3, labelKey: 'timeline_order_confirmed', completed: false, active: false },
           ],
         };
     }
@@ -181,7 +181,7 @@ const OrderDetailPage: React.FC = () => {
       <div className="page-container flex items-center justify-center p-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brown mx-auto mb-4"></div>
-          <p>Loading order details...</p>
+          <p>{t('order_loading_detail')}</p>
         </div>
       </div>
     );
@@ -192,15 +192,15 @@ const OrderDetailPage: React.FC = () => {
       <div className="page-container flex items-center justify-center p-4">
         <div className="text-center">
           <div className="text-4xl mb-4">📦</div>
-          <h5 className="text-xl font-semibold mb-3">Order not found</h5>
+          <h5 className="text-xl font-semibold mb-3">{t('order_not_found_msg')}</h5>
           <p className="text-muted small mb-3">
-            Verify your phone on Track Order if you just placed this order.
+            {t('order_verify_phone_hint')}
           </p>
           <button className="btn btn-primary me-2" onClick={() => navigate('/track-order')}>
-            Track order
+            {t('order_track_btn')}
           </button>
           <button className="btn btn-outline-secondary" onClick={handleBackToOrders}>
-            Back to orders
+            {t('order_back_orders_btn')}
           </button>
         </div>
       </div>
@@ -208,7 +208,7 @@ const OrderDetailPage: React.FC = () => {
   }
 
   const timeline = getTimelineStatus(orderTimelineKey(order));
-  const statusLabel = displayStatusLabel(order);
+  const statusLabel = t(displayStatusKey(order) as any);
   const items = order.items || [];
 
   return (
@@ -217,7 +217,7 @@ const OrderDetailPage: React.FC = () => {
         <div className="mb-6">
           <button className="btn btn-link text-brown p-0 mb-3" onClick={handleBackToOrders}>
             <i className="bi bi-arrow-left me-1"></i>
-            Back to Orders
+            {t('order_back_orders_btn')}
           </button>
         </div>
 
@@ -231,7 +231,7 @@ const OrderDetailPage: React.FC = () => {
         {isPolling && (
           <div className="flex items-center gap-2 text-sm text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2 mb-4">
             <span className="inline-block w-2 h-2 rounded-full bg-blue-500 animate-pulse flex-shrink-0" />
-            Checking for payment confirmation… we'll update this page automatically.
+            {t('order_payment_checking')}
           </div>
         )}
 
@@ -240,8 +240,8 @@ const OrderDetailPage: React.FC = () => {
           <div className="flex items-center gap-3 bg-green-50 border border-green-300 rounded-xl px-4 py-3 mb-4">
             <span className="text-2xl">🎉</span>
             <div>
-              <p className="font-semibold text-green-800">Payment confirmed!</p>
-              <p className="text-sm text-green-700">Your order is now being processed.</p>
+              <p className="font-semibold text-green-800">{t('order_payment_confirmed_title')}</p>
+              <p className="text-sm text-green-700">{t('order_payment_confirmed_desc')}</p>
             </div>
           </div>
         )}
@@ -269,20 +269,20 @@ const OrderDetailPage: React.FC = () => {
               <CardContent>
                 <div className="space-y-4">
                   <div>
-                    <p className="text-sm text-gray-600">Customer name</p>
+                    <p className="text-sm text-gray-600">{t('order_customer_name_label')}</p>
                     <p className="font-semibold">{order.customer_name}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Phone</p>
+                    <p className="text-sm text-gray-600">{t('order_phone_label')}</p>
                     <p className="font-semibold">{order.phone}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Delivery location</p>
+                    <p className="text-sm text-gray-600">{t('order_delivery_location_label')}</p>
                     <p className="font-semibold">{order.customer_location}</p>
                   </div>
                   {order.order_notes && (
                     <div>
-                      <p className="text-sm text-gray-600">Notes</p>
+                      <p className="text-sm text-gray-600">{t('order_notes_label')}</p>
                       <p className="font-semibold">{order.order_notes}</p>
                     </div>
                   )}
@@ -292,16 +292,16 @@ const OrderDetailPage: React.FC = () => {
 
             <Card>
               <CardHeader>
-                <CardTitle>Order items</CardTitle>
+                <CardTitle>{t('order_items_title')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   {items.map((item: any, index: number) => (
                     <div key={index} className="flex justify-between items-center">
                       <div className="flex-1">
-                        <p className="font-medium">{item.product_name || 'Product'}</p>
+                        <p className="font-medium">{item.product_name || t('product')}</p>
                         <p className="text-sm text-gray-600">
-                          Qty: {item.quantity} × {formatPrice(item.unit_price || item.price || 0)}
+                          {t('quantity')}: {item.quantity} × {formatPrice(item.unit_price || item.price || 0)}
                         </p>
                       </div>
                       <p className="font-semibold">
@@ -312,7 +312,7 @@ const OrderDetailPage: React.FC = () => {
                 </div>
                 <div className="border-t mt-4 pt-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-lg font-semibold">Total</span>
+                    <span className="text-lg font-semibold">{t('order_total_label')}</span>
                     <span className="text-xl font-bold text-brown">{formatPrice(order.amount)}</span>
                   </div>
                 </div>
@@ -324,25 +324,21 @@ const OrderDetailPage: React.FC = () => {
             {canUploadPaymentProof(order) && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Payment</CardTitle>
+                  <CardTitle className="text-lg">{t('order_payment_card_title')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {(order.order_status || '').toUpperCase() === 'REJECTED' ||
                   (order.payment_status || '').toUpperCase() === 'PROOF_REJECTED' ? (
                     <div className="bg-red-50 p-4 rounded-lg">
-                      <p className="text-sm text-red-800">
-                        Your previous proof was not accepted. Please upload a new screenshot or receipt.
-                      </p>
+                      <p className="text-sm text-red-800">{t('order_proof_rejected_msg')}</p>
                     </div>
                   ) : (
                     <div className="bg-blue-50 p-4 rounded-lg">
-                      <p className="text-sm text-blue-800">
-                        Pay using the numbers on your order confirmation, then upload your proof here.
-                      </p>
+                      <p className="text-sm text-blue-800">{t('order_payment_instructions_msg')}</p>
                     </div>
                   )}
                   <Button onClick={goUploadProof} className="w-full">
-                    Upload payment proof
+                    {t('order_upload_proof_btn')}
                   </Button>
                 </CardContent>
               </Card>
@@ -352,13 +348,11 @@ const OrderDetailPage: React.FC = () => {
             (order.order_status || '').toUpperCase() === 'AWAITING_VERIFICATION' ? (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Verification</CardTitle>
+                  <CardTitle className="text-lg">{t('order_verification_title')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="bg-yellow-50 p-4 rounded-lg">
-                    <p className="text-sm text-yellow-800">
-                      Your payment proof was received. Our team will confirm it shortly.
-                    </p>
+                    <p className="text-sm text-yellow-800">{t('order_verification_desc')}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -368,11 +362,11 @@ const OrderDetailPage: React.FC = () => {
             (order.order_status || '').toUpperCase() === 'CONFIRMED' ? (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Confirmed</CardTitle>
+                  <CardTitle className="text-lg">{t('order_confirmed_title')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="bg-green-50 p-4 rounded-lg">
-                    <p className="text-sm text-green-800">Payment confirmed — your order is being processed.</p>
+                    <p className="text-sm text-green-800">{t('order_confirmed_desc')}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -381,7 +375,7 @@ const OrderDetailPage: React.FC = () => {
             <Card>
               <CardContent className="pt-6">
                 <div className="text-center space-y-2">
-                  <h3 className="font-semibold">Need help?</h3>
+                  <h3 className="font-semibold">{t('order_need_help_title')}</h3>
                   <p className="text-sm text-gray-600">{t('orders_help')}</p>
                 </div>
               </CardContent>

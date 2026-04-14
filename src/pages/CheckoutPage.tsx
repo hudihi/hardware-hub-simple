@@ -142,19 +142,19 @@ const CheckoutPage: React.FC = () => {
 
     try {
       if (!formData.name.trim()) {
-        setError('Please enter your name');
+        setError(t('checkout_name_required'));
         setCheckoutStatus('form');
         return;
       }
 
       if (!formData.location.trim()) {
-        setError('Please enter your delivery location');
+        setError(t('checkout_location_required'));
         setCheckoutStatus('form');
         return;
       }
 
       if (!isPhoneValid || !normalizedPhone) {
-        setError('Please enter a valid phone number');
+        setError(t('checkout_phone_required'));
         setCheckoutStatus('form');
         return;
       }
@@ -245,8 +245,8 @@ const CheckoutPage: React.FC = () => {
                 </div>
 
                 <div className="mb-0">
-                  <label className="form-label">Location *</label>
-                  <input type="text" className="form-control" name="location" value={formData.location} onChange={handleChange} required placeholder="Enter your location (city/area)" />
+                  <label className="form-label">{t('checkout_location_label')} *</label>
+                  <input type="text" className="form-control" name="location" value={formData.location} onChange={handleChange} required placeholder={t('checkout_location_ph')} />
                 </div>
               </div>
             </div>
@@ -279,7 +279,7 @@ const CheckoutPage: React.FC = () => {
                 {summaryLoading ? (
                   <div className="text-center py-3">
                     <div className="spinner-border spinner-border-sm me-2" role="status"></div>
-                    Loading order summary...
+                    {t('checkout_loading_summary')}
                   </div>
                 ) : checkoutSummary ? (
                   <>
@@ -356,8 +356,8 @@ const CheckoutPage: React.FC = () => {
           <div className="spinner-border text-brown mb-3" role="status" style={{ width: '3rem', height: '3rem' }}>
             <span className="visually-hidden">Processing...</span>
           </div>
-          <h4 className="text-brown">Processing Your Order</h4>
-          <p className="text-muted">Please wait while we process your checkout...</p>
+          <h4 className="text-brown">{t('checkout_processing_title')}</h4>
+          <p className="text-muted">{t('checkout_processing_desc')}</p>
         </div>
       )}
     </>

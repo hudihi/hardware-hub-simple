@@ -62,10 +62,10 @@ const OrderTrackingPage: React.FC = () => {
         return {
           current: 0,
           steps: [
-            { id: 0, label: 'Order Placed', completed: true, active: true },
-            { id: 1, label: 'Awaiting Payment', completed: false, active: false },
-            { id: 2, label: 'Verifying Payment', completed: false, active: false },
-            { id: 3, label: 'Order Confirmed', completed: false, active: false },
+            { id: 0, labelKey: 'timeline_order_placed_full', completed: true, active: true },
+            { id: 1, labelKey: 'timeline_awaiting_payment', completed: false, active: false },
+            { id: 2, labelKey: 'timeline_verifying_payment', completed: false, active: false },
+            { id: 3, labelKey: 'timeline_order_confirmed_full', completed: false, active: false },
           ]
         };
       case 'verifying':
@@ -73,10 +73,10 @@ const OrderTrackingPage: React.FC = () => {
         return {
           current: 1,
           steps: [
-            { id: 0, label: 'Order Placed', completed: true, active: false },
-            { id: 1, label: 'Awaiting Payment', completed: true, active: false },
-            { id: 2, label: 'Verifying Payment', completed: false, active: true },
-            { id: 3, label: 'Order Confirmed', completed: false, active: false },
+            { id: 0, labelKey: 'timeline_order_placed_full', completed: true, active: false },
+            { id: 1, labelKey: 'timeline_awaiting_payment', completed: true, active: false },
+            { id: 2, labelKey: 'timeline_verifying_payment', completed: false, active: true },
+            { id: 3, labelKey: 'timeline_order_confirmed_full', completed: false, active: false },
           ]
         };
       case 'paid':
@@ -85,20 +85,20 @@ const OrderTrackingPage: React.FC = () => {
         return {
           current: 3,
           steps: [
-            { id: 0, label: 'Order Placed', completed: true, active: false },
-            { id: 1, label: 'Awaiting Payment', completed: true, active: false },
-            { id: 2, label: 'Verifying Payment', completed: true, active: false },
-            { id: 3, label: 'Order Confirmed', completed: true, active: true },
+            { id: 0, labelKey: 'timeline_order_placed_full', completed: true, active: false },
+            { id: 1, labelKey: 'timeline_awaiting_payment', completed: true, active: false },
+            { id: 2, labelKey: 'timeline_verifying_payment', completed: true, active: false },
+            { id: 3, labelKey: 'timeline_order_confirmed_full', completed: true, active: true },
           ]
         };
       default:
         return {
           current: 0,
           steps: [
-            { id: 0, label: 'Order Placed', completed: true, active: true },
-            { id: 1, label: 'Awaiting Payment', completed: false, active: false },
-            { id: 2, label: 'Verifying Payment', completed: false, active: false },
-            { id: 3, label: 'Order Confirmed', completed: false, active: false },
+            { id: 0, labelKey: 'timeline_order_placed_full', completed: true, active: true },
+            { id: 1, labelKey: 'timeline_awaiting_payment', completed: false, active: false },
+            { id: 2, labelKey: 'timeline_verifying_payment', completed: false, active: false },
+            { id: 3, labelKey: 'timeline_order_confirmed_full', completed: false, active: false },
           ]
         };
     }
@@ -134,7 +134,7 @@ const OrderTrackingPage: React.FC = () => {
       <div className="page-container flex items-center justify-center p-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brown mx-auto mb-4"></div>
-          <p>Loading order details...</p>
+          <p>{t('order_loading_detail')}</p>
         </div>
       </div>
     );
@@ -145,10 +145,10 @@ const OrderTrackingPage: React.FC = () => {
       <div className="page-container flex items-center justify-center p-4">
         <div className="text-center">
           <div className="text-4xl mb-4">📦</div>
-          <h5 className="text-xl font-semibold mb-3">Order not found</h5>
-          <p className="text-gray-600 mb-4">The order you're looking for doesn't exist or you don't have permission to view it.</p>
+          <h5 className="text-xl font-semibold mb-3">{t('order_not_found_msg')}</h5>
+          <p className="text-gray-600 mb-4">{t('order_not_found_detail')}</p>
           <Button onClick={() => navigate('/track-order')}>
-            Track Another Order
+            {t('order_track_another')}
           </Button>
         </div>
       </div>
@@ -160,23 +160,23 @@ const OrderTrackingPage: React.FC = () => {
       <div className="page-container py-8">
         <div className="max-w-2xl mx-auto px-4">
           <div className="mb-6">
-            <button 
-              className="btn btn-link text-brown p-0 mb-3" 
+            <button
+              className="btn btn-link text-brown p-0 mb-3"
               onClick={() => setShowUploadProof(false)}
             >
               <i className="bi bi-arrow-left me-1"></i>
-              Back to Order Details
+              {t('order_back_to_detail_btn')}
             </button>
           </div>
-          
+
           <Card>
             <CardHeader>
-              <CardTitle>Upload Payment Proof</CardTitle>
+              <CardTitle>{t('order_upload_proof_title')}</CardTitle>
             </CardHeader>
             <CardContent>
               <UploadPaymentProof />
               <div className="mt-4 text-center">
-                <Button 
+                <Button
                   onClick={handlePaymentProofUploaded}
                   disabled={uploadingProof}
                   className="w-full"
@@ -184,10 +184,10 @@ const OrderTrackingPage: React.FC = () => {
                   {uploadingProof ? (
                     <>
                       <div className="spinner-border spinner-border-sm me-2"></div>
-                      Processing...
+                      {t('checkout_loading')}
                     </>
                   ) : (
-                    'Confirm Upload'
+                    t('order_confirm_upload')
                   )}
                 </Button>
               </div>
@@ -205,12 +205,12 @@ const OrderTrackingPage: React.FC = () => {
       <div className="max-w-4xl mx-auto px-4">
         {/* Header */}
         <div className="mb-6">
-          <button 
-            className="btn btn-link text-brown p-0 mb-3" 
+          <button
+            className="btn btn-link text-brown p-0 mb-3"
             onClick={() => navigate('/orders')}
           >
             <i className="bi bi-arrow-left me-1"></i>
-            Back to Orders
+            {t('order_back_orders_btn')}
           </button>
         </div>
 
@@ -238,7 +238,7 @@ const OrderTrackingPage: React.FC = () => {
         {/* Visual Timeline */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Order Status</CardTitle>
+            <CardTitle>{t('order_status_title')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="relative">
@@ -269,13 +269,13 @@ const OrderTrackingPage: React.FC = () => {
                       <h4 className={`font-semibold ${
                         step.active ? 'text-brown' : step.completed ? 'text-green-600' : 'text-gray-500'
                       }`}>
-                        {step.label}
+                        {t(step.labelKey as any)}
                       </h4>
                       {step.active && (
                         <p className="text-sm text-gray-600 mt-1">
-                          {step.id === 1 && 'Please complete payment to proceed'}
-                          {step.id === 2 && 'We are verifying your payment proof'}
-                          {step.id === 3 && 'Your order has been confirmed and is being processed'}
+                          {step.id === 1 && t('timeline_step1_desc')}
+                          {step.id === 2 && t('timeline_step2_desc')}
+                          {step.id === 3 && t('timeline_step3_desc')}
                         </p>
                       )}
                     </div>
@@ -290,15 +290,15 @@ const OrderTrackingPage: React.FC = () => {
         {order.payment_status === 'awaiting_payment' && (
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle>Payment Instructions</CardTitle>
+              <CardTitle>{t('order_payment_instructions_title')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="bg-blue-50 p-4 rounded-lg mb-4">
-                <h5 className="font-semibold text-blue-800 mb-2">Mobile Money Payment</h5>
+                <h5 className="font-semibold text-blue-800 mb-2">{t('order_mobile_money_title')}</h5>
                 <div className="space-y-2 text-sm text-blue-700">
-                  <p><strong>Amount:</strong> {formatPrice(order.amount)}</p>
-                  <p><strong>Reference:</strong> Use order code: {formatOrderDisplayCode(order.order_id)}</p>
-                  <p><strong>Available Methods:</strong></p>
+                  <p><strong>{t('order_amount_label')}:</strong> {formatPrice(order.amount)}</p>
+                  <p><strong>{t('order_reference_label')}:</strong> {t('order_reference_hint')} {formatOrderDisplayCode(order.order_id)}</p>
+                  <p><strong>{t('order_available_methods')}:</strong></p>
                   <ul className="list-disc list-inside space-y-1 ml-4">
                     <li>M-Pesa: *150*00#</li>
                     <li>Tigo Pesa: *150*01#</li>
@@ -309,7 +309,7 @@ const OrderTrackingPage: React.FC = () => {
               
               <Button onClick={handleUploadProof} className="w-full">
                 <i className="bi bi-upload me-2"></i>
-                Upload Payment Proof
+                {t('order_upload_proof_title')}
               </Button>
             </CardContent>
           </Card>
@@ -318,25 +318,25 @@ const OrderTrackingPage: React.FC = () => {
         {/* Order Details */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Order Details</CardTitle>
+            <CardTitle>{t('order_details')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div>
-                <p className="text-sm text-gray-600">Customer Name</p>
+                <p className="text-sm text-gray-600">{t('order_customer_name_full')}</p>
                 <p className="font-semibold">{order.customer_name}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Phone Number</p>
+                <p className="text-sm text-gray-600">{t('order_phone_number_label')}</p>
                 <p className="font-semibold">{order.phone}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Delivery Location</p>
+                <p className="text-sm text-gray-600">{t('order_delivery_location_full')}</p>
                 <p className="font-semibold">{order.customer_location}</p>
               </div>
               {order.order_notes && (
                 <div>
-                  <p className="text-sm text-gray-600">Order Notes</p>
+                  <p className="text-sm text-gray-600">{t('order_notes_label')}</p>
                   <p className="font-semibold">{order.order_notes}</p>
                 </div>
               )}
@@ -347,16 +347,16 @@ const OrderTrackingPage: React.FC = () => {
         {/* Order Items */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Order Items</CardTitle>
+            <CardTitle>{t('order_items_title')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {order.items.map((item, index) => (
                 <div key={index} className="flex justify-between items-center">
                   <div className="flex-1">
-                    <p className="font-medium">{item.product_name || 'Product'}</p>
+                    <p className="font-medium">{item.product_name || t('product')}</p>
                     <p className="text-sm text-gray-600">
-                      Qty: {item.quantity} × {formatPrice(item.unit_price || item.price || 0)}
+                      {t('quantity')}: {item.quantity} × {formatPrice(item.unit_price || item.price || 0)}
                     </p>
                   </div>
                   <p className="font-semibold">
@@ -367,7 +367,7 @@ const OrderTrackingPage: React.FC = () => {
             </div>
             <div className="border-t mt-4 pt-4">
               <div className="flex justify-between items-center">
-                <span className="text-lg font-semibold">Total Amount</span>
+                <span className="text-lg font-semibold">{t('order_total_amount_label')}</span>
                 <span className="text-xl font-bold text-brown">
                   {formatPrice(order.amount)}
                 </span>
@@ -380,9 +380,9 @@ const OrderTrackingPage: React.FC = () => {
         <Card>
           <CardContent className="pt-6">
             <div className="text-center space-y-2">
-              <h3 className="font-semibold">Need Help?</h3>
+              <h3 className="font-semibold">{t('order_need_help_title')}</h3>
               <p className="text-sm text-gray-600">
-                Contact our customer support for any questions about your order
+                {t('order_help_contact_msg')}
               </p>
               <div className="space-y-1">
                 <p className="text-sm">
