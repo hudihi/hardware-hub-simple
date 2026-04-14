@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import SearchBar from '../components/SearchBar';
+import TranslatedText from '../components/TranslatedText';
 import { useLanguage } from '../context/LanguageContext';
 import { PaginatedProductsResponse, productService } from '../services/product.service';
 import { Category, Product } from '../types';
@@ -343,7 +344,7 @@ const ProductsPage: React.FC = () => {
                   onClick={() => handleCategoryChange(category.id)}
                 >
                   <i className={`bi ${category.icon} me-1`}></i>
-                  {category.name}
+                  <TranslatedText text={category.name} />
                 </button>
               ))
             )}

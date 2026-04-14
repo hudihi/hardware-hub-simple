@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslatedContent } from '../hooks/useTranslatedContent';
 import { Category } from '../types';
 
 interface CategoryCardProps {
@@ -7,6 +8,8 @@ interface CategoryCardProps {
 }
 
 const CategoryCard: React.FC<CategoryCardProps> = ({ category }) => {
+  const translatedName = useTranslatedContent(category.name);
+
   return (
     <Link
       to={`/products?category=${category.id}`}
@@ -14,7 +17,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ category }) => {
     >
       <div className="category-card">
         <i className={`bi ${category.icon} category-icon`}></i>
-        <div className="category-name">{category.name}</div>
+        <div className="category-name">{translatedName || category.name}</div>
       </div>
     </Link>
   );
