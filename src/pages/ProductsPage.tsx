@@ -100,10 +100,16 @@ const ProductsPage: React.FC = () => {
         };
       });
       
+      // Shuffle products so each visit shows a different order
+      for (let i = mappedProducts.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [mappedProducts[i], mappedProducts[j]] = [mappedProducts[j], mappedProducts[i]];
+      }
+
       setAllProductsCache(mappedProducts);
       setTotalCount(mappedProducts.length);
       setCacheInitialized(true);
-      
+
       // Load first page
       const firstPage = mappedProducts.slice(0, PAGE_SIZE);
       setProducts(firstPage);

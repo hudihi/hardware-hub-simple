@@ -37,7 +37,7 @@ const HomePage: React.FC = () => {
           const primaryImage = apiProduct.images?.find((img: any) => img.is_primary);
           const rawImageUrl = primaryImage?.url || apiProduct.image_url || '/placeholder.svg';
           const processedImageUrl = processImageUrl(rawImageUrl);
-          
+
           return {
             id: apiProduct.id,
             name: apiProduct.name,
@@ -49,6 +49,13 @@ const HomePage: React.FC = () => {
             stock: apiProduct.stock_quantity, // Map stock_quantity to stock
           };
         });
+
+        // Shuffle products so each visit shows a different order
+        for (let i = mappedProducts.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [mappedProducts[i], mappedProducts[j]] = [mappedProducts[j], mappedProducts[i]];
+        }
+
         setProducts(mappedProducts);
       } catch (error) {
         console.error('Failed to fetch products:', error);

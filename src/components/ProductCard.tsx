@@ -15,6 +15,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const { addItem } = useCart();
   const { language, t } = useLanguage();
   const [imageError, setImageError] = React.useState(false);
+  const [imageLoaded, setImageLoaded] = React.useState(false);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -35,17 +36,25 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     <Link to={createProductUrl(product.id, product.name)} className="text-decoration-none">
       <div className="product-card h-100">
         <div className="product-image-container position-relative">
+          {/* Shimmer skeleton — visible until image finishes loading */}
+          {!imageLoaded && !imageError && (
+            <div className="product-image-placeholder" aria-hidden="true" />
+          )}
           <img
             src={imageError ? '/placeholder.svg' : product.image}
             alt={product.name}
             className="product-image w-100"
             width={300}
             height={300}
-            style={{ borderRadius: '0.375rem 0.375rem 0 0', objectFit: 'cover' }}
-            loading="eager"
-            onError={() => {
-              setImageError(true);
+            style={{
+              borderRadius: '0.375rem 0.375rem 0 0',
+              objectFit: 'cover',
+              opacity: imageLoaded || imageError ? 1 : 0,
+              transition: 'opacity 0.3s ease',
             }}
+            loading="lazy"
+            onLoad={() => setImageLoaded(true)}
+            onError={() => { setImageError(true); setImageLoaded(true); }}
           />
         </div>
         <div className="p-3">
