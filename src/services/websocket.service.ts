@@ -17,6 +17,9 @@ export interface LocationMessage {
 
 export type WebSocketMessageCallback = (message: LocationMessage) => void;
 
+// Send a ping every 90s — well under Traefik's 180s idle timeout
+const HEARTBEAT_INTERVAL_MS = 90_000;
+
 class WebSocketService {
   private ws: WebSocket | null = null;
   private reconnectAttempts = 0;
@@ -24,6 +27,7 @@ class WebSocketService {
   private reconnectDelay = 1000;
   private messageCallbacks: Set<WebSocketMessageCallback> = new Set();
   private userId: string | null = null;
+  private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
 
   /**
    * Connect to WebSocket endpoint
@@ -96,6 +100,7 @@ class WebSocketService {
    * Disconnect from WebSocket
    */
   disconnect(): void {
+    this.stopHeartbeat();
     if (this.ws) {
       this.ws.close();
       this.ws = null;
@@ -104,6 +109,20 @@ class WebSocketService {
     this.userId = null;
     this.reconnectAttempts = 0;
     console.log('WebSocket disconnected');
+  }
+
+  private startHeartbeat(): void {
+    this.stopHeartbeat();
+    this.heartbeatTimer = setInterval(() => {
+      this.sendMessage({ type: 'ping' });
+    }, HEARTBEAT_INTERVAL_MS);
+  }
+
+  private stopHeartbeat(): void {
+    if (this.heartbeatTimer !== null) {
+      clearInterval(this.heartbeatTimer);
+      this.heartbeatTimer = null;
+    }
   }
 
   /**
@@ -148,7 +167,7 @@ class WebSocketService {
     
     if (isDevelopment) {
       // Use proxied WebSocket URL for development
-      let wsUrl = `ws://localhost:8080/ws/locations/${userId}`;
+      let wsUrl = `ws://localhost:8080/api/v1/ws/locations/${userId}`;
       
       // Add token as query parameter if provided
       if (token) {
@@ -159,7 +178,7 @@ class WebSocketService {
     } else {
       // Production WebSocket URL
       const wsBaseUrl = 'wss://api.pahala.store';
-      const url = new URL(`/ws/locations/${userId}`, wsBaseUrl.replace('wss://', 'https://'));
+      const url = new URL(`/api/v1/ws/locations/${userId}`, wsBaseUrl.replace('wss://', 'https://'));
       
       // Convert back to WebSocket protocol
       url.protocol = 'wss:';
@@ -179,6 +198,7 @@ class WebSocketService {
     this.ws.onopen = () => {
       console.log('WebSocket connected successfully');
       this.reconnectAttempts = 0;
+      this.startHeartbeat();
     };
 
     this.ws.onmessage = (event) => {
@@ -206,6 +226,7 @@ class WebSocketService {
         console.log('Connection failed - map will work without live updates');
         this.handleConnectionError(new Error(`WebSocket closed with code ${event.code}`));
       }
+      this.stopHeartbeat();
     };
 
     this.ws.onerror = (error) => {

@@ -1,6 +1,6 @@
 import { DivIcon, Icon, LatLngBounds, Map as LeafletMap } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import React, { useEffect, useRef } from 'react';
+import React, { memo, useEffect, useRef } from 'react';
 import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
 import { LocationUser } from '../../services/websocket.service';
 
@@ -55,19 +55,25 @@ const STATUS_LABEL: Record<string, string> = {
   active: 'Active', visitor: 'Visitor', engaged: 'Engaged',
 };
 
-function createMarkerIcon(status: string): DivIcon {
-  const dotClass = STATUS_DOT_CLASS[status] ?? STATUS_DOT_CLASS.visitor;
-  const rings = status === 'active'
-    ? '<div class="lm-pulse-ring"></div><div class="lm-pulse-ring"></div>'
-    : '';
-  return new DivIcon({
+// Pre-created once — same object reference forever, prevents Leaflet from
+// tearing down and rebuilding marker DOM nodes on every WebSocket message.
+const ICONS: Record<string, DivIcon> = {
+  active: new DivIcon({
     className: '',
-    html: `<div class="lm-pulse-wrapper">${rings}<div class="lm-pulse-dot ${dotClass}"></div></div>`,
-    iconSize: [20, 20],
-    iconAnchor: [10, 10],
-    popupAnchor: [0, -12],
-  });
-}
+    html: '<div class="lm-pulse-wrapper"><div class="lm-pulse-ring"></div><div class="lm-pulse-ring"></div><div class="lm-pulse-dot lm-dot-active"></div></div>',
+    iconSize: [20, 20], iconAnchor: [10, 10], popupAnchor: [0, -12],
+  }),
+  visitor: new DivIcon({
+    className: '',
+    html: '<div class="lm-pulse-wrapper"><div class="lm-pulse-dot lm-dot-visitor"></div></div>',
+    iconSize: [20, 20], iconAnchor: [10, 10], popupAnchor: [0, -12],
+  }),
+  engaged: new DivIcon({
+    className: '',
+    html: '<div class="lm-pulse-wrapper"><div class="lm-pulse-dot lm-dot-engaged"></div></div>',
+    iconSize: [20, 20], iconAnchor: [10, 10], popupAnchor: [0, -12],
+  }),
+};
 
 // Marker styles (kept for legend rendering)
 const MARKER_STYLES = {
@@ -86,58 +92,41 @@ interface LiveMapProps {
 const DEFAULT_CENTER: [number, number] = [-6.8, 39.2];
 const DEFAULT_ZOOM = 11;
 
-/**
- * LiveMap component for displaying real-time user locations
- * Follows SOLID principles - single responsibility for map rendering
- */
-const LiveMap: React.FC<LiveMapProps> = ({ 
-  users, 
-  height = '400px', 
-  className = '' 
+// Stable style objects — defined outside render to avoid new references each cycle
+const MAP_STYLE = { height: '100%', width: '100%' };
+
+const LiveMap: React.FC<LiveMapProps> = ({
+  users,
+  height = '400px',
+  className = ''
 }) => {
   const mapRef = useRef<LeafletMap | null>(null);
-  const boundsRef = useRef<LatLngBounds | null>(null);
+  const prevUserIdsRef = useRef<string>('');
 
-  // Update map bounds when users change
+  // Only re-fit bounds when the set of users changes (join/leave), not on every status ping
   useEffect(() => {
     if (!mapRef.current) return;
 
+    const currentIds = users.map(u => u.user_id).sort().join(',');
+    if (currentIds === prevUserIdsRef.current) return;
+    prevUserIdsRef.current = currentIds;
+
     if (users.length === 0) {
-      // Reset to default center when no users
       mapRef.current.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
-      boundsRef.current = null;
       return;
     }
 
-    const userPositions: [number, number][] = users.map(user => [user.latitude, user.longitude]);
-    
-    if (userPositions.length > 0) {
-      try {
-        const bounds = new LatLngBounds(userPositions);
-        boundsRef.current = bounds;
-        
-        // Only fit bounds if we have multiple users or if map is not already centered
-        if (userPositions.length > 1) {
-          mapRef.current.fitBounds(bounds, { 
-            padding: [20, 20],
-            maxZoom: DEFAULT_ZOOM
-          });
-        } else if (userPositions.length === 1) {
-          // Center on single user
-          mapRef.current.setView(userPositions[0], DEFAULT_ZOOM);
-        }
-      } catch (error) {
-        console.error('Error updating map bounds:', error);
+    const positions: [number, number][] = users.map(u => [u.latitude, u.longitude]);
+    try {
+      if (positions.length === 1) {
+        mapRef.current.setView(positions[0], DEFAULT_ZOOM);
+      } else {
+        mapRef.current.fitBounds(new LatLngBounds(positions), { padding: [20, 20], maxZoom: DEFAULT_ZOOM });
       }
+    } catch (e) {
+      console.error('Error updating map bounds:', e);
     }
   }, [users]);
-
-  // Cleanup bounds on unmount
-  useEffect(() => {
-    return () => {
-      boundsRef.current = null;
-    };
-  }, []);
 
   return (
     <div className={`live-map-container ${className}`} style={{ height }}>
@@ -145,7 +134,7 @@ const LiveMap: React.FC<LiveMapProps> = ({
       <MapContainer
         center={DEFAULT_CENTER}
         zoom={DEFAULT_ZOOM}
-        style={{ height, width: '100%' }}
+        style={MAP_STYLE}
         ref={mapRef}
         className="rounded"
       >
@@ -158,7 +147,7 @@ const LiveMap: React.FC<LiveMapProps> = ({
         {/* User markers - only render when users exist */}
         {users.map((user) => {
           const userStatus = user.status || 'active';
-          const icon = createMarkerIcon(userStatus);
+          const icon = ICONS[userStatus] ?? ICONS.visitor;
 
           return (
             <Marker
@@ -239,4 +228,11 @@ const LiveMap: React.FC<LiveMapProps> = ({
   );
 };
 
-export default LiveMap;
+// Only re-render when user IDs or their statuses change — ignore unrelated parent updates
+export default memo(LiveMap, (prev, next) => {
+  if (prev.height !== next.height || prev.className !== next.className) return false;
+  if (prev.users.length !== next.users.length) return false;
+  return prev.users.every((u, i) =>
+    u.user_id === next.users[i].user_id && u.status === next.users[i].status
+  );
+});

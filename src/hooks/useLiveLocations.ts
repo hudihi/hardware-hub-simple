@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useAuth } from '../context/AuthContext';
 import { LocationMessage, LocationUser, websocketService } from '../services/websocket.service';
 
-// Interface for the hook's return value
 interface UseLiveLocationsReturn {
   users: LocationUser[];
   isConnected: boolean;
@@ -10,114 +8,50 @@ interface UseLiveLocationsReturn {
   reconnect: () => void;
 }
 
-/**
- * Custom hook for managing live user locations via WebSocket
- * Follows SOLID principles - single responsibility for location state management
- */
 export const useLiveLocations = (): UseLiveLocationsReturn => {
   const [users, setUsers] = useState<LocationUser[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Handle incoming WebSocket messages
+  // Use a ref to track connection state in the interval so we never
+  // recreate the callback (which was causing the retry storm).
+  const isConnectedRef = useRef(false);
+
   const handleMessage = useCallback((message: LocationMessage) => {
-    try {
-      if (message.type === 'users_update') {
-        setUsers(message.data);
-        setError(null);
-        console.log('Live locations updated:', message.data.length, 'users');
-      }
-    } catch (err) {
-      console.error('Error handling location message:', err);
-      setError('Failed to process location updates');
+    if (message.type === 'users_update') {
+      setUsers(message.data);
+      setError(null);
     }
   }, []);
 
-  // Manual reconnect function
   const reconnect = useCallback(() => {
-    if (user?.id) {
-      setError(null);
-      websocketService.disconnect();
-      
-      // Small delay before reconnecting
-      setTimeout(() => {
-        connectWebSocket();
-      }, 1000);
-    }
-  }, [user?.id]);
-
-  // Connect to WebSocket
-  const connectWebSocket = useCallback(() => {
-    try {
-      // Get auth token if available
-      const token = localStorage.getItem('token') || undefined;
-      
-      // Connect to WebSocket (user ID is generated automatically)
-      websocketService.connect(token);
-      setIsConnected(true);
-      setError(null);
-      console.log('Connecting to live locations...');
-    } catch (err) {
-      console.error('Failed to connect to WebSocket:', err);
-      setError('Failed to connect to location service');
-      setIsConnected(false);
-    }
+    setError(null);
+    websocketService.disconnect();
+    setTimeout(() => websocketService.connect(), 1000);
   }, []);
 
-  // Monitor WebSocket connection state
-  const monitorConnection = useCallback(() => {
-    const checkInterval = setInterval(() => {
-      const currentState = websocketService.isConnected();
-      if (currentState !== isConnected) {
-        setIsConnected(currentState);
-        if (!currentState) {
-          setError('Connection to location service lost');
-        }
-      }
-    }, 1000);
-
-    return () => clearInterval(checkInterval);
-  }, [isConnected]);
-
-  // Initialize WebSocket connection and set up event listeners
   useEffect(() => {
-    // Register message handler
+    // VisitorTracker already owns the connection — just subscribe to messages.
     const unsubscribe = websocketService.onMessage(handleMessage);
 
-    // Connect to WebSocket (anonymous ID is generated automatically)
-    connectWebSocket();
+    // Poll connection state via a ref so this interval never needs to be
+    // recreated and never triggers a useEffect re-run.
+    const intervalId = setInterval(() => {
+      const live = websocketService.isConnected();
+      if (live !== isConnectedRef.current) {
+        isConnectedRef.current = live;
+        setIsConnected(live);
+        if (!live) setError('Connection to location service lost');
+      }
+    }, 2000);
 
-    // Start connection monitoring
-    const stopMonitoring = monitorConnection();
-
-    // Cleanup on unmount
     return () => {
       unsubscribe();
-      stopMonitoring();
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-      // Note: We don't disconnect here to allow connection to persist across component re-renders
+      clearInterval(intervalId);
     };
-  }, [handleMessage, connectWebSocket, monitorConnection]);
+  }, [handleMessage]); // stable — handleMessage never changes
 
-  // Cleanup on user logout (optional - keep connection for anonymous tracking)
-  useEffect(() => {
-    if (!user) {
-      console.log('User logged out, but keeping WebSocket connection for anonymous tracking');
-    }
-  }, [user]);
-
-  // Connection lifecycle is owned by VisitorTracker; we only clean up message handlers here.
-
-  return {
-    users,
-    isConnected,
-    error,
-    reconnect
-  };
+  return { users, isConnected, error, reconnect };
 };
 
 export default useLiveLocations;
