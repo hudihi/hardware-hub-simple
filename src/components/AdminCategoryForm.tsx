@@ -9,20 +9,9 @@ interface AdminCategoryFormProps {
   onSave: (category: Category) => void;
 }
 
-const AdminCategoryForm: React.FC<AdminCategoryFormProps> = ({ 
-  open, 
-  onClose, 
-  category, 
-  onSave 
-}) => {
+const AdminCategoryForm: React.FC<AdminCategoryFormProps> = ({open,onClose,category,onSave }) => {
   const { t } = useLanguage();
-  const [formData, setFormData] = useState<Partial<Category>>({
-    id: '',
-    name: '',
-    slug: '',
-    description: '',
-    icon: 'bi-tag'
-  });
+  const [formData, setFormData] = useState<Partial<Category>>({id: '',name: '',slug: '',description: '',icon: 'bi-tag'});
 
   React.useEffect(() => {
     if (category) {

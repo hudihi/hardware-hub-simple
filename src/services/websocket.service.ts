@@ -120,6 +120,15 @@ class WebSocketService {
   }
 
   /**
+   * Send a message to the server
+   */
+  sendMessage(data: object): void {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify(data));
+    }
+  }
+
+  /**
    * Get current connection state
    */
   getReadyState(): number {

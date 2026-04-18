@@ -110,12 +110,7 @@ export const useLiveLocations = (): UseLiveLocationsReturn => {
     }
   }, [user]);
 
-  // Cleanup on unmount to prevent memory leaks
-  useEffect(() => {
-    return () => {
-      websocketService.disconnect();
-    };
-  }, []);
+  // Connection lifecycle is owned by VisitorTracker; we only clean up message handlers here.
 
   return {
     users,

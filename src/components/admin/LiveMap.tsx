@@ -1,39 +1,79 @@
-import { Icon, LatLngBounds } from 'leaflet';
+import { DivIcon, Icon, LatLngBounds, Map as LeafletMap } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import React, { useEffect, useRef } from 'react';
 import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
 import { LocationUser } from '../../services/websocket.service';
 
 // Fix for default Leaflet marker icons in React
-delete (Icon.Default.prototype as any)._getIconUrl;
+delete (Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
 Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-// Custom marker icons for different user statuses
-const createCustomIcon = (color: string, animated: boolean = false) => {
-  const iconUrl = animated 
-    ? `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`
-    : `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${color}.png`;
-    
-  return new Icon({
-    iconUrl,
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41],
-    className: animated ? 'marker-pulse' : ''
-  });
+// Inject pulse-dot CSS once
+const PULSE_STYLE = `
+  @keyframes lm-pulse {
+    0%   { transform: scale(1);   opacity: 0.8; }
+    100% { transform: scale(3.5); opacity: 0;   }
+  }
+  .lm-pulse-wrapper { position: relative; width: 20px; height: 20px; }
+  .lm-pulse-ring {
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    background: rgba(25,135,84,0.35);
+    animation: lm-pulse 1.6s ease-out infinite;
+  }
+  .lm-pulse-ring:nth-child(2) { animation-delay: 0.55s; }
+  .lm-pulse-dot {
+    position: absolute; top: 3px; left: 3px;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 6px rgba(25,135,84,0.9);
+  }
+  .lm-dot-visitor  { background: #6c757d; }
+  .lm-dot-active   { background: #198754; }
+  .lm-dot-engaged  { background: #0d6efd; }
+`;
+
+if (typeof document !== 'undefined' && !document.getElementById('lm-pulse-style')) {
+  const el = document.createElement('style');
+  el.id = 'lm-pulse-style';
+  el.textContent = PULSE_STYLE;
+  document.head.appendChild(el);
+}
+
+const STATUS_DOT_CLASS: Record<string, string> = {
+  active:  'lm-dot-active',
+  visitor: 'lm-dot-visitor',
+  engaged: 'lm-dot-engaged',
 };
 
-// Marker styles
+const STATUS_LABEL: Record<string, string> = {
+  active: 'Active', visitor: 'Visitor', engaged: 'Engaged',
+};
+
+function createMarkerIcon(status: string): DivIcon {
+  const dotClass = STATUS_DOT_CLASS[status] ?? STATUS_DOT_CLASS.visitor;
+  const rings = status === 'active'
+    ? '<div class="lm-pulse-ring"></div><div class="lm-pulse-ring"></div>'
+    : '';
+  return new DivIcon({
+    className: '',
+    html: `<div class="lm-pulse-wrapper">${rings}<div class="lm-pulse-dot ${dotClass}"></div></div>`,
+    iconSize: [20, 20],
+    iconAnchor: [10, 10],
+    popupAnchor: [0, -12],
+  });
+}
+
+// Marker styles (kept for legend rendering)
 const MARKER_STYLES = {
-  active: { color: 'green', animated: true, label: 'Active' }, // Users currently interacting
-  visitor: { color: 'gray', animated: false, label: 'Visitor' }, // Existing users not active
-  engaged: { color: 'blue', animated: false, label: 'Engaged' } // Users engaged with content
+  active:  { color: '#198754', label: 'Active' },
+  visitor: { color: '#6c757d', label: 'Visitor' },
+  engaged: { color: '#0d6efd', label: 'Engaged' },
 } as const;
 
 interface LiveMapProps {
@@ -55,18 +95,8 @@ const LiveMap: React.FC<LiveMapProps> = ({
   height = '400px', 
   className = '' 
 }) => {
-  const mapRef = useRef<any>(null);
+  const mapRef = useRef<LeafletMap | null>(null);
   const boundsRef = useRef<LatLngBounds | null>(null);
-
-  // Custom user marker icon
-  const userIcon = new Icon({
-    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41]
-  });
 
   // Update map bounds when users change
   useEffect(() => {
@@ -128,9 +158,8 @@ const LiveMap: React.FC<LiveMapProps> = ({
         {/* User markers - only render when users exist */}
         {users.map((user) => {
           const userStatus = user.status || 'active';
-          const markerStyle = MARKER_STYLES[userStatus] || MARKER_STYLES.active;
-          const icon = createCustomIcon(markerStyle.color, markerStyle.animated);
-          
+          const icon = createMarkerIcon(userStatus);
+
           return (
             <Marker
               key={user.user_id}
@@ -146,7 +175,7 @@ const LiveMap: React.FC<LiveMapProps> = ({
                       userStatus === 'active' ? 'success' : 
                       userStatus === 'visitor' ? 'secondary' : 'primary'
                     }`}>
-                      {markerStyle.label}
+                      {MARKER_STYLES[userStatus]?.label ?? 'Visitor'}
                     </span>
                   </div>
                   <small className="text-muted d-block mt-1">

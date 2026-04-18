@@ -29,6 +29,7 @@ import AdminOrders from './pages/admin/AdminOrders';
 import AdminPaymentProofs from './pages/admin/AdminPaymentProofs';
 import AdminProducts from './pages/admin/AdminProducts';
 import ProtectedAdminRoute from './routes/ProtectedAdminRoute';
+import VisitorTracker from './components/VisitorTracker';
 
 const App: React.FC = () => {
   return (
@@ -38,6 +39,7 @@ const App: React.FC = () => {
         <OrderProvider>
           <OrderFlowProvider>
             <BrowserRouter>
+              <VisitorTracker />
               <Navbar />
               <Routes>
                 {/* Customer Routes */}
