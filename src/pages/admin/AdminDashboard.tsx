@@ -119,29 +119,88 @@ const AdminDashboard: React.FC = () => {
         ))}
       </div>
 
-      {/* Live Locations Map */}
+      {/* Live Visitor Intelligence */}
       <div className="card-pahala card mb-4">
         <div className="card-header bg-white d-flex justify-content-between align-items-center">
-          <h6 className="mb-0 fw-bold">Live User Locations</h6>
+          <h6 className="mb-0 fw-bold">
+            Live Visitors
+            {liveUsers.length > 0 && (
+              <span className="badge bg-success ms-2">{liveUsers.length} online</span>
+            )}
+          </h6>
           <div className="d-flex align-items-center gap-2">
-            <div
-              className={`rounded-circle ${isConnected ? 'bg-success' : 'bg-danger'}`}
-              style={{ width: '8px', height: '8px' }}
-            />
-            <small className="text-muted">
-              {isConnected ? 'Connected' : 'Disconnected'}
-            </small>
+            <div className={`rounded-circle ${isConnected ? 'bg-success' : 'bg-danger'}`}
+              style={{ width: 8, height: 8 }} />
+            <small className="text-muted">{isConnected ? 'Connected' : 'Disconnected'}</small>
             {locationError && (
-              <button 
-                className="btn btn-sm btn-outline-secondary"
-                onClick={reconnect}
-                title="Reconnect"
-              >
-                <i className="bi bi-arrow-clockwise"></i>
+              <button className="btn btn-sm btn-outline-secondary" onClick={reconnect}>
+                <i className="bi bi-arrow-clockwise" />
               </button>
             )}
           </div>
         </div>
+
+        {/* Stats row above map */}
+        {liveUsers.length > 0 && (() => {
+          const funnelStages = [
+            { label: 'Home',     icon: 'bi-house',        match: (p: string) => p === '/' },
+            { label: 'Products', icon: 'bi-grid',         match: (p: string) => p.startsWith('/products') },
+            { label: 'Cart',     icon: 'bi-cart',         match: (p: string) => p === '/cart' },
+            { label: 'Checkout', icon: 'bi-credit-card',  match: (p: string) => p.startsWith('/checkout') || p.startsWith('/payment') },
+          ];
+          const devices = {
+            mobile:  liveUsers.filter(u => u.device_type === 'mobile').length,
+            tablet:  liveUsers.filter(u => u.device_type === 'tablet').length,
+            desktop: liveUsers.filter(u => !u.device_type || u.device_type === 'desktop').length,
+          };
+          return (
+            <div className="card-body border-bottom py-2 px-3">
+              <div className="row g-2">
+                {/* Funnel */}
+                <div className="col-12 col-md-8">
+                  <small className="text-muted fw-semibold d-block mb-1">Conversion Funnel</small>
+                  <div className="d-flex gap-2 flex-wrap">
+                    {funnelStages.map(stage => {
+                      const count = liveUsers.filter(u => stage.match(u.page ?? '/')).length;
+                      return (
+                        <div key={stage.label}
+                          className="d-flex align-items-center gap-1 bg-light rounded px-2 py-1">
+                          <i className={`bi ${stage.icon} text-muted`} style={{ fontSize: 11 }} />
+                          <span className="small">{stage.label}</span>
+                          <span className={`badge ${count > 0 ? 'bg-primary' : 'bg-secondary'}`}>
+                            {count}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                {/* Devices */}
+                <div className="col-12 col-md-4">
+                  <small className="text-muted fw-semibold d-block mb-1">Devices</small>
+                  <div className="d-flex gap-2">
+                    {devices.mobile > 0 && (
+                      <span className="d-flex align-items-center gap-1 bg-light rounded px-2 py-1 small">
+                        📱 {devices.mobile}
+                      </span>
+                    )}
+                    {devices.tablet > 0 && (
+                      <span className="d-flex align-items-center gap-1 bg-light rounded px-2 py-1 small">
+                        📋 {devices.tablet}
+                      </span>
+                    )}
+                    {devices.desktop > 0 && (
+                      <span className="d-flex align-items-center gap-1 bg-light rounded px-2 py-1 small">
+                        💻 {devices.desktop}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
         <div className="card-body p-0">
           <LiveMap users={liveUsers} height="400px" />
         </div>

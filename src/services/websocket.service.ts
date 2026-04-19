@@ -7,7 +7,15 @@ export interface LocationUser {
   user_id: string;
   latitude: number;
   longitude: number;
-  status?: 'active' | 'visitor' | 'engaged'; // Optional status for marker styling
+  status?: 'active' | 'visitor' | 'engaged';
+  city?: string;
+  country?: string;
+  page?: string;
+  page_title?: string;
+  device_type?: 'mobile' | 'tablet' | 'desktop';
+  referrer?: string;
+  connected_at?: string;
+  session_seconds?: number;
 }
 
 export interface LocationMessage {
