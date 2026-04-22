@@ -14,9 +14,7 @@ export const translations = {
   home_categories: { en: 'Categories', sw: 'Makundi' },
   home_featured: { en: 'Featured Products', sw: 'Bidhaa Maarufu' },
   home_view_all: { en: 'View All', sw: 'Ona Zote' },
-  home_need_help: { en: 'Need Help?', sw: 'Unahitaji Msaada?' },
-  home_help_text: { en: 'Our team is ready to help you', sw: 'Timu yetu iko tayari kukusaidia' },
-  home_call: { en: 'Call Us', sw: 'Piga Simu' },
+
 
   // Categories
   cat_tools: { en: 'Tools', sw: 'Vifaa' },
@@ -337,6 +335,154 @@ export const translations = {
   confirm_step3: { en: 'Upload your payment proof', sw: 'Pakia uthibitisho wako wa malipo' },
   confirm_verify_upload: { en: 'Verify phone & upload payment proof', sw: 'Thibitisha simu na pakia uthibitisho wa malipo' },
   confirm_track_only: { en: 'Track my orders only', sw: 'Fuatilia maagizo yangu tu' },
+
+  // Payment Guide page
+  pay_guide_title: { en: 'Payment Guide', sw: 'Mwongozo wa Malipo' },
+  pay_guide_subtitle: {
+    en: 'How to pay for your Pahala order using M-Pesa or Airtel Money in 8 simple steps.',
+    sw: 'Jinsi ya kulipa agizo lako la Pahala kwa M-Pesa au Airtel Money kwa hatua 8 rahisi.',
+  },
+  pay_step1_title: { en: 'Find Your Payment Details', sw: 'Pata Maelezo ya Malipo' },
+  pay_step1_desc: {
+    en: 'After placing your order you will receive a confirmation page showing the payment number, exact amount, and your order code.',
+    sw: 'Baada ya kuweka agizo utapata ukurasa wa uthibitisho unaoonyesha nambari ya malipo, kiasi halisi, na nambari yako ya agizo.',
+  },
+  pay_step2_title: { en: 'Open Your Mobile Money App', sw: 'Fungua Programu ya Pesa ya Simu' },
+  pay_step2_desc: {
+    en: 'Open M-Pesa or Airtel Money on your phone. Both are accepted at Pahala Store. Make sure you have enough balance for the full order amount.',
+    sw: 'Fungua M-Pesa au Airtel Money kwenye simu yako. Zote zinakubaliwa Pahala Store. Hakikisha una salio la kutosha kwa kiasi chote cha agizo.',
+  },
+  pay_step3_title: { en: 'Select Send Money', sw: 'Chagua Tuma Pesa' },
+  pay_step3_desc: {
+    en: 'On M-Pesa tap "Send Money". On Airtel Money tap "Lipa". This opens the screen where you enter the recipient number.',
+    sw: 'Kwenye M-Pesa bonyeza "Send Money". Kwenye Airtel Money bonyeza "Lipa". Hii inafungua skrini unayoingiza nambari ya mpokeaji.',
+  },
+  pay_step4_title: { en: 'Enter the Payment Number', sw: 'Ingiza Nambari ya Malipo' },
+  pay_step4_desc: {
+    en: 'Type in the Pahala payment number shown on your order confirmation. Check it twice before proceeding — one wrong digit sends money to the wrong place.',
+    sw: 'Andika nambari ya malipo ya Pahala inayoonyeshwa kwenye uthibitisho wako wa agizo. Iangalie mara mbili kabla ya kuendelea — tarakimu moja mbaya inatuma pesa mahali pabaya.',
+  },
+  pay_step5_title: { en: 'Enter Amount and Reference', sw: 'Ingiza Kiasi na Kumbukumbu' },
+  pay_step5_desc: {
+    en: 'Enter the exact total amount from your order. In the reference or description field type your order code (e.g. PAH-12345). This helps us match your payment to your order.',
+    sw: 'Ingiza kiasi halisi cha jumla kutoka kwa agizo lako. Katika sehemu ya kumbukumbu au maelezo andika nambari yako ya agizo (mfano PAH-12345). Hii inatusaidia kulinganisha malipo yako na agizo lako.',
+  },
+  pay_step6_title: { en: 'Confirm the Transaction', sw: 'Thibitisha Muamala' },
+  pay_step6_desc: {
+    en: 'Review everything — number, amount, and reference — then enter your PIN and confirm. You will receive an SMS confirmation from your network within seconds.',
+    sw: 'Kagua kila kitu — nambari, kiasi, na kumbukumbu — kisha ingiza PIN yako na uthibitishe. Utapokea SMS ya uthibitisho kutoka kwa mtandao wako ndani ya sekunde chache.',
+  },
+  pay_step7_title: { en: 'Screenshot the Confirmation', sw: 'Piga Picha ya Uthibitisho' },
+  pay_step7_desc: {
+    en: 'Take a screenshot of the success message immediately. The screenshot must clearly show the amount paid, transaction ID, and date.',
+    sw: 'Piga picha ya skrini ya ujumbe wa mafanikio mara moja. Picha lazima ionyeshe wazi kiasi kilicholipwa, nambari ya muamala, na tarehe.',
+  },
+  pay_step8_title: { en: 'Upload Your Proof', sw: 'Pakia Uthibitisho Wako' },
+  pay_step8_desc: {
+    en: 'Go to your order on Pahala, tap "Upload Payment Proof", and select the screenshot. Our team verifies and confirms your order — usually within minutes.',
+    sw: 'Nenda kwenye agizo lako kwenye Pahala, bonyeza "Pakia Uthibitisho wa Malipo", na uchague picha ya skrini. Timu yetu inathibitisha agizo lako — kawaida ndani ya dakika chache.',
+  },
+  pay_tip4: {
+    en: 'Save the Pahala payment number to your contacts before sending to avoid typing errors.',
+    sw: 'Hifadhi nambari ya malipo ya Pahala kwenye anwani zako kabla ya kutuma ili kuepuka makosa ya kuandika.',
+  },
+  pay_tip5: {
+    en: 'Your order code starts with PAH- and is shown on your order confirmation page.',
+    sw: 'Nambari yako ya agizo inaanza na PAH- na inaonyeshwa kwenye ukurasa wako wa uthibitisho wa agizo.',
+  },
+  pay_tip7: {
+    en: 'Screenshot must show: amount paid, transaction ID, and date. Blurry or cropped screenshots will be rejected.',
+    sw: 'Picha lazima ionyeshe: kiasi kilicholipwa, nambari ya muamala, na tarehe. Picha zisizo wazi au zilizokatwa zitakataliwa.',
+  },
+  pay_cta_title: { en: 'Payment not going through?', sw: 'Malipo hayafanyi kazi?' },
+  pay_cta_desc: {
+    en: 'We are here to help. Send us a WhatsApp message and we will guide you step by step.',
+    sw: 'Tuko hapa kusaidia. Tutumie ujumbe wa WhatsApp na tutakuongoza hatua kwa hatua.',
+  },
+  pay_cta_btn: { en: 'Get Help on WhatsApp', sw: 'Pata Msaada kwenye WhatsApp' },
+  pay_track_btn: { en: 'Track My Order', sw: 'Fuatilia Agizo Langu' },
+
+  // How to Order page
+  how_page_title: { en: 'How to Order', sw: 'Jinsi ya Kuagiza' },
+  how_page_subtitle: {
+    en: 'Order hardware products in 7 simple steps — delivered right to your door.',
+    sw: 'Agiza vifaa vya ujenzi kwa hatua 7 rahisi — zinawasilishwa mlangoni mwako.',
+  },
+  how_step1_title: { en: 'Browse Products', sw: 'Tazama Bidhaa' },
+  how_step1_desc: {
+    en: 'Open the store and explore our full catalog. Use the search bar or browse by category to find exactly what you need.',
+    sw: 'Fungua duka na uchunguze katalogi yetu yote. Tumia kisanduku cha kutafuta au tazama kwa kategoria kupata unachohitaji.',
+  },
+  how_step2_title: { en: 'Add to Cart', sw: 'Ongeza kwenye Kikapu' },
+  how_step2_desc: {
+    en: 'Tap "Add" on any product to put it in your cart. You can add as many products as you need before checking out.',
+    sw: 'Bonyeza "Ongeza" kwenye bidhaa yoyote kuiweka kwenye kikapu chako. Unaweza kuongeza bidhaa nyingi unavyohitaji kabla ya kulipa.',
+  },
+  how_step3_title: { en: 'Enter Your Details', sw: 'Ingiza Maelezo Yako' },
+  how_step3_desc: {
+    en: 'Fill in your full name, phone number, and delivery location. We use your phone number to send you an OTP confirmation.',
+    sw: 'Jaza jina lako kamili, nambari ya simu, na mahali pa uwasilishaji. Tunatumia nambari yako ya simu kukutumia uthibitisho wa OTP.',
+  },
+  how_step4_title: { en: 'Verify Your Phone', sw: 'Thibitisha Simu Yako' },
+  how_step4_desc: {
+    en: 'We send a one-time code (OTP) to your phone via SMS. Enter the code to confirm your order. This keeps your order secure.',
+    sw: 'Tunatuma nambari ya mara moja (OTP) kwenye simu yako kupitia SMS. Ingiza nambari hiyo kuthibitisha agizo lako. Hii inalinda agizo lako.',
+  },
+  how_step5_title: { en: 'Make Payment', sw: 'Fanya Malipo' },
+  how_step5_desc: {
+    en: 'Send payment to our M-Pesa or Airtel Money number shown on your order confirmation. Use your order code as the reference.',
+    sw: 'Tuma malipo kwa nambari yetu ya M-Pesa au Airtel Money inayoonyeshwa kwenye uthibitisho wako wa agizo. Tumia nambari yako ya agizo kama kumbukumbu.',
+  },
+  how_step6_title: { en: 'Upload Payment Proof', sw: 'Pakia Uthibitisho wa Malipo' },
+  how_step6_desc: {
+    en: 'Take a screenshot of your payment confirmation and upload it on the order page. Our team will verify it and confirm your order within minutes.',
+    sw: 'Piga picha ya skrini ya uthibitisho wako wa malipo na uipakilie kwenye ukurasa wa agizo. Timu yetu itathibitisha na kuthibitisha agizo lako ndani ya dakika chache.',
+  },
+  how_step7_title: { en: 'Receive Your Order', sw: 'Pokea Agizo Lako' },
+  how_step7_desc: {
+    en: 'Once payment is confirmed, we prepare and deliver your order. Track your delivery status anytime from the Orders page.',
+    sw: 'Malipo yakithibitishwa, tunaandaa na kutoa agizo lako. Fuatilia hali ya uwasilishaji wako wakati wowote kutoka ukurasa wa Maagizo.',
+  },
+  how_tip4: {
+    en: 'Did not receive the code? Tap "Resend OTP" after 60 seconds.',
+    sw: 'Hukupokea nambari? Bonyeza "Tuma OTP Tena" baada ya sekunde 60.',
+  },
+  how_tip5: {
+    en: 'Save our payment number to your contacts before sending — it helps avoid mistakes.',
+    sw: 'Hifadhi nambari yetu ya malipo kwenye anwani zako kabla ya kutuma — inasaidia kuepuka makosa.',
+  },
+  how_tip6: {
+    en: 'Make sure the screenshot clearly shows the amount, date, and transaction ID.',
+    sw: 'Hakikisha picha ya skrini inaonyesha wazi kiasi, tarehe, na nambari ya muamala.',
+  },
+  how_cta_title: { en: 'Still have questions?', sw: 'Bado una maswali?' },
+  how_cta_desc: {
+    en: 'Our team is on WhatsApp and ready to guide you through your first order.',
+    sw: 'Timu yetu iko kwenye WhatsApp na iko tayari kukuongoza kupitia agizo lako la kwanza.',
+  },
+  how_cta_btn: { en: 'Ask on WhatsApp', sw: 'Uliza kwenye WhatsApp' },
+  how_start_btn: { en: 'Start Shopping Now', sw: 'Anza Kununua Sasa' },
+
+  // Footer
+  footer_tagline: {
+    en: 'Your trusted hardware store in Tanzania. Quality products delivered to your door.',
+    sw: 'Duka lako la vifaa vya ujenzi la kuaminika Tanzania. Bidhaa bora zinawasilishwa mlangoni mwako.',
+  },
+  footer_quick_links: { en: 'Quick Links', sw: 'Viungo vya Haraka' },
+  footer_track_order: { en: 'Track Order', sw: 'Fuatilia Agizo' },
+  footer_customer_service: { en: 'Customer Service', sw: 'Huduma kwa Wateja' },
+  footer_how_to_order: { en: 'How to Order', sw: 'Jinsi ya Kuagiza' },
+  footer_payment_guide: { en: 'Payment Guide', sw: 'Mwongozo wa Malipo' },
+  footer_returns_policy: { en: 'Returns & Exchanges', sw: 'Kurudisha & Kubadilisha' },
+  footer_payment_methods: { en: 'We Accept', sw: 'Tunakubali' },
+  footer_accepted_payments: { en: 'Safe and convenient payment options', sw: 'Njia za malipo salama na rahisi' },
+  footer_bank_transfer: { en: 'Bank Transfer', sw: 'Uhamisho wa Benki' },
+  footer_address: { en: 'Dar es Salaam, Tanzania', sw: 'Dar es Salaam, Tanzania' },
+  footer_whatsapp_support: { en: 'Chat on WhatsApp', sw: 'Zungumza kwenye WhatsApp' },
+  footer_rights_reserved: { en: 'All rights reserved.', sw: 'Haki zote zimehifadhiwa.' },
+  footer_privacy_policy: { en: 'Privacy Policy', sw: 'Sera ya Faragha' },
+  footer_terms_of_sale: { en: 'Terms of Sale', sw: 'Masharti ya Mauzo' },
+  footer_returns_label: { en: 'Returns Policy', sw: 'Sera ya Kurudisha' },
 
   // Language
   lang_toggle: { en: 'SW', sw: 'EN' },

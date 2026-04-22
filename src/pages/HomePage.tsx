@@ -207,34 +207,7 @@ const HomePage: React.FC = () => {
           )}
         </div>
 
-        {/* Contact Section */}
-        <div className="card-pahala card mb-4">
-          <div className="card-body text-center py-4">
-            <i className="bi bi-headset fs-1 text-brown mb-2 d-block"></i>
-            <h5 className="fw-bold mb-2">{t('home_need_help')}</h5>
-            <p className="text-muted mb-3 small">
-              {t('home_help_text')}
-            </p>
-            <div className="d-flex gap-2 justify-content-center flex-wrap">
-              <a
-                href="https://wa.me/+255694352388"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn btn-whatsapp btn-lg-mobile"
-              >
-                <i className="bi bi-whatsapp me-2"></i>
-                WhatsApp
-              </a>
-              <a
-                href="tel:+255694352388"
-                className="btn btn-outline-primary btn-lg-mobile"
-              >
-                <i className="bi bi-telephone me-2"></i>
-                {t('home_call')}
-              </a>
-            </div>
-          </div>
-        </div>
+
       </div>
     </div>
   );

@@ -19,6 +19,8 @@ import PaymentStatusPage from './pages/PaymentStatusPage';
 import PaymentInstructions from './pages/PaymentInstructions';
 import ProductDetailPage from './pages/ProductDetailPage';
 import ProductsPage from './pages/ProductsPage';
+import HowToOrderPage from './pages/HowToOrderPage';
+import PaymentGuidePage from './pages/PaymentGuidePage';
 import TrackOrderPage from './pages/TrackOrderPage';
 import UploadPaymentProof from './pages/UploadPaymentProof';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -29,6 +31,7 @@ import AdminOrders from './pages/admin/AdminOrders';
 import AdminPaymentProofs from './pages/admin/AdminPaymentProofs';
 import AdminProducts from './pages/admin/AdminProducts';
 import ProtectedAdminRoute from './routes/ProtectedAdminRoute';
+import Footer from './components/Footer';
 import VisitorTracker from './components/VisitorTracker';
 
 const App: React.FC = () => {
@@ -49,6 +52,8 @@ const App: React.FC = () => {
                 <Route path="/cart" element={<CartPage />} />
                 <Route path="/checkout" element={<CheckoutPage />} />
                 <Route path="/track-order" element={<TrackOrderPage />} />
+                <Route path="/how-to-order" element={<HowToOrderPage />} />
+                <Route path="/payment-guide" element={<PaymentGuidePage />} />
                 <Route path="/otp-verification" element={<OTPVerificationPage />} />
                 <Route path="/payment-processing" element={<PaymentProcessingPage />} />
                 <Route path="/payment-status" element={<PaymentStatusPage />} />
@@ -73,6 +78,7 @@ const App: React.FC = () => {
                   <Route path="payment-proofs" element={<AdminPaymentProofs />} />
                 </Route>
               </Routes>
+              <Footer />
               <WhatsAppButton />
             </BrowserRouter>
           </OrderFlowProvider>

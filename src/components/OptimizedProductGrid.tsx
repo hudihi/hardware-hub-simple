@@ -152,7 +152,7 @@ const OptimizedProductGrid: React.FC<OptimizedProductGridProps> = ({
   return (
     <div className="optimized-product-grid">
       {/* Products Grid */}
-      <div className="row g-3">
+      <div className="row g-2 g-md-3">
         {displayedProducts.map((product, index) => (
           <div key={product.id} className="col-6 col-md-4 col-lg-3">
             <div 
