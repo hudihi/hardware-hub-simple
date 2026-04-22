@@ -8,6 +8,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '../components/ui/input-ot
 import { Label } from '../components/ui/label';
 import { useLanguage } from '../context/LanguageContext';
 import { useOrderFlow } from '../hooks/useOrderFlow';
+import { analytics } from '../lib/analytics';
 
 type TrackOrderStep = 'phone' | 'otp';
 
@@ -32,6 +33,8 @@ const TrackOrderPage: React.FC = () => {
 
   const [resending, setResending] = useState(false);
 
+  const isUploadFlow = safeNextPath(searchParams.get('next'))?.includes('/upload-proof/') ?? false;
+
   const isStep1Active = currentStep === 'phone';
   const isStep1Completed = currentStep === 'otp';
   const isStep2Active = currentStep === 'otp';
@@ -54,6 +57,7 @@ const TrackOrderPage: React.FC = () => {
 
     try {
       await requestOTP(normalizedPhone);
+      analytics.otpRequested();
       // Only after a successful send, allow moving to step 2.
       setCurrentStep('otp');
     } catch (err: any) {
@@ -80,6 +84,8 @@ const TrackOrderPage: React.FC = () => {
         setError(t('track_otp_wrong'));
         return;
       }
+
+      analytics.otpVerified();
 
       try {
         await fetchCustomerOrders();
@@ -117,14 +123,20 @@ const TrackOrderPage: React.FC = () => {
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)} aria-label="Go back">
             <ArrowLeft size={18} />
           </Button>
-          <p className="font-semibold text-[#5C3D2E]">{t('track_order_title')}</p>
+          <p className="font-semibold text-[#5C3D2E]">
+            {isUploadFlow ? t('verify_header_upload') : t('track_order_title')}
+          </p>
         </div>
       </header>
 
       <main className="max-w-lg mx-auto px-4 py-6 space-y-6 animate-fade-in">
         <div className="text-center space-y-1">
-          <h1 className="text-xl font-bold text-[#5C3D2E]">{t('track_verify_identity')}</h1>
-          <p className="text-sm text-muted-foreground">{t('track_phone_hint')}</p>
+          <h1 className="text-xl font-bold text-[#5C3D2E]">
+            {isUploadFlow ? t('verify_header_upload') : t('track_verify_identity')}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {isUploadFlow ? t('verify_subtitle_upload') : t('track_phone_hint')}
+          </p>
         </div>
 
         {/* 2-step indicator */}

@@ -36,7 +36,17 @@
   }
   body {
     @apply bg-background text-foreground;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
   }
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  flex: 1;
 }
 
 /* Custom CSS Variables for Pahala Store Brand */
@@ -326,9 +336,10 @@
 
 /* Page Container */
 .page-container {
-  padding-bottom: 80px; /* Space for bottom nav */
-  min-height: 100vh;
+  flex: 1;
+  padding-bottom: 80px;
   background-color: var(--pahala-gray-light);
+  isolation: isolate;
 }
 
 /* Section Headers */

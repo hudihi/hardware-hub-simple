@@ -1,6 +1,16 @@
 # Multi-stage build for production optimization
 FROM node:18-alpine AS builder
 
+# Declare build-time env vars (set via --build-arg in CI)
+ARG VITE_POSTHOG_KEY=""
+ARG VITE_POSTHOG_HOST=""
+ARG VITE_GLITCHTIP_DSN=""
+
+# Make them visible to Vite during build
+ENV VITE_POSTHOG_KEY=$VITE_POSTHOG_KEY
+ENV VITE_POSTHOG_HOST=$VITE_POSTHOG_HOST
+ENV VITE_GLITCHTIP_DSN=$VITE_GLITCHTIP_DSN
+
 # Set working directory
 WORKDIR /app
 

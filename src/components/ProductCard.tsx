@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useTranslatedContent } from '../hooks/useTranslatedContent';
+import { analytics } from '../lib/analytics';
 import { Product } from '../types';
 import { formatPrice } from '../utils/format';
 import { createProductUrl } from '../utils/slug';
@@ -22,6 +23,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     e.preventDefault();
     e.stopPropagation();
     addItem(product);
+    analytics.addedToCart({ product_id: product.id, category: product.category, price: product.price });
   };
 
   return (

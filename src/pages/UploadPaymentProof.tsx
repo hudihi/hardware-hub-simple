@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { analytics } from '../lib/analytics';
 import authService from '../services/auth.service';
 import apiClient from '../services/api';
 
@@ -254,12 +255,14 @@ const UploadPaymentProof: React.FC<UploadPaymentProofProps> = ({ orderIdProp }) 
         setOverallProgress(progress);
       }
 
+      analytics.paymentProofUploaded({ file_count: uploadedFiles.length });
       setSuccess('Payment proof uploaded successfully! We will verify it shortly.');
       setTimeout(() => {
         navigate(`/orders/${resolvedOrderId}`);
       }, 2000);
     } catch (err: any) {
       console.error('Upload error:', err);
+      analytics.uploadError({ reason: err.message || 'unknown' });
       
       // Handle authentication errors specifically
       if (err.message?.includes('401') || err.message?.includes('Unauthorized')) {

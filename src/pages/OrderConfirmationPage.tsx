@@ -4,6 +4,7 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { useLanguage } from '../context/LanguageContext';
 import { useOrderFlow } from '../hooks/useOrderFlow';
+import { analytics } from '../lib/analytics';
 import { formatOrderDisplayCode, formatPrice } from '../utils/format';
 
 const OrderConfirmationPage: React.FC = () => {
@@ -18,6 +19,7 @@ const OrderConfirmationPage: React.FC = () => {
       navigate('/checkout');
       return;
     }
+    analytics.confirmationViewed();
   }, [orderState, navigate]);
 
   const copyToClipboard = async (paymentNumber: string) => {
@@ -132,26 +134,18 @@ const OrderConfirmationPage: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* 4) Next steps: verify phone then upload proof (or open orders only) */}
-        <div className="space-y-3">
-          <Button
-            className="w-full !bg-[var(--pahala-brown)] !text-white hover:!bg-[var(--pahala-brown-dark)]"
-            onClick={() =>
-              navigate(
-                `/track-order?next=${encodeURIComponent(`/upload-proof/${orderState.order_id}`)}`
-              )
-            }
-          >
-            {t('confirm_verify_upload')}
-          </Button>
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={() => navigate('/track-order')}
-          >
-            {t('confirm_track_only')}
-          </Button>
-        </div>
+        {/* 4) Single CTA — phone verification happens transparently in the flow */}
+        <Button
+          className="w-full !bg-[var(--pahala-brown)] !text-white hover:!bg-[var(--pahala-brown-dark)] py-3"
+          onClick={() =>
+            navigate(
+              `/track-order?next=${encodeURIComponent(`/upload-proof/${orderState.order_id}`)}`
+            )
+          }
+        >
+          <i className="bi bi-upload me-2"></i>
+          {t('confirm_upload_proof_btn')}
+        </Button>
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import CartItem from '../components/CartItem';
 import EmptyState from '../components/EmptyState';
 import { useCart } from '../context/CartContext';
 import { useLanguage } from '../context/LanguageContext';
+import { analytics } from '../lib/analytics';
 import { formatPrice } from '../utils/format';
 
 const CartPage: React.FC = () => {
@@ -68,7 +69,7 @@ const CartPage: React.FC = () => {
             <div className="d-grid gap-2">
               <button
                 className="btn btn-primary btn-lg-mobile"
-                onClick={() => navigate('/checkout')}
+                onClick={() => { analytics.checkoutStarted({ item_count: items.length, total }); navigate('/checkout'); }}
               >
                 <i className="bi bi-lock me-2"></i>
                 {t('cart_checkout')}

@@ -300,6 +300,11 @@ export const translations = {
 
   // Track Order page
   track_order_title: { en: 'Track Order', sw: 'Fuatilia Agizo' },
+  verify_header_upload: { en: 'Verify Your Phone', sw: 'Thibitisha Simu Yako' },
+  verify_subtitle_upload: {
+    en: 'We need to verify your phone before you upload your payment proof.',
+    sw: 'Tunahitaji kuthibitisha simu yako kabla ya kupakia uthibitisho wako wa malipo.',
+  },
   track_verify_identity: { en: 'Verify Your Identity', sw: 'Thibitisha Utambulisho Wako' },
   track_phone_hint: { en: 'Enter your phone number to access your orders', sw: 'Ingiza nambari ya simu yako kupata maagizo yako' },
   track_step_phone: { en: 'Phone Number', sw: 'Nambari ya Simu' },
@@ -333,8 +338,7 @@ export const translations = {
   confirm_step1: { en: 'Pay using the payment details above', sw: 'Lipa kwa kutumia maelezo ya malipo hapo juu' },
   confirm_step2: { en: 'Click "Track My Order" below', sw: 'Bonyeza "Fuatilia Agizo Langu" hapa chini' },
   confirm_step3: { en: 'Upload your payment proof', sw: 'Pakia uthibitisho wako wa malipo' },
-  confirm_verify_upload: { en: 'Verify phone & upload payment proof', sw: 'Thibitisha simu na pakia uthibitisho wa malipo' },
-  confirm_track_only: { en: 'Track my orders only', sw: 'Fuatilia maagizo yangu tu' },
+  confirm_upload_proof_btn: { en: 'Upload Payment Proof', sw: 'Pakia Uthibitisho wa Malipo' },
 
   // Payment Guide page
   pay_guide_title: { en: 'Payment Guide', sw: 'Mwongozo wa Malipo' },

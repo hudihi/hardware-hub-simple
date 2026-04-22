@@ -4,6 +4,7 @@ import PhoneInput from '../components/PhoneInput';
 import { useCart } from '../context/CartContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useOrderFlow } from '../hooks/useOrderFlow';
+import { analytics } from '../lib/analytics';
 import { checkoutService, CheckoutSummaryResponse } from '../services/checkout.service';
 import { formatPrice } from '../utils/format';
 
@@ -183,6 +184,7 @@ const CheckoutPage: React.FC = () => {
         console.warn('Cart clear after order:', clearErr);
       }
 
+      analytics.orderSubmitted({ item_count: items.length, total });
       navigate('/order-confirmation');
     } catch (err: any) {
       console.error('Order creation error:', err);
