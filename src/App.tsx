@@ -21,6 +21,11 @@ import ProductDetailPage from './pages/ProductDetailPage';
 import ProductsPage from './pages/ProductsPage';
 import HowToOrderPage from './pages/HowToOrderPage';
 import PaymentGuidePage from './pages/PaymentGuidePage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import TermsPage from './pages/TermsPage';
+import ReturnsPage from './pages/ReturnsPage';
+import WarrantyPage from './pages/WarrantyPage';
+import ShippingPolicyPage from './pages/ShippingPolicyPage';
 import TrackOrderPage from './pages/TrackOrderPage';
 import UploadPaymentProof from './pages/UploadPaymentProof';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -54,6 +59,11 @@ const App: React.FC = () => {
                 <Route path="/track-order" element={<TrackOrderPage />} />
                 <Route path="/how-to-order" element={<HowToOrderPage />} />
                 <Route path="/payment-guide" element={<PaymentGuidePage />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+                <Route path="/terms" element={<TermsPage />} />
+                <Route path="/returns" element={<ReturnsPage />} />
+                <Route path="/warranty" element={<WarrantyPage />} />
+                <Route path="/shipping" element={<ShippingPolicyPage />} />
                 <Route path="/otp-verification" element={<OTPVerificationPage />} />
                 <Route path="/payment-processing" element={<PaymentProcessingPage />} />
                 <Route path="/payment-status" element={<PaymentStatusPage />} />

@@ -478,6 +478,8 @@ export const translations = {
   footer_how_to_order: { en: 'How to Order', sw: 'Jinsi ya Kuagiza' },
   footer_payment_guide: { en: 'Payment Guide', sw: 'Mwongozo wa Malipo' },
   footer_returns_policy: { en: 'Returns & Exchanges', sw: 'Kurudisha & Kubadilisha' },
+  footer_warranty: { en: 'Warranty Policy', sw: 'Sera ya Dhamana' },
+  footer_shipping: { en: 'Shipping & Delivery', sw: 'Usafirishaji & Utoaji' },
   footer_payment_methods: { en: 'We Accept', sw: 'Tunakubali' },
   footer_accepted_payments: { en: 'Safe and convenient payment options', sw: 'Njia za malipo salama na rahisi' },
   footer_bank_transfer: { en: 'Bank Transfer', sw: 'Uhamisho wa Benki' },

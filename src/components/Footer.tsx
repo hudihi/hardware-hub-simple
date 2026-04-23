@@ -63,17 +63,11 @@ const Footer: React.FC = () => {
           <div className="col-6 col-md-3">
             <h6 className="footer-heading">{t('footer_customer_service')}</h6>
             <ul className="list-unstyled footer-links">
-              <li>
-                <Link to="/how-to-order">{t('footer_how_to_order')}</Link>
-              </li>
-              <li>
-                <Link to="/payment-guide">{t('footer_payment_guide')}</Link>
-              </li>
-              <li>
-                <a href={waLink} target="_blank" rel="noopener noreferrer">
-                  {t('footer_returns_policy')}
-                </a>
-              </li>
+              <li><Link to="/how-to-order">{t('footer_how_to_order')}</Link></li>
+              <li><Link to="/payment-guide">{t('footer_payment_guide')}</Link></li>
+              <li><Link to="/returns">{t('footer_returns_policy')}</Link></li>
+              <li><Link to="/warranty">{t('footer_warranty')}</Link></li>
+              <li><Link to="/shipping">{t('footer_shipping')}</Link></li>
             </ul>
           </div>
 
@@ -110,17 +104,17 @@ const Footer: React.FC = () => {
             </div>
             <div className="col-12 col-md-6">
               <div className="d-flex justify-content-center justify-content-md-end gap-3 flex-wrap">
-                <a href={waLink} target="_blank" rel="noopener noreferrer" className="footer-legal-link">
+                <Link to="/privacy-policy" className="footer-legal-link">
                   {t('footer_privacy_policy')}
-                </a>
+                </Link>
                 <span className="footer-legal-separator">·</span>
-                <a href={waLink} target="_blank" rel="noopener noreferrer" className="footer-legal-link">
+                <Link to="/terms" className="footer-legal-link">
                   {t('footer_terms_of_sale')}
-                </a>
+                </Link>
                 <span className="footer-legal-separator">·</span>
-                <a href={waLink} target="_blank" rel="noopener noreferrer" className="footer-legal-link">
+                <Link to="/returns" className="footer-legal-link">
                   {t('footer_returns_label')}
-                </a>
+                </Link>
               </div>
             </div>
           </div>
