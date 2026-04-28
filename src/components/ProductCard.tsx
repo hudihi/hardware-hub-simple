@@ -8,6 +8,15 @@ import { Product } from '../types';
 import { formatPrice } from '../utils/format';
 import { createProductUrl } from '../utils/slug';
 
+/** Stable 1-10% discount derived from product ID — same value on every render. */
+function getProductDiscount(productId: string): number {
+  let h = 0;
+  for (let i = 0; i < productId.length; i++) {
+    h = Math.imul(31, h) + productId.charCodeAt(i);
+  }
+  return (Math.abs(h) % 10) + 1;
+}
+
 interface ProductCardProps {
   product: Product;
 }
@@ -18,6 +27,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const [imageError, setImageError] = React.useState(false);
   const [imageLoaded, setImageLoaded] = React.useState(false);
   const translatedName = useTranslatedContent(product.name);
+  const discount = getProductDiscount(product.id);
+  const originalPrice = Math.round(product.price / (1 - discount / 100));
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -50,11 +61,31 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             onLoad={() => setImageLoaded(true)}
             onError={() => { setImageError(true); setImageLoaded(true); }}
           />
+          <span
+            className="position-absolute top-0 end-0 m-2 badge"
+            style={{
+              backgroundColor: '#C0392B',
+              color: '#fff',
+              fontSize: '0.7rem',
+              fontWeight: 700,
+              borderRadius: '0.25rem',
+              padding: '3px 6px',
+              letterSpacing: '0.02em',
+            }}
+          >
+            {discount}% OFF
+          </span>
         </div>
         <div className="p-2 p-md-3">
           <h6 className="mb-1 text-dark fw-semibold product-name">{translatedName || product.name}</h6>
           <div className="d-flex align-items-baseline gap-1 mb-2">
             <span className="product-price">{formatPrice(product.price)}</span>
+            <span
+              className="text-muted text-decoration-line-through"
+              style={{ fontSize: '0.78rem' }}
+            >
+              {formatPrice(originalPrice)}
+            </span>
             <span className="product-unit">/ {product.unit}</span>
           </div>
           <button

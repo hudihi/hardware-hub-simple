@@ -1,4 +1,4 @@
-import { ArrowLeft, CheckCircle, ChevronDown, ChevronUp, Minus, Package, Plus, Share2, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, CheckCircle, ChevronDown, ChevronUp, Minus, Package, Plus, Share2, ShoppingCart, Tag } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import ShareButton from '../components/ShareButton';
@@ -11,6 +11,14 @@ import { Category, Product } from '../types';
 import { formatPrice } from '../utils/format';
 import { processImageUrl } from '../utils/imageUrlUtils';
 import { extractProductIdFromSlug } from '../utils/slug';
+
+function getProductDiscount(productId: string): number {
+  let h = 0;
+  for (let i = 0; i < productId.length; i++) {
+    h = Math.imul(31, h) + productId.charCodeAt(i);
+  }
+  return (Math.abs(h) % 10) + 1;
+}
 
 const ProductDetailPage: React.FC = () => {
   const { slugWithId } = useParams<{ slugWithId: string }>();
@@ -267,12 +275,32 @@ const ProductDetailPage: React.FC = () => {
             </div>
 
             {/* Price */}
-            <div className="d-flex align-items-baseline gap-2 mb-3">
-              <span className="fs-3 fw-bold" style={{ color: 'var(--pahala-brown)' }}>
-                {formatPrice(product.price)}
-              </span>
-              <span className="text-muted">/ {product.unit}</span>
-            </div>
+            {(() => {
+              const discount = getProductDiscount(product.id);
+              const originalPrice = Math.round(product.price / (1 - discount / 100));
+              return (
+                <div className="mb-3">
+                  <div className="d-flex align-items-center gap-2 mb-1">
+                    <span
+                      className="badge d-inline-flex align-items-center gap-1 px-2 py-1"
+                      style={{ backgroundColor: '#C0392B', color: '#fff', fontSize: '0.8rem', fontWeight: 700 }}
+                    >
+                      <Tag size={12} />
+                      {discount}% OFF
+                    </span>
+                    <span className="text-muted text-decoration-line-through" style={{ fontSize: '0.9rem' }}>
+                      {formatPrice(originalPrice)}
+                    </span>
+                  </div>
+                  <div className="d-flex align-items-baseline gap-2">
+                    <span className="fs-3 fw-bold" style={{ color: 'var(--pahala-brown)' }}>
+                      {formatPrice(product.price)}
+                    </span>
+                    <span className="text-muted">/ {product.unit}</span>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Stock */}
             <div className="d-flex align-items-center gap-2 mb-4">
