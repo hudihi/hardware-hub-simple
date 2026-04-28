@@ -41,9 +41,40 @@ const VisitorTracker: React.FC = () => {
   const location = useLocation();
   const inactivityTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const referrerRef = useRef<string>(document.referrer || '');
+  const watchIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     websocketService.connect();
+
+    // Start GPS watch after connection is established (brief delay lets WS open)
+    const startGeoWatch = () => {
+      if (!navigator.geolocation) return;
+
+      watchIdRef.current = navigator.geolocation.watchPosition(
+        (pos) => {
+          websocketService.sendMessage({
+            type: 'location_update',
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+            accuracy: pos.coords.accuracy,
+          });
+        },
+        // On denial/error we silently fall back to server-side IP geolocation
+        () => {},
+        { enableHighAccuracy: true, maximumAge: 10_000, timeout: 15_000 }
+      );
+    };
+
+    // Give WS ~500ms to open before sending the first position
+    const timerId = setTimeout(startGeoWatch, 500);
+
+    return () => {
+      clearTimeout(timerId);
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+      }
+    };
   }, []);
 
   useEffect(() => {
