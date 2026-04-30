@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import LiveMap from '../../components/admin/LiveMap';
 import { useLanguage } from '../../context/LanguageContext';
 import { useLiveLocations } from '../../hooks/useLiveLocations';
-import { adminService, DashboardSummary, PopularProduct, RecentOrder, RevenueOverview } from '../../services/admin.service';
+import { adminService, DashboardSummary, PopularProduct, RecentOrder, RevenueOverview, VisitorStats } from '../../services/admin.service';
 import { formatOrderDisplayCode, formatPrice, getStatusClass, getStatusText } from '../../utils/format';
 
 const AdminDashboard: React.FC = () => {
@@ -14,7 +15,8 @@ const AdminDashboard: React.FC = () => {
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
   const [revenue, setRevenue] = useState<RevenueOverview | null>(null);
   const [popularProducts, setPopularProducts] = useState<PopularProduct[]>([]);
-  
+  const [visitorStats, setVisitorStats] = useState<VisitorStats | null>(null);
+
   // Live locations hook
   const { users: liveUsers, isConnected, error: locationError, reconnect } = useLiveLocations();
 
@@ -28,19 +30,21 @@ const AdminDashboard: React.FC = () => {
       setError('');
       
       // Fetch all dashboard data in parallel
-      const [summaryData, recentOrdersData, revenueData, popularProductsData, productsData] = await Promise.all([
+      const [summaryData, recentOrdersData, revenueData, popularProductsData, productsData, visitorData] = await Promise.all([
         adminService.getDashboardSummary(),
         adminService.getRecentOrders(),
         adminService.getRevenueOverview(),
         adminService.getPopularProducts(),
-        adminService.getAllProducts(1, 100) // Get all products to count them
+        adminService.getAllProducts(1, 100),
+        adminService.getVisitorStats(30).catch(() => null),
       ]);
-      
+
       setSummary(summaryData);
-      setActualProductCount(productsData.total); // Use actual count from products API
+      setActualProductCount(productsData.total);
       setRecentOrders(recentOrdersData);
       setRevenue(revenueData);
       setPopularProducts(popularProductsData);
+      setVisitorStats(visitorData);
       
       console.log('Dashboard data loaded successfully');
       console.log('Product count discrepancy:', {
@@ -118,6 +122,41 @@ const AdminDashboard: React.FC = () => {
           </div>
         ))}
       </div>
+
+      {/* Daily Visitor Trend */}
+      {visitorStats && (
+        <div className="card-pahala card mb-4">
+          <div className="card-header bg-white d-flex justify-content-between align-items-center">
+            <h6 className="mb-0 fw-bold">
+              Daily Visitors
+              <span className="badge bg-primary ms-2">{visitorStats.total} in 30 days</span>
+            </h6>
+            <small className="text-muted">Unique visitors per day</small>
+          </div>
+          <div className="card-body">
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={visitorStats.data} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={(v: string) => {
+                    const d = new Date(v);
+                    return `${d.getMonth() + 1}/${d.getDate()}`;
+                  }}
+                  tick={{ fontSize: 11 }}
+                  interval={4}
+                />
+                <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+                <Tooltip
+                  formatter={(value: number) => [value, 'Visitors']}
+                  labelFormatter={(label: string) => new Date(label).toLocaleDateString()}
+                />
+                <Bar dataKey="count" fill="#0d6efd" radius={[3, 3, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
 
       {/* Live Visitor Intelligence */}
       <div className="card-pahala card mb-4">

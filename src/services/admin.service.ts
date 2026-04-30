@@ -1,5 +1,17 @@
 import apiClient from './api';
 
+// Visitor stats
+export interface DailyVisitorCount {
+  date: string;
+  count: number;
+}
+
+export interface VisitorStats {
+  days: number;
+  total: number;
+  data: DailyVisitorCount[];
+}
+
 // Dashboard Types
 export interface DashboardSummary {
   total_orders: number;
@@ -662,6 +674,11 @@ export const adminService = {
       responseType: 'blob',
     });
     return URL.createObjectURL(response.data);
+  },
+
+  getVisitorStats: async (days: number = 30): Promise<VisitorStats> => {
+    const response = await apiClient.get('/api/v1/admin/dashboard/visitor-stats', { params: { days } });
+    return response.data;
   },
 };
 
