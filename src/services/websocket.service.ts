@@ -1,7 +1,7 @@
 // WebSocket service for real-time location updates
 // Follows SOLID principles - single responsibility for WebSocket communication
 
-import { getOrCreateUserId, STORAGE_KEYS } from './user.service';
+import { getOrCreateUserId } from './user.service';
 
 export interface LocationUser {
   user_id: string;
@@ -69,19 +69,10 @@ class WebSocketService {
   private handleConnectionError(error: any): void {
     console.error('WebSocket connection failed:', error);
     
-    // Check if it's a 403 Forbidden error
+    // 403 means the endpoint rejected the connection — rotating the UUID would
+    // create a ghost visitor entry on every retry, inflating visitor counts.
     if (error?.message?.includes('403') || error?.code === 403) {
-      console.warn('403 Forbidden - generating new UUID and retrying...');
-      // Clear existing ID and generate new one
-      localStorage.removeItem(STORAGE_KEYS.USER_ID);
-      sessionStorage.removeItem(STORAGE_KEYS.USER_ID);
-      
-      // Retry with new UUID after short delay
-      setTimeout(() => {
-        const newUserId = getOrCreateUserId();
-        console.log('Retrying with new UUID:', newUserId);
-        this.connect();
-      }, 2000);
+      console.warn('WebSocket 403 — endpoint rejected connection, stopping reconnect');
       return;
     }
     

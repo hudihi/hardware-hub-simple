@@ -32,26 +32,26 @@ const generateUUID = (): string => {
  */
 export const getOrCreateUserId = (): string => {
   try {
-    // Check if tab-specific ID exists in sessionStorage (unique per tab)
-    let tabUserId = sessionStorage.getItem(STORAGE_KEYS.USER_ID);
-    
+    // 1. Tab-scoped ID (fastest path, survives page reloads within same tab)
+    const tabUserId = sessionStorage.getItem(STORAGE_KEYS.USER_ID);
     if (tabUserId && tabUserId.trim() !== '') {
-      console.log('Using existing tab user ID:', tabUserId);
       return tabUserId;
     }
 
-    // Generate new unique ID for this tab
-    tabUserId = generateUUID();
-    sessionStorage.setItem(STORAGE_KEYS.USER_ID, tabUserId);
-    
-    // Also store in localStorage for persistence (backup)
-    localStorage.setItem(STORAGE_KEYS.USER_ID, tabUserId);
-    
-    console.log('Generated new tab user ID:', tabUserId);
-    return tabUserId;
+    // 2. Cross-session backup (same device, different tab or after browser restart)
+    const persistedId = localStorage.getItem(STORAGE_KEYS.USER_ID);
+    if (persistedId && persistedId.trim() !== '') {
+      sessionStorage.setItem(STORAGE_KEYS.USER_ID, persistedId);
+      return persistedId;
+    }
+
+    // 3. Truly new visitor — generate a fresh UUID
+    const newId = generateUUID();
+    sessionStorage.setItem(STORAGE_KEYS.USER_ID, newId);
+    localStorage.setItem(STORAGE_KEYS.USER_ID, newId);
+    return newId;
   } catch (error) {
     console.error('Error managing user ID:', error);
-    // Fallback: generate temporary ID
     return generateUUID();
   }
 };
