@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { websocketService } from '../services/websocket.service';
+import { authService } from '../services/auth.service';
 
 const INACTIVITY_TIMEOUT_MS = 30_000;
 
@@ -43,10 +44,20 @@ const VisitorTracker: React.FC = () => {
   const referrerRef = useRef<string>(document.referrer || '');
   const watchIdRef = useRef<number | null>(null);
 
+  // Exclude admin routes AND any browser session where an admin JWT is present.
+  // authService.isAuthenticated() reads localStorage synchronously — safe during render.
+  const isAdmin =
+    location.pathname.startsWith('/admin') || authService.isAuthenticated();
+
   useEffect(() => {
+    if (isAdmin) {
+      // Clean up any previously opened connection if the admin navigates back to the portal.
+      websocketService.disconnect();
+      return;
+    }
+
     websocketService.connect();
 
-    // Start GPS watch after connection is established (brief delay lets WS open)
     const startGeoWatch = () => {
       if (!navigator.geolocation) return;
 
@@ -59,13 +70,11 @@ const VisitorTracker: React.FC = () => {
             accuracy: pos.coords.accuracy,
           });
         },
-        // On denial/error we silently fall back to server-side IP geolocation
         () => {},
         { enableHighAccuracy: true, maximumAge: 10_000, timeout: 15_000 }
       );
     };
 
-    // Give WS ~500ms to open before sending the first position
     const timerId = setTimeout(startGeoWatch, 500);
 
     return () => {
@@ -75,13 +84,14 @@ const VisitorTracker: React.FC = () => {
         watchIdRef.current = null;
       }
     };
-  }, []);
+  }, [isAdmin]);
 
   useEffect(() => {
+    if (isAdmin) return;
+
     const pathname = location.pathname;
     const pageStatus = getPageStatus(pathname);
 
-    // Tell backend which page this visitor is on
     websocketService.sendMessage({
       type: 'page_update',
       page: pathname,
@@ -106,7 +116,7 @@ const VisitorTracker: React.FC = () => {
       events.forEach(e => window.removeEventListener(e, handleActivity));
       if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
     };
-  }, [location.pathname]);
+  }, [location.pathname, isAdmin]);
 
   return null;
 };
