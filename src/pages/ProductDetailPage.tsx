@@ -6,7 +6,7 @@ import { useCart } from '../context/CartContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useTranslatedContent } from '../hooks/useTranslatedContent';
 import { categoryService } from '../services/category.service';
-import { productService } from '../services/product.service';
+import { productService, type ApiProductImage } from '../services/product.service';
 import { Category, Product } from '../types';
 import { formatPrice } from '../utils/format';
 import { processImageUrl } from '../utils/imageUrlUtils';
@@ -24,6 +24,8 @@ const ProductDetailPage: React.FC = () => {
   const { slugWithId } = useParams<{ slugWithId: string }>();
   const navigate = useNavigate();
   const [product, setProduct] = useState<Product | null>(null);
+  const [galleryImages, setGalleryImages] = useState<ApiProductImage[]>([]);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string>('');
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -73,22 +75,24 @@ const ProductDetailPage: React.FC = () => {
         
         // Map API response to match Product interface expected by components
         if (fetchedProduct) {
-          // Get the primary image from the images array, or fallback to image_url, then placeholder
-          const primaryImage = (fetchedProduct as any).images?.find((img: any) => img.is_primary);
-          const rawImageUrl = primaryImage?.url || (fetchedProduct as any).image_url || '/placeholder.svg';
+          const apiImages: ApiProductImage[] = fetchedProduct.images ?? [];
+          const primaryImage = apiImages.find((img) => img.is_primary) ?? apiImages[0];
+          const rawImageUrl = primaryImage?.url || fetchedProduct.image_url || '/placeholder.svg';
           const processedImageUrl = processImageUrl(rawImageUrl);
-          
+
           const mappedProduct = {
             id: fetchedProduct.id,
             name: fetchedProduct.name,
             description: fetchedProduct.description,
             price: fetchedProduct.price,
-            unit: fetchedProduct.unit_of_measure, // Map unit_of_measure to unit
-            image: processedImageUrl, // Use processed image URL
-            category: fetchedProduct.category_id, // Map category_id to category
-            stock: fetchedProduct.stock_quantity, // Map stock_quantity to stock
+            unit: fetchedProduct.unit_of_measure,
+            image: processedImageUrl,
+            category: fetchedProduct.category_id,
+            stock: fetchedProduct.stock_quantity,
           };
           setProduct(mappedProduct);
+          setGalleryImages(apiImages);
+          setSelectedImageUrl(processedImageUrl);
         } else {
           setProduct(null);
         }
@@ -233,25 +237,58 @@ const ProductDetailPage: React.FC = () => {
 
         {/* Two-column desktop / single-column mobile */}
         <div className="row g-4">
-          {/* LEFT: Image */}
+          {/* LEFT: Image gallery */}
           <div className="col-12 col-md-6">
-            <div
-              className="rounded-3 overflow-hidden position-sticky"
-              style={{
-                top: '1rem',
-                aspectRatio: '1',
-                backgroundColor: 'var(--pahala-beige)',
-              }}
-            >
-              <img
-                src={imageError ? '/placeholder.svg' : getImageUrl(product)}
-                alt={product.name}
-                className="w-100 h-100 object-fit-cover"
-                loading="eager"
-                onError={() => {
-                  setImageError(true);
-                }}
-              />
+            <div className="position-sticky" style={{ top: '1rem' }}>
+              {/* Main image */}
+              <div
+                className="rounded-3 overflow-hidden"
+                style={{ aspectRatio: '1', backgroundColor: 'var(--pahala-beige)' }}
+              >
+                <img
+                  src={imageError ? '/placeholder.svg' : (selectedImageUrl || getImageUrl(product))}
+                  alt={product.name}
+                  className="w-100 h-100 object-fit-cover"
+                  loading="eager"
+                  onError={() => setImageError(true)}
+                />
+              </div>
+
+              {/* Thumbnail strip — only when there are multiple images */}
+              {galleryImages.length > 1 && (
+                <div
+                  className="d-flex gap-2 mt-2 overflow-auto hide-scrollbar"
+                  style={{ scrollbarWidth: 'none' }}
+                >
+                  {galleryImages.map((img) => {
+                    const thumbUrl = processImageUrl(img.url);
+                    const isActive = thumbUrl === selectedImageUrl;
+                    return (
+                      <button
+                        key={img.id}
+                        type="button"
+                        onClick={() => { setSelectedImageUrl(thumbUrl); setImageError(false); }}
+                        className="p-0 border-0 bg-transparent flex-shrink-0"
+                        style={{ width: 64, height: 64 }}
+                      >
+                        <img
+                          src={thumbUrl}
+                          alt=""
+                          className="rounded-2 w-100 h-100"
+                          style={{
+                            objectFit: 'cover',
+                            outline: isActive ? '2px solid var(--pahala-brown)' : '2px solid transparent',
+                            outlineOffset: 2,
+                            opacity: isActive ? 1 : 0.72,
+                            transition: 'outline 0.15s, opacity 0.15s',
+                          }}
+                          onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
 

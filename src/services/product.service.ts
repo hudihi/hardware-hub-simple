@@ -9,6 +9,15 @@ export interface Category {
   updated_at: string;
 }
 
+export interface ApiProductImage {
+  id: string;
+  product_id: string;
+  url: string;
+  is_primary: boolean;
+  sort_order: number;
+  created_at: string;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -17,7 +26,8 @@ export interface Product {
   currency: string;
   unit_of_measure: string;
   category_id: string;
-  image_url: string;
+  image_url: string | null;
+  images: ApiProductImage[];
   stock_quantity: number;
   is_active: boolean;
   created_at?: string;

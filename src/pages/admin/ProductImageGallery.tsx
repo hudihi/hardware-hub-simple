@@ -23,9 +23,14 @@ interface PendingImage {
   status: UploadStatus;
 }
 
+export interface FlushResult {
+  succeeded: number;
+  failed: number;
+}
+
 export interface ProductImageGalleryRef {
   /** Upload all queued images after a new product has been created. */
-  flushPending: (productId: string) => Promise<void>;
+  flushPending: (productId: string) => Promise<FlushResult>;
   hasPending: () => boolean;
 }
 
@@ -173,9 +178,10 @@ const ProductImageGallery = forwardRef<ProductImageGalleryRef, Props>(
     // ── flushPending — called by form after createProduct() ────────────────
 
     const flushPending = useCallback(
-      async (pid: string) => {
-        // Snapshot the queue; iterate sequentially
+      async (pid: string): Promise<FlushResult> => {
         const queue = pendingImages.filter((p) => p.status !== 'error');
+        let succeeded = 0;
+        let failed = 0;
         for (let i = 0; i < queue.length; i++) {
           const p = queue[i];
           markUploading(p.localId);
@@ -183,10 +189,13 @@ const ProductImageGallery = forwardRef<ProductImageGalleryRef, Props>(
             const isFirst = serverImages.length === 0 && i === 0;
             const uploaded = await adminService.uploadProductImage(pid, p.file, isFirst);
             promoteToServer(p.localId, uploaded);
+            succeeded++;
           } catch {
             markError(p.localId);
+            failed++;
           }
         }
+        return { succeeded, failed };
       },
       // eslint-disable-next-line react-hooks/exhaustive-deps
       [pendingImages, serverImages.length],

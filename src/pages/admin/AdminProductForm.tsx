@@ -116,7 +116,13 @@ const AdminProductForm: React.FC<AdminProductFormProps> = ({
         const created = await adminService.createProduct(payload);
         // Flush any photos the admin queued before saving
         if (galleryRef.current?.hasPending()) {
-          await galleryRef.current.flushPending(created.id);
+          const { failed } = await galleryRef.current.flushPending(created.id);
+          if (failed > 0) {
+            alert(
+              `Product saved, but ${failed} photo${failed > 1 ? 's' : ''} failed to upload. ` +
+              `Open the product to retry uploading the failed images.`
+            );
+          }
         }
       }
 
