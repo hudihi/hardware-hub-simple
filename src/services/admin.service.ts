@@ -50,6 +50,15 @@ export interface PopularProduct {
 }
 
 // Product Types
+export interface ProductImage {
+  id: string;
+  product_id: string;
+  url: string;
+  is_primary: boolean;
+  sort_order: number;
+  created_at: string;
+}
+
 export interface AdminProduct {
   id: string;
   name: string;
@@ -64,7 +73,7 @@ export interface AdminProduct {
   is_active: boolean;
   created_at: string;
   updated_at: string;
-  images: any[];
+  images: ProductImage[];
 }
 
 export interface AdminProductsResponse {
@@ -623,6 +632,29 @@ export const adminService = {
       
       throw error;
     }
+  },
+
+  uploadProductImage: async (productId: string, file: File, isPrimary = false): Promise<ProductImage> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('is_primary', String(isPrimary));
+    const response = await apiClient.post(
+      `/api/v1/admin/products/${productId}/images/upload`,
+      formData,
+    );
+    return response.data;
+  },
+
+  deleteProductImage: async (productId: string, imageId: string): Promise<void> => {
+    await apiClient.delete(`/api/v1/admin/products/${productId}/images/${imageId}`);
+  },
+
+  setPrimaryImage: async (productId: string, imageId: string): Promise<ProductImage> => {
+    const response = await apiClient.patch(
+      `/api/v1/admin/products/${productId}/images/${imageId}`,
+      { is_primary: true },
+    );
+    return response.data;
   },
 
   getPendingPaymentProofs: async (): Promise<PaymentProofPending[]> => {
