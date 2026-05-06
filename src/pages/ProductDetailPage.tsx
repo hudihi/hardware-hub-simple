@@ -240,24 +240,72 @@ const ProductDetailPage: React.FC = () => {
           {/* LEFT: Image gallery */}
           <div className="col-12 col-md-6">
             <div className="position-sticky" style={{ top: '1rem' }}>
-              {/* Main image */}
-              <div
-                className="rounded-3 overflow-hidden"
-                style={{ aspectRatio: '1', backgroundColor: 'var(--pahala-beige)' }}
-              >
-                <img
-                  src={imageError ? '/placeholder.svg' : (selectedImageUrl || getImageUrl(product))}
-                  alt={product.name}
-                  className="w-100 h-100 object-fit-cover"
-                  loading="eager"
-                  onError={() => setImageError(true)}
-                />
+
+              {/* Desktop: vertical thumbnail rail LEFT + main image RIGHT */}
+              <div className="d-flex gap-3 align-items-start">
+
+                {/* Vertical thumbnail rail — desktop only */}
+                {galleryImages.length > 1 && (
+                  <div
+                    className="d-none d-md-flex flex-column gap-2 flex-shrink-0"
+                    style={{
+                      width: 72,
+                      maxHeight: 440,
+                      overflowY: 'auto',
+                      scrollbarWidth: 'none',
+                    }}
+                  >
+                    {galleryImages.map((img) => {
+                      const thumbUrl = processImageUrl(img.url);
+                      const isActive = thumbUrl === selectedImageUrl;
+                      return (
+                        <button
+                          key={img.id}
+                          type="button"
+                          onClick={() => { setSelectedImageUrl(thumbUrl); setImageError(false); }}
+                          className="p-0 border-0 bg-transparent flex-shrink-0"
+                          style={{ width: 72, height: 72 }}
+                        >
+                          <img
+                            src={thumbUrl}
+                            alt=""
+                            className="rounded-2 w-100 h-100"
+                            style={{
+                              objectFit: 'cover',
+                              outline: isActive
+                                ? '2.5px solid var(--pahala-brown)'
+                                : '1.5px solid var(--pahala-beige)',
+                              outlineOffset: isActive ? 2 : 0,
+                              opacity: isActive ? 1 : 0.65,
+                              transition: 'outline 0.15s, opacity 0.15s, outline-offset 0.15s',
+                            }}
+                            onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
+                          />
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Main image */}
+                <div
+                  className="flex-grow-1 rounded-3 overflow-hidden"
+                  style={{ aspectRatio: '1', backgroundColor: 'var(--pahala-beige)', minWidth: 0 }}
+                >
+                  <img
+                    src={imageError ? '/placeholder.svg' : (selectedImageUrl || getImageUrl(product))}
+                    alt={product.name}
+                    className="w-100 h-100 object-fit-cover"
+                    loading="eager"
+                    onError={() => setImageError(true)}
+                  />
+                </div>
               </div>
 
-              {/* Thumbnail strip — only when there are multiple images */}
+              {/* Horizontal thumbnail strip — mobile only */}
               {galleryImages.length > 1 && (
                 <div
-                  className="d-flex gap-2 mt-2 overflow-auto hide-scrollbar"
+                  className="d-flex d-md-none gap-2 mt-2 overflow-auto hide-scrollbar"
                   style={{ scrollbarWidth: 'none' }}
                 >
                   {galleryImages.map((img) => {
@@ -289,6 +337,7 @@ const ProductDetailPage: React.FC = () => {
                   })}
                 </div>
               )}
+
             </div>
           </div>
 
