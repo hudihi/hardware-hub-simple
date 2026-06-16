@@ -8,7 +8,6 @@ import { Product } from '../types';
 import { formatPrice } from '../utils/format';
 import { createProductUrl } from '../utils/slug';
 
-/** Stable 1-10% discount derived from product ID — same value on every render. */
 function getProductDiscount(productId: string): number {
   let h = 0;
   for (let i = 0; i < productId.length; i++) {
@@ -41,7 +40,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     <Link to={createProductUrl(product.id, product.name)} className="text-decoration-none">
       <div className="product-card h-100">
         <div className="product-image-container position-relative">
-          {/* Shimmer skeleton — visible until image finishes loading */}
           {!imageLoaded && !imageError && (
             <div className="product-image-placeholder" aria-hidden="true" />
           )}
@@ -61,6 +59,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             onLoad={() => setImageLoaded(true)}
             onError={() => { setImageError(true); setImageLoaded(true); }}
           />
+
+          {/* Discount badge */}
           <span
             className="position-absolute top-0 end-0 m-2 badge"
             style={{
@@ -71,28 +71,34 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               borderRadius: '0.25rem',
               padding: '3px 6px',
               letterSpacing: '0.02em',
+              zIndex: 2,
             }}
           >
             {discount}% OFF
           </span>
+
+          {/* Hover overlay — desktop */}
+          <div className="product-img-overlay" aria-hidden="true">
+            <span className="product-img-overlay-pill">
+              <i className="bi bi-eye me-1" />
+              {language === 'sw' ? 'Tazama' : 'View'}
+            </span>
+          </div>
         </div>
+
         <div className="p-2 p-md-3">
-          <h6 className="mb-1 text-dark fw-semibold product-name">{translatedName || product.name}</h6>
+          <h6 className="mb-1 text-dark fw-semibold product-name">
+            {translatedName || product.name}
+          </h6>
           <div className="d-flex align-items-baseline gap-1 mb-2">
             <span className="product-price">{formatPrice(product.price)}</span>
-            <span
-              className="text-muted text-decoration-line-through"
-              style={{ fontSize: '0.78rem' }}
-            >
+            <span className="text-muted text-decoration-line-through" style={{ fontSize: '0.78rem' }}>
               {formatPrice(originalPrice)}
             </span>
             <span className="product-unit">/ {product.unit}</span>
           </div>
-          <button
-            onClick={handleAddToCart}
-            className="btn btn-primary btn-sm w-100"
-          >
-            <i className="bi bi-cart-plus me-1"></i>
+          <button onClick={handleAddToCart} className="btn btn-primary btn-sm w-100">
+            <i className="bi bi-cart-plus me-1" />
             {t('products_add')}
           </button>
         </div>

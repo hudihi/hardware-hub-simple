@@ -1,0 +1,26 @@
+{
+  "name": "Pahala Store",
+  "short_name": "Pahala",
+  "description": "Duka lako la vifaa vya ujenzi la kuaminika — Your trusted hardware store in Tanzania",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F8F9FA",
+  "theme_color": "#7C5A3C",
+  "orientation": "portrait-primary",
+  "lang": "sw",
+  "categories": ["shopping"],
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

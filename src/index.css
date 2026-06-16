@@ -737,6 +737,50 @@
 }
 
 /* ============================================================
+   ANNOUNCEMENT BANNER — infinite marquee strip
+   ============================================================ */
+.announcement-banner {
+  background: var(--pahala-brown-dark);
+  color: rgba(255,255,255,0.88);
+  font-size: 0.72rem;
+  font-weight: 500;
+  overflow: hidden;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+  height: 32px;
+  display: flex;
+  align-items: center;
+}
+
+.announcement-track {
+  display: inline-flex;
+  align-items: center;
+  animation: marquee 32s linear infinite;
+  will-change: transform;
+}
+
+.announcement-track:hover {
+  animation-play-state: paused;
+}
+
+.announcement-item {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 0.25rem;
+}
+
+.announcement-dot {
+  margin: 0 1.1rem;
+  opacity: 0.35;
+  font-size: 1rem;
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* ============================================================
    GLOBAL FONT OVERRIDE — Inter
    ============================================================ */
 body, input, button, select, textarea {
@@ -1088,6 +1132,332 @@ body, input, button, select, textarea {
   width: 65%;
   margin: 0 auto;
 }
+
+/* ============================================================
+   NAVBAR SCROLL EFFECT — frosted glass on scroll
+   ============================================================ */
+.navbar-pahala {
+  transition: background-color 0.3s ease, backdrop-filter 0.3s ease, box-shadow 0.3s ease;
+}
+
+.navbar-scrolled {
+  background-color: rgba(92, 61, 46, 0.88) !important;
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  box-shadow: 0 2px 16px rgba(0,0,0,0.18) !important;
+}
+
+/* Active nav link indicator */
+.nav-link-active {
+  color: #fff !important;
+  font-weight: 600;
+  position: relative;
+}
+
+.nav-link-active::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: rgba(255,255,255,0.65);
+  border-radius: 1px;
+}
+
+/* Bottom nav animated active pill */
+.bottom-nav-link {
+  position: relative;
+}
+
+.bottom-nav-indicator {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 3px;
+  background: var(--pahala-brown);
+  border-radius: 0 0 3px 3px;
+  transition: width 0.25s ease;
+}
+
+.bottom-nav-link.active .bottom-nav-indicator {
+  width: 28px;
+}
+
+/* ============================================================
+   PRODUCT CARD — image zoom + hover overlay
+   ============================================================ */
+.product-card {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.product-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-hover) !important;
+}
+
+.product-card .product-image {
+  transition: transform 0.4s ease;
+}
+
+.product-card:hover .product-image {
+  transform: scale(1.07);
+}
+
+/* Hover overlay */
+.product-img-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(60, 35, 15, 0.38);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.22s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.product-card:hover .product-img-overlay {
+  opacity: 1;
+}
+
+.product-img-overlay-pill {
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: rgba(255,255,255,0.16);
+  border: 1px solid rgba(255,255,255,0.45);
+  padding: 0.35rem 0.85rem;
+  border-radius: 2rem;
+  backdrop-filter: blur(6px);
+  display: inline-flex;
+  align-items: center;
+  letter-spacing: 0.02em;
+}
+
+/* ============================================================
+   NEW ARRIVALS PRODUCT RAIL — horizontal scroll
+   ============================================================ */
+.product-rail-scroll {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  padding: 0.25rem 0 0.75rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+.rail-card {
+  flex: 0 0 auto;
+  width: 148px;
+  background: var(--pahala-white);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-soft);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+
+.rail-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-card);
+}
+
+.rail-card-img-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: var(--pahala-beige);
+}
+
+.rail-card-img-placeholder {
+  position: absolute;
+  inset: 0;
+}
+
+.rail-card-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.35s ease;
+  display: block;
+}
+
+.rail-card:hover .rail-card-img {
+  transform: scale(1.06);
+}
+
+.rail-card-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  background: var(--pahala-brown);
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 2px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+
+.rail-card-body {
+  padding: 0.5rem 0.6rem 0.65rem;
+}
+
+.rail-card-name {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--pahala-brown-dark);
+  margin: 0 0 0.2rem;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.3;
+  min-height: 1.9em;
+}
+
+.rail-card-price {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--pahala-brown);
+  margin: 0;
+}
+
+.rail-card-skeleton {
+  pointer-events: none;
+}
+
+/* ============================================================
+   FLOATING CART BUTTON
+   ============================================================ */
+.floating-cart-wrap {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 990;
+  transition: bottom 0.35s cubic-bezier(0.34,1.56,0.64,1), opacity 0.25s ease;
+  /* above bottom nav on mobile */
+  bottom: 72px;
+  pointer-events: auto;
+}
+
+.floating-cart-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.floating-cart-hidden {
+  opacity: 0;
+  pointer-events: none;
+  bottom: 48px;
+}
+
+.floating-cart-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  background: var(--pahala-brown-dark);
+  color: #fff !important;
+  text-decoration: none !important;
+  padding: 0.65rem 1.25rem;
+  border-radius: 3rem;
+  box-shadow: 0 4px 20px rgba(92, 61, 46, 0.45), 0 2px 8px rgba(0,0,0,0.18);
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  border: 1.5px solid rgba(255,255,255,0.12);
+}
+
+.floating-cart-btn:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 24px rgba(92, 61, 46, 0.5), 0 3px 10px rgba(0,0,0,0.2);
+}
+
+.floating-cart-icon-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  font-size: 1.1rem;
+}
+
+.floating-cart-count {
+  position: absolute;
+  top: -8px;
+  right: -10px;
+  background: #E74C3C;
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 700;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--pahala-brown-dark);
+}
+
+.floating-cart-label {
+  font-size: 0.8rem;
+  opacity: 0.88;
+}
+
+.floating-cart-divider {
+  width: 1px;
+  height: 16px;
+  background: rgba(255,255,255,0.25);
+  flex-shrink: 0;
+}
+
+.floating-cart-total {
+  font-weight: 700;
+  font-size: 0.88rem;
+}
+
+.floating-cart-arrow {
+  font-size: 0.7rem;
+  opacity: 0.7;
+}
+
+/* Desktop: bottom-right corner, no bottom-nav offset */
+@media (min-width: 768px) {
+  .floating-cart-wrap {
+    left: auto;
+    right: 1.75rem;
+    transform: none;
+    bottom: 1.75rem;
+  }
+
+  .floating-cart-hidden {
+    bottom: 1rem;
+  }
+}
+
+/* ============================================================
+   SCROLL REVEAL ANIMATIONS
+   ============================================================ */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+[data-reveal].reveal-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+[data-reveal][data-reveal-delay="1"] { transition-delay: 0.1s; }
+[data-reveal][data-reveal-delay="2"] { transition-delay: 0.2s; }
+[data-reveal][data-reveal-delay="3"] { transition-delay: 0.3s; }
 
 /* ============================================================
    SECTION HEADER — refined

@@ -1,17 +1,18 @@
 import SearchBar from '@/components/SearchBar';
 import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import AnnouncementBanner from '../components/AnnouncementBanner';
 import CategoryCard from '../components/CategoryCard';
 import OptimizedProductGrid from '../components/OptimizedProductGrid';
+import ProductRail from '../components/ProductRail';
 import { useLanguage } from '../context/LanguageContext';
+import { useScrollReveal } from '../hooks/useScrollReveal';
 import apiClient from '../services/api';
 import { productService } from '../services/product.service';
 import { Category, Product } from '../types';
 import { getCategoryIcon } from '../utils/categoryIcons';
 import { processImageUrl } from '../utils/imageUrlUtils';
 import { generateWhatsAppLink } from '../utils/whatsapp';
-
-const WHATSAPP_NUMBER = '+255694352388';
 
 const SkeletonProductCard: React.FC = () => (
   <div className="skeleton-product-card">
@@ -42,6 +43,7 @@ const HomePage: React.FC = () => {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
   const [products, setProducts] = React.useState<Product[]>([]);
+  const [newArrivals, setNewArrivals] = React.useState<Product[]>([]);
   const [categories, setCategories] = React.useState<Category[]>([]);
   const [productsLoading, setProductsLoading] = React.useState(true);
   const [categoriesLoading, setCategoriesLoading] = React.useState(true);
@@ -73,11 +75,16 @@ const HomePage: React.FC = () => {
           };
         });
 
-        for (let i = mappedProducts.length - 1; i > 0; i--) {
+        // New Arrivals = first 8 (sorted by newest, before shuffle)
+        setNewArrivals(mappedProducts.slice(0, 8));
+
+        // Featured = shuffled remainder
+        const rest = mappedProducts.slice(8);
+        for (let i = rest.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
-          [mappedProducts[i], mappedProducts[j]] = [mappedProducts[j], mappedProducts[i]];
+          [rest[i], rest[j]] = [rest[j], rest[i]];
         }
-        setProducts(mappedProducts);
+        setProducts(rest);
       } catch (error) {
         console.error('Failed to fetch products:', error);
       } finally {
@@ -108,6 +115,9 @@ const HomePage: React.FC = () => {
 
   const featuredProducts = useMemo(() => products.slice(0, 20), [products]);
 
+  // Re-run scroll reveal after async content loads
+  useScrollReveal([productsLoading, categoriesLoading]);
+
   const suggestions = ['Power Tools', 'Hand Tools', 'Drilling Machine', 'Electric Saw', 'Measuring Tools', 'Safety Equipment', 'Garden Tools', 'Painting Supplies'];
   const recentSearches = ['Hammer', 'Screwdriver Set', 'Power Drill'];
 
@@ -122,6 +132,9 @@ const HomePage: React.FC = () => {
 
   return (
     <div className="page-container">
+
+      {/* ── Announcement Banner ── */}
+      <AnnouncementBanner />
 
       {/* ── Hero ── */}
       <div className="hero-v2">
@@ -179,7 +192,7 @@ const HomePage: React.FC = () => {
       <div className="container mt-4">
 
         {/* ── Categories ── */}
-        <div className="mb-4">
+        <div className="mb-4" data-reveal>
           <div className="d-flex justify-content-between align-items-center mb-3">
             <h2 className="section-header mb-0">{t('home_categories')}</h2>
             <Link to="/products" className="text-brown text-decoration-none small fw-semibold d-flex align-items-center gap-1">
@@ -190,9 +203,7 @@ const HomePage: React.FC = () => {
           <div className="categories-scroll-row">
             {categoriesLoading
               ? Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="category-scroll-item">
-                    <SkeletonCategoryCard />
-                  </div>
+                  <div key={i} className="category-scroll-item"><SkeletonCategoryCard /></div>
                 ))
               : categories.map(category => (
                   <div key={category.id} className="category-scroll-item">
@@ -203,8 +214,22 @@ const HomePage: React.FC = () => {
           </div>
         </div>
 
+        {/* ── New Arrivals Rail ── */}
+        <div className="mb-4" data-reveal data-reveal-delay="1">
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <h2 className="section-header mb-0">
+              <i className="bi bi-stars me-2" style={{ color: 'var(--pahala-brown)' }} />
+              {language === 'sw' ? 'Bidhaa Mpya' : 'New Arrivals'}
+            </h2>
+            <Link to="/products?ordering=-created_at" className="text-brown text-decoration-none small fw-semibold d-flex align-items-center gap-1">
+              {t('home_view_all')} <i className="bi bi-chevron-right" />
+            </Link>
+          </div>
+          <ProductRail products={newArrivals} loading={productsLoading} />
+        </div>
+
         {/* ── WhatsApp CTA Banner ── */}
-        <div className="wa-cta-banner mb-4">
+        <div className="wa-cta-banner mb-4" data-reveal data-reveal-delay="2">
           <div className="wa-cta-left">
             <div className="wa-icon-wrap">
               <i className="bi bi-whatsapp" />
@@ -225,7 +250,7 @@ const HomePage: React.FC = () => {
         </div>
 
         {/* ── Featured Products ── */}
-        <div className="mb-4">
+        <div className="mb-4" data-reveal data-reveal-delay="3">
           <div className="d-flex justify-content-between align-items-center mb-3">
             <h2 className="section-header mb-0">{t('home_featured')}</h2>
             <Link to="/products" className="text-brown text-decoration-none small fw-semibold d-flex align-items-center gap-1">

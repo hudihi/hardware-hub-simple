@@ -37,6 +37,7 @@ import AdminPaymentProofs from './pages/admin/AdminPaymentProofs';
 import AdminProducts from './pages/admin/AdminProducts';
 import ProtectedAdminRoute from './routes/ProtectedAdminRoute';
 import Footer from './components/Footer';
+import FloatingCartButton from './components/FloatingCartButton';
 import VisitorTracker from './components/VisitorTracker';
 
 const App: React.FC = () => {
@@ -89,6 +90,7 @@ const App: React.FC = () => {
                 </Route>
               </Routes>
               <Footer />
+              <FloatingCartButton />
               <WhatsAppButton />
             </BrowserRouter>
           </OrderFlowProvider>
